@@ -1,0 +1,8 @@
+node_modules/
+*.apk
+*.aab
+*.keystore
+*.jks
+.env
+.DS_Store
+Thumbs.db

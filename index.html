@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffd59e" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/icon-192.png" />
+  <title>Nubi e a Casa Mágica</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden; background: #efe3ff;
+      font-family: "Comic Sans MS", system-ui, sans-serif;
+      touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none;
+    }
+    #game { display: block; width: 100vw; height: 100vh; }
+
+    /* Botões "de brinquedo": volume, contorno macio, resposta ao toque */
+    .toy {
+      border: none; border-radius: 50%; cursor: pointer; padding: 0;
+      display: grid; place-items: center;
+      background: linear-gradient(180deg, #ffffff 0%, #f1e9ff 100%);
+      box-shadow: 0 4px 0 #cdb8f0, 0 6px 14px rgba(70,40,110,.18);
+      transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .18s, background .25s;
+    }
+    .toy:active { transform: translateY(3px) scale(.92); box-shadow: 0 1px 0 #cdb8f0, 0 2px 6px rgba(70,40,110,.18); }
+    .toy svg { width: 62%; height: 62%; overflow: visible; }
+
+    /* Barra de cômodos */
+    #nav {
+      position: fixed; top: 50%; transform: translateY(-50%);
+      right: calc(env(safe-area-inset-right, 0px) + 10px); z-index: 6;
+      display: flex; flex-direction: column; gap: 12px; background: rgba(255,255,255,.55);
+      padding: 10px 8px; border-radius: 999px; backdrop-filter: blur(6px);
+      box-shadow: 0 6px 20px rgba(70,40,110,.15);
+      pointer-events: none;   /* só os botões recebem toque; o fundo não bloqueia o jogo */
+    }
+    #nav button { width: min(13vw, 56px, 12vh); height: min(13vw, 56px, 12vh); pointer-events: auto; }
+    #nav button.active {
+      background: linear-gradient(180deg, #ffe680 0%, #ffc93a 100%);
+      box-shadow: 0 4px 0 #e0a21c, 0 0 0 4px rgba(255,214,90,.45), 0 6px 14px rgba(160,100,10,.25);
+      animation: navPop .45s cubic-bezier(.34,1.56,.64,1);
+    }
+    #nav button.active:active { transform: translateY(3px) scale(.92); }
+    @keyframes navPop { 0% { transform: scale(.85); } 60% { transform: scale(1.08); } 100% { transform: none; } }
+    /* pedido em outro cômodo: o botão daquele cômodo chama com um pulso suave */
+    #nav button.wish { animation: wish 1.3s ease-in-out infinite; box-shadow: 0 4px 0 #cdb8f0, 0 0 0 5px rgba(255,214,90,.7), 0 0 18px 6px rgba(255,214,90,.55); }
+    @keyframes wish { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14) rotate(-4deg); } }
+    /* adesivo chegou: o botão do álbum dá um pulinho */
+    #btnAlbum.bump { animation: bump .6s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.3); } 100% { transform: scale(1); } }
+
+    .corner { position: fixed; z-index: 6; }
+    #btnSound { top: calc(env(safe-area-inset-top, 0px) + 10px); right: 12px; }
+    #btnAlbum { top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(20px + min(12vw, 54px)); }
+    #btnParent { top: calc(env(safe-area-inset-top, 0px) + 10px); left: 12px; }
+    .corner button { position: fixed; width: min(12vw, 54px); height: min(12vw, 54px); }
+    #btnSound .slash { opacity: 0; transition: opacity .2s; }
+    #btnSound.off .slash { opacity: 1; }
+    #btnSound.off .waves { opacity: .2; }
+    #btnSound .waves { transition: opacity .2s; }
+    /* anel de progresso ao segurar o botão dos responsáveis */
+    #btnParent::after {
+      content: ""; position: absolute; inset: -4px; border-radius: 50%;
+      border: 4px solid transparent; border-top-color: #8a3bff; opacity: 0;
+    }
+    #btnParent:active::after { opacity: 1; animation: hold 1.2s linear forwards; }
+    @keyframes hold { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+    /* Overlays: entram com fade + escala elástica (antes: display none/flex) */
+    .overlay {
+      position: fixed; inset: 0; z-index: 20; display: flex;
+      align-items: center; justify-content: center; padding: 5vw;
+      background: rgba(40,30,60,.45); backdrop-filter: blur(3px);
+      opacity: 0; visibility: hidden; pointer-events: none;
+      transition: opacity .25s ease, visibility 0s linear .25s;
+    }
+    .overlay.show { opacity: 1; visibility: visible; pointer-events: auto; transition: opacity .25s ease; }
+    .panel {
+      background: #fff; color: #4a3f5c; border-radius: 28px; padding: 4vh 5vw;
+      max-width: 92vw; max-height: 86vh; overflow: auto;
+      box-shadow: 0 6px 0 #e3d6fb, 0 18px 50px rgba(40,20,70,.35);
+      transform: translateY(18px) scale(.9);
+      transition: transform .38s cubic-bezier(.34,1.56,.64,1);
+    }
+    .overlay.show .panel { transform: none; }
+    .panel h2 { font-size: min(6vw, 28px); margin-bottom: 2vh; }
+    .panel .close {
+      float: right; border: none; background: #ff8bbf; color: #fff; font-size: 20px;
+      width: 46px; height: 46px; border-radius: 50%; cursor: pointer;
+      box-shadow: 0 3px 0 #e0679f; transition: transform .15s;
+    }
+    .panel .close:active { transform: translateY(2px) scale(.9); }
+    #albumGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 14px; margin-top: 2vh; }
+    .albumCard { text-align: center; opacity: .5; transform: scale(.9); }
+    .albumCard.found { opacity: 1; transform: none; }
+    .overlay.show .albumCard.found { animation: cardIn .45s cubic-bezier(.34,1.56,.64,1) backwards; }
+    .overlay.show .albumCard:nth-child(2) { animation-delay: .04s; } .overlay.show .albumCard:nth-child(3) { animation-delay: .08s; }
+    .overlay.show .albumCard:nth-child(4) { animation-delay: .12s; } .overlay.show .albumCard:nth-child(5) { animation-delay: .16s; }
+    .overlay.show .albumCard:nth-child(6) { animation-delay: .2s; } .overlay.show .albumCard:nth-child(n+7) { animation-delay: .24s; }
+    @keyframes cardIn { from { opacity: 0; transform: translateY(10px) scale(.7); } }
+    .albumIcon { width: 72px; height: 72px; border-radius: 22px; margin: 0 auto 6px; box-shadow: inset 0 -6px 0 rgba(0,0,0,.08); display: grid; place-items: center; font-size: 30px; color: #b3a6c9; }
+    .albumTitle { font-size: 15px; min-height: 1.2em; }
+    button.albumCard { border: none; background: none; font: inherit; color: inherit; cursor: pointer; transition: transform .15s; }
+    button.albumCard:active { transform: scale(.9); }
+    #albumStickers { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 10px; margin-top: 1vh; background: #faf6ff; border-radius: 20px; }
+    .sticker { border: none; background: none; padding: 0; cursor: pointer; transition: transform .15s; }
+    .sticker:active { transform: scale(.88) rotate(-6deg); }
+    .overlay.show .sticker { animation: cardIn .5s cubic-bezier(.34,1.56,.64,1) backwards; }
+
+    .modeRow { display: flex; gap: 10px; flex-wrap: wrap; margin: 2vh 0; }
+    .modeRow button {
+      flex: 1 1 30%; padding: 14px; border: 2px solid #d9c7f5; border-radius: 14px;
+      background: #faf6ff; font-size: 16px; cursor: pointer; transition: background .2s, color .2s, transform .15s;
+    }
+    .modeRow button:active { transform: scale(.95); }
+    .modeRow button.active { background: #8a3bff; color: #fff; border-color: #8a3bff; }
+    .cfg { display: flex; align-items: center; gap: 10px; margin: 12px 0; font-size: 17px; }
+    .cfg input { width: 26px; height: 26px; accent-color: #8a3bff; }
+    .hint { font-size: 13px; color: #8a7fa0; margin-top: 1vh; }
+
+    body.reduce-motion *, body.reduce-motion *::after { animation-duration: .01s !important; transition-duration: .05s !important; }
+    @media (prefers-reduced-motion: reduce) { #nav button.active { animation: none; } }
+
+    #rotate {
+      position: fixed; inset: 0; z-index: 30; display: none;
+      align-items: center; justify-content: center; flex-direction: column; gap: 3vh;
+      background: #efe3ff; color: #5a4630; text-align: center; padding: 8vw;
+    }
+    #rotate .ico { font-size: 22vw; animation: tip 1.6s ease-in-out infinite; }
+    #rotate .msg { font-size: min(7vw, 30px); }
+    @keyframes tip { 0%,100%{ transform: rotate(0); } 50%{ transform: rotate(90deg); } }
+    @media (orientation: portrait) { #rotate { display: flex; } #game, #nav, .corner { visibility: hidden; } }
+  </style>
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <nav id="nav">
+    <button class="toy" data-room="kitchen" aria-label="Cozinha">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <ellipse cx="24" cy="30" rx="18" ry="9" fill="#fff" stroke="#c98a52" stroke-width="3"/>
+        <circle cx="17" cy="24" r="6" fill="#4a74d6" stroke="#2d4a8f" stroke-width="2.5"/>
+        <path d="M27 27c-6-5-3-11 2-9 5-2 8 4 2 9z" fill="#e8426b" stroke="#9c1f3f" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M33 20c3 0 6 3 6 6" fill="none" stroke="#f6cf3f" stroke-width="5" stroke-linecap="round"/>
+      </svg>
+    </button>
+    <button class="toy" data-room="bathroom" aria-label="Banheiro">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="16" cy="13" r="4" fill="#bfe6ff" stroke="#4c7ea6" stroke-width="2"/>
+        <circle cx="26" cy="9" r="3" fill="#bfe6ff" stroke="#4c7ea6" stroke-width="2"/>
+        <path d="M5 24h38v4a12 12 0 0 1-12 12H17A12 12 0 0 1 5 28z" fill="#fff" stroke="#4c7ea6" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M8 24h32" stroke="#8fd3ff" stroke-width="5" stroke-linecap="round"/>
+        <circle cx="35" cy="19" r="4" fill="#ffe14d" stroke="#b8860b" stroke-width="2"/>
+      </svg>
+    </button>
+    <button class="toy" data-room="bedroom" aria-label="Quarto">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <rect x="5" y="14" width="6" height="26" rx="3" fill="#b98ee6" stroke="#6e4aa3" stroke-width="2.5"/>
+        <rect x="9" y="25" width="34" height="11" rx="5" fill="#8fd3ff" stroke="#3c7fb0" stroke-width="2.5"/>
+        <rect x="12" y="20" width="11" height="8" rx="4" fill="#fff1a8" stroke="#c49a1a" stroke-width="2"/>
+        <path d="M9 36v4M41 36v4" stroke="#6e4aa3" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </nav>
+
+  <div class="corner"><button class="toy" id="btnSound" aria-label="Som">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M8 19h7l10-8v26l-10-8H8z" fill="#ffd54a" stroke="#a8791a" stroke-width="3" stroke-linejoin="round"/>
+      <g class="waves" fill="none" stroke="#8a3bff" stroke-width="3.5" stroke-linecap="round">
+        <path d="M31 18a8 8 0 0 1 0 12"/><path d="M36 13a15 15 0 0 1 0 22"/>
+      </g>
+      <path class="slash" d="M30 16l12 16" stroke="#e5484d" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+  </button></div>
+  <div class="corner"><button class="toy" id="btnAlbum" aria-label="Álbum de descobertas">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M6 11c7-3 13-2 18 2v26c-5-4-11-5-18-2z" fill="#ff9bc4" stroke="#b3406f" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M42 11c-7-3-13-2-18 2v26c5-4 11-5 18-2z" fill="#9fd3ff" stroke="#3c7fb0" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M33 19l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z" fill="#ffd54a"/>
+    </svg>
+  </button></div>
+  <div class="corner"><button class="toy" id="btnParent" aria-label="Área dos responsáveis (segure)">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M24 6l4 4h6v6l4 4-4 4v6h-6l-4 4-4-4h-6v-6l-4-4 4-4v-6h6z" fill="#cdb8f0" stroke="#6e4aa3" stroke-width="3" stroke-linejoin="round"/>
+      <circle cx="24" cy="24" r="6" fill="#fff" stroke="#6e4aa3" stroke-width="3"/>
+    </svg>
+  </button></div>
+
+  <!-- Álbum -->
+  <div class="overlay" id="album">
+    <div class="panel">
+      <button class="close" id="albumClose" aria-label="Fechar">✕</button>
+      <h2>Descobertas do Nubi</h2>
+      <div id="albumStickers"></div>
+      <div id="albumGrid"></div>
+    </div>
+  </div>
+
+  <!-- Área dos responsáveis -->
+  <div class="overlay" id="parent">
+    <div class="panel">
+      <button class="close" id="parentClose" aria-label="Fechar">✕</button>
+      <h2>Para os responsáveis</h2>
+      <p>Modo de brincadeira:</p>
+      <div class="modeRow">
+        <button data-mode="explore">Explorar</button>
+        <button data-mode="experiment">Experimentar</button>
+        <button data-mode="solve">Resolver</button>
+      </div>
+      <label class="cfg"><input type="checkbox" id="cfgMusic" /> Música</label>
+      <label class="cfg"><input type="checkbox" id="cfgSfx" /> Efeitos sonoros</label>
+      <label class="cfg"><input type="checkbox" id="cfgVoice" /> Falas do Nubi</label>
+      <label class="cfg"><input type="checkbox" id="cfgReduce" /> Reduzir movimento e partículas</label>
+      <p class="hint">Esta área reduz toques acidentais; não é comprovação de idade. Sem anúncios, compras, contas ou coleta de dados.</p>
+    </div>
+  </div>
+
+  <div id="rotate">
+    <div class="ico">📱</div>
+    <div class="msg">Vire o celular<br/>para brincar com o Nubi</div>
+  </div>
+
+  <script type="module">
+    import { boot } from "./src/main.js";
+    boot();
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
