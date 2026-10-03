@@ -80,12 +80,24 @@ export class ProgressUI {
     ], { duration: reduce ? 200 : 750, easing: "cubic-bezier(.45,.05,.4,1)" });
     anim.onfinish = () => {
       el.remove();
-      this.shown = finalTotal != null ? finalTotal : this.shown + 1;
-      if (finalTotal != null) this.shown = this.progress.total;
-      this._renderCount();
+      const from = this.shown;
+      const to = finalTotal != null ? this.progress.total : this.shown + 1;
+      this._rollCount(from, to, reduce ? 0 : 320);
       bump(this.pill);
-      this.audio.chime(1);
+      this.audio.coin(this._coinStep = ((this._coinStep || 0) + 1) % 8);
     };
+  }
+  /* O número sobe contando (em vez de pular), como um placar de fliperama. */
+  _rollCount(from, to, ms) {
+    if (this._roll) cancelAnimationFrame(this._roll);
+    const t0 = performance.now();
+    const tick = (now) => {
+      const k = ms ? Math.min(1, (now - t0) / ms) : 1;
+      this.shown = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3)));
+      this._renderCount();
+      if (k < 1) this._roll = requestAnimationFrame(tick); else { this.shown = to; this._renderCount(); this._roll = null; }
+    };
+    this._roll = requestAnimationFrame(tick);
   }
   _badge() {
     const b = document.getElementById("btnShop");

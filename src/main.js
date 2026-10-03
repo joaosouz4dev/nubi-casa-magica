@@ -116,6 +116,10 @@ export function boot() {
 
   // áudio
   const startAudio = () => { audio.init(); audio.resume(); };
+  // música de fundo diferente por cômodo + "fuuu" curtinho na troca
+  bus.on("room:changed", (id) => { audio.setTheme(id); if (booted) audio.whoosh(); });
+  // ganhar estrelinhas faz o bichinho dar um "boing" de alegria (só visual)
+  bus.on("stars:changed", (e) => { if (e && e.gained > 0 && nubi.sq) nubi.sq.kick(0.9); });
   bus.on("pointer:down", startAudio);
   bus.on("pointer:down", wakeUp);
   let booted = false;   // a primeira entrada (abertura do jogo) não acorda o Nubi

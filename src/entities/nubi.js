@@ -342,7 +342,16 @@ export class Nubi {
     const ow = Math.max(2, r * 0.055);
 
     // respiração + balanço + squash/stretch (ancorados nos pés)
-    const breathe = reduce ? 0 : Math.sin(this.t * (this.sleeping ? 0.0013 : 0.0024)) * (this.sleeping ? 0.035 : 0.022);
+    // respiração assimétrica: inspira devagar, solta mais rápido e faz uma pausa
+    // curta no fim (um seno puro parece "mecânico")
+    let breathe = 0;
+    if (!reduce) {
+      const ph = (this.t * (this.sleeping ? 0.0013 : 0.0024) / (Math.PI * 2)) % 1;
+      const k = ph < 0.55 ? Math.sin((ph / 0.55) * Math.PI / 2)            // inspira
+              : ph < 0.85 ? Math.cos(((ph - 0.55) / 0.3) * Math.PI / 2)    // expira
+              : 0;                                                         // pausa
+      breathe = (k * 2 - 1) * (this.sleeping ? 0.035 : 0.022);
+    }
     const pulse = this.pulse.x * 0.05;
     const s = this.sq.x;
     const sx = 1 + s + breathe * -0.5 + pulse;
