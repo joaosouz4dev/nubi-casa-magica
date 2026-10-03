@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console.error: ' + m.text()); });
 
-  await page.goto('http://127.0.0.1:8742/index.html', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:8742/index.html?notitle', { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.__nubi, null, { timeout: 5000 });
   await page.waitForTimeout(300);
 

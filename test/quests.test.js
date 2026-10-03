@@ -29,7 +29,7 @@ fs.mkdirSync(OUT, { recursive: true });
   };
   const nubiPt = (dy) => ev((k) => { const n = window.__nubi.nubi; return { x: n.px(), y: n.py() + n.radius() * k }; }, dy);
 
-  await page.goto('http://127.0.0.1:8742/index.html', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:8742/index.html?notitle', { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.__nubi && window.__nubi.room);
   await ev(() => { try { localStorage.clear(); } catch (e) {} });
   await page.reload({ waitUntil: 'networkidle' });

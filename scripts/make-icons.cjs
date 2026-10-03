@@ -100,6 +100,7 @@ const ANDROID = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 };
     console.log("ok", path.relative(ROOT, out));
   };
   fs.writeFileSync(path.join(ROOT, "assets/icon.svg"), svg({ bg: "rounded" }));
+  fs.writeFileSync(path.join(ROOT, "assets/nubi.svg"), svg({ bg: "none", scale: 0.92 }));   // tela inicial
   await render({ bg: "rounded" }, 192, path.join(ROOT, "assets/icon-192.png"));
   await render({ bg: "rounded" }, 512, path.join(ROOT, "assets/icon-512.png"));
   await render({ bg: "full", scale: 0.8 }, 512, path.join(ROOT, "assets/icon-maskable-512.png"));

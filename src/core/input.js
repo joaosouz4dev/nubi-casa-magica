@@ -10,8 +10,11 @@ export class Input {
     this.active = null;   // ponteiro em andamento
     this.moved = false;
     const rectPoint = (e) => {
-      const r = canvas.getBoundingClientRect();
       const src = e.touches && e.touches[0] ? e.touches[0] : (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0] : e);
+      // o canvas cobre o palco inteiro em (0,0); com o palco girado (retrato
+      // no navegador) a conversão tela -> palco troca os eixos
+      if (document.body.classList.contains("rot")) return { x: src.clientY, y: window.innerWidth - src.clientX };
+      const r = canvas.getBoundingClientRect();
       return { x: src.clientX - r.left, y: src.clientY - r.top };
     };
 

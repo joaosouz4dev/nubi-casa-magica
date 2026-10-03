@@ -32,6 +32,11 @@ sed -i -E "s#(<string name=\"(app_name|title_activity_main)\">)[^<]*#\1$APP_NAME
 RES=android/app/src/main/res
 rm -f "$RES"/mipmap-anydpi-v26/ic_launcher*.xml "$RES"/mipmap-*/ic_launcher*.webp
 cp -r "$SRC"/android-res/. "$RES"/
+# o app é sempre paisagem: o Android trava a orientação (as duas paisagens,
+# conforme o sensor), então a página nunca precisa pedir "gire o celular"
+MANIFEST=android/app/src/main/AndroidManifest.xml
+sed -i -E 's# android:screenOrientation="[^"]*"##g' "$MANIFEST"
+sed -i -E 's#(android:name="\.MainActivity")#\1 android:screenOrientation="sensorLandscape"#' "$MANIFEST"
 rm -rf www && mkdir -p www
 cp -r "$SRC/index.html" "$SRC/manifest.webmanifest" "$SRC/sw.js" "$SRC/src" "$SRC/assets" www/
 npx cap copy android

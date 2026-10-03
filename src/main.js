@@ -6,6 +6,7 @@ import { Viewport } from "./core/viewport.js";
 import { Input } from "./core/input.js";
 import { SceneManager } from "./core/scene_manager.js";
 import { Audio } from "./systems/audio.js";
+import { showTitle } from "./ui/title.js";
 import { Save } from "./systems/save.js";
 import { Effects } from "./systems/effects.js";
 import { Nubi } from "./entities/nubi.js";
@@ -162,6 +163,15 @@ export function boot() {
   // o Guia mostra o que fazer). Depois disso o jogo abre no mapa da casa.
   scenes.go(quests.isDone("recepcao") ? "hub" : "kitchen");
   booted = true;
+
+  // tela inicial com Play: o jogo já roda por trás; ao tocar em Play a
+  // contagem de inatividade do Guia recomeça (a ajuda não "pula" na criança)
+  window.__titleDone = false;
+  showTitle({ audio, onStart: () => {
+    window.__titleDone = true;
+    if (guide._activity) guide._activity();
+    bus.emit("title:start");
+  } });
 
   // loop
   let last = performance.now();

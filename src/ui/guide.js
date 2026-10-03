@@ -105,10 +105,9 @@ export class Guide {
 
   _albumPoint() {
     const btn = document.getElementById("btnAlbum");
-    const cv = this.vp.ctx.canvas.getBoundingClientRect();
     if (!btn) return { x: this.vp.w - 40, y: 40 };
-    const b = btn.getBoundingClientRect();
-    return { x: b.left + b.width / 2 - cv.left, y: b.top + b.height / 2 - cv.top };
+    const b = this.vp.rectToStage(btn.getBoundingClientRect());
+    return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
   }
 
   // ---------------- loop ----------------

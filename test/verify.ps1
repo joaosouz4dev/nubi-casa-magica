@@ -26,7 +26,7 @@ Start-Sleep -Seconds 2
 
 # 4) testes (copiados para o scratch, onde está o node_modules)
 $tests = $args
-if (-not $tests -or $tests.Count -eq 0) { $tests = @("play","stage2","mvp","visual","quests","features","growth") }
+if (-not $tests -or $tests.Count -eq 0) { $tests = @("play","stage2","mvp","visual","quests","features","growth","title") }
 foreach ($t in $tests) {
   Copy-Item (Join-Path $proj "test\$t.test.js") (Join-Path $scratch "$t.test.js") -Force
   Push-Location $scratch

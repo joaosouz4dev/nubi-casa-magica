@@ -63,13 +63,13 @@ export class ProgressUI {
     if (!this.pill) { this.shown = total; return; }
   }
   _flyStar(from, finalTotal) {
-    const cv = this.vp.ctx.canvas.getBoundingClientRect();
-    const tgt = this.pill ? this.pill.getBoundingClientRect() : { left: cv.width / 2, top: 10, width: 40, height: 40 };
+    // coordenadas no palco (#stage): o canvas ocupa o palco a partir de (0,0)
+    const tgt = this.pill ? this.vp.rectToStage(this.pill.getBoundingClientRect()) : { left: this.vp.w / 2, top: 10, width: 40, height: 40 };
     const el = document.createElement("div");
     el.className = "flyStar";
     el.appendChild(iconCanvas(28, "star"));
-    document.body.appendChild(el);
-    const x0 = cv.left + from.x - 14, y0 = cv.top + from.y - 14;
+    (document.getElementById("stage") || document.body).appendChild(el);
+    const x0 = from.x - 14, y0 = from.y - 14;
     const x1 = tgt.left + 18 - 14, y1 = tgt.top + tgt.height / 2 - 14;
     const reduce = document.body.classList.contains("reduce-motion");
     const midX = (x0 + x1) / 2 + (Math.random() - 0.5) * 80, midY = Math.min(y0, y1) - 60;

@@ -35,7 +35,7 @@ fs.mkdirSync(OUT, { recursive: true });
   };
   const tapTab = async (i) => { const p = await ev((k) => window.__nubi.kitchen.tabPos(k), i); await page.mouse.click(p.x, p.y); await wait(700); };
 
-  await page.goto('http://127.0.0.1:8742/index.html', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:8742/index.html?notitle', { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.__nubi && window.__nubi.room);
   await ev(() => { try { localStorage.clear(); } catch (e) {} });
   await page.reload({ waitUntil: 'networkidle' });
