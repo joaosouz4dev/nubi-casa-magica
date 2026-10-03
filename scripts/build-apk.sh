@@ -11,19 +11,27 @@ export ANDROID_SDK_ROOT="$ANDROID_HOME"
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
 APP="${APP_DIR:-$HOME/nubi-apk}"
 APP_ID="dev.joaovictorsouza.nubi"
+APP_NAME="Casa do Nubi"
 
 if [ ! -d "$APP/android" ]; then
   echo "=== criando projeto Capacitor em $APP ==="
   mkdir -p "$APP/www" && cd "$APP"
   [ -f package.json ] || printf '{ "name": "nubi-casa-magica", "version": "1.0.0", "private": true }\n' > package.json
   npm install --no-audit --no-fund @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
-  printf '{ "appId": "%s", "appName": "Nubi e a Casa Magica", "webDir": "www" }\n' "$APP_ID" > capacitor.config.json
+  printf '{ "appId": "%s", "appName": "%s", "webDir": "www" }\n' "$APP_ID" "$APP_NAME" > capacitor.config.json
   npx cap add android
   printf 'sdk.dir=%s\n' "$ANDROID_HOME" > android/local.properties
 fi
 
 echo "=== copiando o jogo ==="
 cd "$APP"
+# nome e ícone sempre sincronizados com o repositório (também em projetos já criados)
+printf '{ "appId": "%s", "appName": "%s", "webDir": "www" }\n' "$APP_ID" "$APP_NAME" > capacitor.config.json
+STRINGS=android/app/src/main/res/values/strings.xml
+sed -i -E "s#(<string name=\"(app_name|title_activity_main)\">)[^<]*#\1$APP_NAME#" "$STRINGS"
+RES=android/app/src/main/res
+rm -f "$RES"/mipmap-anydpi-v26/ic_launcher*.xml "$RES"/mipmap-*/ic_launcher*.webp
+cp -r "$SRC"/android-res/. "$RES"/
 rm -rf www && mkdir -p www
 cp -r "$SRC/index.html" "$SRC/manifest.webmanifest" "$SRC/sw.js" "$SRC/src" "$SRC/assets" www/
 npx cap copy android

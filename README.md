@@ -1,4 +1,9 @@
-# Nubi e a Casa Mágica
+# Casa do Nubi
+
+<img src="assets/icon-192.png" width="96" alt="Ícone do Casa do Nubi" />
+
+Ícones (PWA e Android) são gerados de um único desenho em `scripts/make-icons.cjs`
+(precisa de Playwright: `NODE_PATH=<node_modules com playwright> node scripts/make-icons.cjs`).
 
 Jogo 2D offline para crianças de 3 a 5 anos. A criança brinca com um bichinho
 (Nubi, a coelhinha Lili ou o ursinho Tito) manipulando objetos pela casa. O

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe2b0"/><stop offset=".55" stop-color="#f3d9ff"/><stop offset="1" stop-color="#cbb6f5"/>
+    </linearGradient>
+    <radialGradient id="body" cx=".38" cy=".3" r=".8">
+      <stop offset="0" stop-color="#fff5e8"/><stop offset=".6" stop-color="#f3e6d4"/><stop offset="1" stop-color="#e2cdb2"/>
+    </radialGradient>
+    <clipPath id="clip"><rect width="512" height="512" rx="112"/></clipPath>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#sky)"/>
+  <g clip-path="url(#clip)">
+    <g transform="translate(256 262) scale(1) translate(-256 -262)">
+
+      <!-- orelhas -->
+      <g stroke="#3a2f4f" stroke-width="10">
+        <ellipse cx="150" cy="212" rx="40" ry="50" transform="rotate(-28 150 212)" fill="#f3e6d4"/>
+        <ellipse cx="362" cy="212" rx="40" ry="50" transform="rotate(28 362 212)" fill="#f3e6d4"/>
+      </g>
+      <ellipse cx="153" cy="216" rx="20" ry="29" transform="rotate(-28 153 216)" fill="#ffc9d6"/>
+      <ellipse cx="359" cy="216" rx="20" ry="29" transform="rotate(28 359 216)" fill="#ffc9d6"/>
+      <!-- corpo -->
+      <ellipse cx="256" cy="305" rx="128" ry="118" fill="url(#body)" stroke="#3a2f4f" stroke-width="10"/>
+      <ellipse cx="256" cy="352" rx="72" ry="50" fill="#fff6ea"/>
+      <ellipse cx="205" cy="232" rx="34" ry="18" transform="rotate(-25 205 232)" fill="#fff" opacity=".55"/>
+      <!-- tufo -->
+      <g fill="#cdb8f0" stroke="#3a2f4f" stroke-width="10">
+        <circle cx="214" cy="196" r="34"/><circle cx="298" cy="196" r="34"/><circle cx="256" cy="176" r="42"/>
+      </g>
+      <circle cx="244" cy="163" r="12" fill="#fff" opacity=".6"/>
+      <!-- olhos -->
+      <ellipse cx="208" cy="290" rx="27" ry="32" fill="#4a3b78"/>
+      <ellipse cx="304" cy="290" rx="27" ry="32" fill="#4a3b78"/>
+      <circle cx="217" cy="278" r="10" fill="#fff"/><circle cx="313" cy="278" r="10" fill="#fff"/>
+      <circle cx="200" cy="302" r="4.5" fill="#fff"/><circle cx="296" cy="302" r="4.5" fill="#fff"/>
+      <!-- bochechas e boca -->
+      <ellipse cx="164" cy="330" rx="24" ry="14" fill="#ff9fb6" opacity=".75"/>
+      <ellipse cx="348" cy="330" rx="24" ry="14" fill="#ff9fb6" opacity=".75"/>
+      <path d="M232 326 Q256 362 280 326 Z" fill="#b4566e" stroke="#3a2f4f" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M245 344 Q256 336 268 344 Q256 354 245 344Z" fill="#ff8fa8"/>
+      <!-- ninho de nuvem -->
+      <!-- contorno único: círculos com traço por baixo, os mesmos sem traço por cima -->
+      <g fill="#fffaf3" stroke="#3a2f4f" stroke-width="20"><circle cx="124" cy="462" r="58"/><circle cx="388" cy="462" r="58"/><circle cx="194" cy="448" r="66"/><circle cx="318" cy="448" r="66"/><circle cx="256" cy="462" r="70"/><circle cx="196" cy="494" r="52"/><circle cx="316" cy="494" r="52"/><circle cx="256" cy="504" r="50"/></g>
+      <g fill="#fffaf3"><circle cx="124" cy="462" r="58"/><circle cx="388" cy="462" r="58"/><circle cx="194" cy="448" r="66"/><circle cx="318" cy="448" r="66"/><circle cx="256" cy="462" r="70"/><circle cx="196" cy="494" r="52"/><circle cx="316" cy="494" r="52"/><circle cx="256" cy="504" r="50"/></g>
+      <path d="M150 440 Q170 418 198 424" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <path d="M150 478 Q256 500 362 478" stroke="#e6dcff" stroke-width="10" fill="none" stroke-linecap="round"/>
+      <!-- estrelinhas -->
+      <path d="M110.8 84.7L116.0 107.0L137.8 114.1L118.2 126.0L118.1 148.9L100.8 134.0L78.9 141.0L87.8 119.9L74.4 101.3L97.2 103.2Z" fill="#ffd36e" stroke="#3a2f4f" stroke-width="6" stroke-linejoin="round"/><path d="M406.9 79.1L417.7 91.1L433.6 88.2L425.5 102.2L433.2 116.4L417.4 113.0L406.3 124.7L404.6 108.6L390.0 101.7L404.8 95.1Z" fill="#ffd36e" stroke="#3a2f4f" stroke-width="6" stroke-linejoin="round"/><path d="M439.6 284.1L443.1 294.3L453.6 296.6L445.0 303.1L446.1 313.8L437.2 307.6L427.4 311.9L430.5 301.6L423.4 293.6L434.1 293.4Z" fill="#ffd36e" stroke="#3a2f4f" stroke-width="6" stroke-linejoin="round"/>
+      <path d="M380 162 Q380 176 394 176 Q380 176 380 190 Q380 176 366 176 Q380 176 380 162Z" fill="#fff"/><path d="M80 249 Q80 260 91 260 Q80 260 80 271 Q80 260 69 260 Q80 260 80 249Z" fill="#fff"/>
+    </g></g>
+</svg>
