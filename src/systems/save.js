@@ -18,6 +18,23 @@ export class Save {
   }
   setTint(color) { this.state.tint = color; this.persist(); }
   setAccessories(acc) { this.state.accessories = acc; this.persist(); }
+  setCosmetics(c) { this.state.cosmetics = c; this.persist(); }
+
+  /* Cada bichinho guarda a própria aparência. Os campos tint/accessories/
+     cosmetics de topo são sempre os do bichinho ATUAL (compatível com o
+     save antigo, que só tinha o Nubi); os demais ficam em state.pets. */
+  currentPet() { return this.state.pet || "nubi"; }
+  switchPet(id) {
+    const cur = this.currentPet();
+    if (id === cur) return false;
+    this.state.pets = this.state.pets || {};
+    this.state.pets[cur] = { tint: this.state.tint || null, accessories: this.state.accessories || {}, cosmetics: this.state.cosmetics || null };
+    const next = this.state.pets[id] || { tint: null, accessories: {}, cosmetics: null };
+    this.state.tint = next.tint; this.state.accessories = next.accessories; this.state.cosmetics = next.cosmetics;
+    this.state.pet = id;
+    this.persist();
+    return true;
+  }
   addDiscovery(id) {
     if (!id) return false;
     const isNew = !this.state.discoveries[id];

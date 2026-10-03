@@ -100,4 +100,43 @@ export class Audio {
     this._tone({ freq: 880, type: "sine", dur: 0.12, gain: 0.08, at: 0 });
     this._tone({ freq: 1175, type: "sine", dur: 0.14, gain: 0.07, at: 0.1 });
   }
+  // escovar / esfregar: chiadinho curto
+  scrub() {
+    if (!this.enabled.sfx) return;
+    this._tone({ freq: 1400 + Math.random() * 300, slideTo: 900, type: "triangle", dur: 0.06, gain: 0.05, at: 0 });
+  }
+  // brilho de limpinho
+  sparkle() {
+    if (!this.enabled.sfx) return;
+    this._tone({ freq: 1568, type: "sine", dur: 0.12, gain: 0.08, at: 0 });
+    this._tone({ freq: 2093, type: "sine", dur: 0.16, gain: 0.06, at: 0.06 });
+  }
+  // bichinho de açúcar indo embora
+  pop() {
+    if (!this.enabled.sfx) return;
+    this._tone({ freq: 300, slideTo: 900, type: "sine", dur: 0.12, gain: 0.16, at: 0 });
+  }
+  // dente encaixando
+  click() {
+    if (!this.enabled.sfx) return;
+    this._tone({ freq: 1200, type: "square", dur: 0.03, gain: 0.08, at: 0 });
+    this._tone({ freq: 700, type: "square", dur: 0.04, gain: 0.07, at: 0.04 });
+  }
+  // descarga
+  flush() {
+    if (!this.enabled.sfx) return;
+    this._tone({ freq: 500, slideTo: 120, type: "sawtooth", dur: 0.7, gain: 0.05, at: 0 });
+    this._tone({ freq: 900, slideTo: 300, type: "sine", dur: 0.6, gain: 0.06, at: 0.08 });
+  }
+  // casquinha caindo na lixeira
+  plop() {
+    if (!this.enabled.sfx) return;
+    this._tone({ freq: 420, slideTo: 180, type: "sine", dur: 0.12, gain: 0.16, at: 0 });
+  }
+  // buzina do caminhão
+  honk() {
+    if (!this.enabled.sfx) return;
+    this._tone({ freq: 392, type: "square", dur: 0.14, gain: 0.08, at: 0 });
+    this._tone({ freq: 392, type: "square", dur: 0.18, gain: 0.08, at: 0.2 });
+  }
 }

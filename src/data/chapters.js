@@ -65,6 +65,49 @@ export const CHAPTERS = [
       { act: "equip:hat:fluffy", icon: "combo:fluffy-hat", room: "bedroom" },
       { act: "basket:cape",      icon: "combo:cape-ball", room: "bedroom" }
     ] }
+  },
+  /* ---------- Temporada 2: novos amigos, looks, dentista, rotina, salão ----------
+     Ficam disponíveis desde o início (o capítulo segue o cômodo onde a criança
+     está), mas a ordem sugerida vem depois da festa. */
+  {
+    id: "amigos", room: null, sticker: "amigos", color: "#ff9fc4",
+    steps: { all: [
+      { act: "pet:bunny", icon: "pet:bunny", dom: "#btnPets" },
+      { act: "pet:bear",  icon: "pet:bear",  dom: "#btnPets" },
+      { act: "pet:nubi",  icon: "pet:nubi",  dom: "#btnPets" }
+    ] }
+  },
+  {
+    id: "looks", room: "bedroom", sticker: "looks", color: "#ffc93a",
+    steps: {
+      explore:    [{ act: "equip:face", icon: "wear:sunglasses" }, { act: "equip:body", icon: "wear:tutu" }, { act: "look", icon: "looks" }],
+      experiment: [{ act: "equip:neck", icon: "wear:bowtie" }, { act: "look", icon: "looks" }, { act: "wear:gift", icon: "gift" }],
+      solve:      [{ act: "look", icon: "looks" }, { act: "equip:face", icon: "wear:sunglasses" }, { act: "wear:gift", icon: "gift" }]
+    }
+  },
+  {
+    id: "dentista", room: "dentist", sticker: "dente", color: "#7fd0bd",
+    steps: {
+      explore:    [{ act: "teeth:plaque", icon: "brush" }, { act: "teeth:bugs", icon: "bug" }, { act: "teeth:align", icon: "teeth:align" }],
+      experiment: [{ act: "teeth:plaque", icon: "brush" }, { act: "teeth:align", icon: "teeth:align" }, { act: "teeth:rinse", icon: "cup" }],
+      solve:      [{ act: "teeth:bugs", icon: "bug" }, { act: "teeth:plaque", icon: "brush" }, { act: "teeth:all", icon: "tooth" }]
+    }
+  },
+  {
+    id: "rotina", room: null, sticker: "limpeza", color: "#62c370",
+    steps: {
+      explore:    [{ act: "poop:flush", icon: "poop:flush", room: "bathroom" }, { act: "trash:bin", icon: "trash:bin", room: "kitchen" }, { act: "comb", icon: "comb", room: "bathroom" }],
+      experiment: [{ act: "trash:bin", icon: "trash:bin", room: "kitchen" }, { act: "trash:out", icon: "trash:out", room: "kitchen" }, { act: "poop:flush", icon: "poop:flush", room: "bathroom" }],
+      solve:      [{ act: "poop:flush", icon: "poop:flush", room: "bathroom" }, { act: "ears", icon: "sponge", room: "bathroom" }, { act: "trash:out", icon: "trash:out", room: "kitchen" }]
+    }
+  },
+  {
+    id: "salao", room: "salon", sticker: "salao", color: "#ff6bb5",
+    steps: {
+      explore:    [{ act: "hair", icon: "hair" }, { act: "nails", icon: "nails" }, { act: "beauty", icon: "beauty" }],
+      experiment: [{ act: "haircolor", icon: "color:#ff6b9d" }, { act: "nails", icon: "nails" }, { act: "paint", icon: "paint:mustache" }],
+      solve:      [{ act: "hair", icon: "hair" }, { act: "hairacc", icon: "acc:bow" }, { act: "beauty", icon: "beauty" }]
+    }
   }
 ];
 
@@ -78,7 +121,13 @@ export const FREE_WISHES = [
   { act: "foam", icon: "sponge", room: "bathroom" },
   { act: "duck", icon: "duck", room: "bathroom" },
   { act: "equip:hat", icon: "hat", room: "bedroom" },
-  { act: "basket", icon: "basket", room: "bedroom" }
+  { act: "basket", icon: "basket", room: "bedroom" },
+  { act: "look", icon: "looks", room: "bedroom" },
+  { act: "teeth:all", icon: "tooth", room: "dentist" },
+  { act: "nails", icon: "nails", room: "salon" },
+  { act: "hair", icon: "hair", room: "salon" },
+  { act: "trash:bin", icon: "trash:bin", room: "kitchen" },
+  { act: "comb", icon: "comb", room: "bathroom" }
 ];
 
 // Ajuda escalonada por inatividade (ms). O modo multiplica os tempos.

@@ -1,121 +1,109 @@
-# Nubi e a Casa Mágica — MVP
+# Nubi e a Casa Mágica
 
-Jogo 2D offline para crianças de ~3 a 7 anos. A criança brinca com o **Nubi**,
-uma criaturinha de nuvem, manipulando objetos nos cenários. O centro do jogo é
-descobrir como o Nubi reage à brincadeira — **não** cuidar de barras.
+Jogo 2D offline para crianças de 3 a 5 anos. A criança brinca com um bichinho
+(Nubi, a coelhinha Lili ou o ursinho Tito) manipulando objetos pela casa. O
+centro do jogo é descobrir como o bichinho reage, com pedidos que orientam sem
+pressionar.
 
-Esta entrega é o **MVP completo** do roteiro (etapas 1-5). Jardim, instrumentos,
-ateliê, sonhos, festa, mistura de frutas e catálogo ampliado de roupas são
-**expansões fora do MVP** e não estão aqui — nem como botões "em breve".
+- HTML5 Canvas + JavaScript (ES modules), sem dependências de runtime; som
+  gerado com Web Audio. APK Android via Capacitor 6.
+- Paisagem, um dedo, sem leitura obrigatória, sem anúncios, compras, contas,
+  backend ou coleta de dados. Tudo salvo só no aparelho (localStorage).
+- Toda ação aceita dois jeitos: arrastar o objeto **ou** tocar nele e depois no
+  destino.
 
-## Decisões
+## Como rodar
 
-- **Engine:** Web / HTML5 Canvas + JavaScript (ES modules), **zero dependências
-  de runtime**, Web Audio para som gerado em tempo real. Empacotamento Android
-  (APK) depois via Capacitor/TWA sobre esta mesma base.
-- **Orientação:** horizontal (paisagem); em retrato, pede para girar o aparelho.
-- **Controles:** um dedo. Dois esquemas em todas as atividades principais:
-  arrastar o objeto **ou** tocar no objeto (seleciona) e depois tocar no destino.
-- **Sem leitura obrigatória, backend, anúncios, compras, contas, notificações,
-  coleta de dados ou permissões.** Nubi nunca sofre: sem fome, barras, vidas,
-  punição, sequência diária ou culpa por ausência. A volta é sempre acolhedora.
+**Navegador** (precisa só de Python 3; ES modules não abrem por `file://`):
 
-## Recorte do MVP (seção 11 do briefing)
+```bash
+python -m http.server 8000 --bind 127.0.0.1
+# abra http://127.0.0.1:8000 em paisagem (DevTools > modo celular, se quiser)
+```
 
-**1 personagem, 3 cômodos, 4 brincadeiras** + recepção:
+Para recomeçar do zero: `localStorage.clear()` no console e recarregar.
 
-| Cômodo | Brincadeira | Objetos |
-|---|---|---|
-| Cozinha | Alimentar | 4 alimentos (frutinha azul, morango, banana, pera) |
-| Banheiro | Banho | esponja, chuveirinho, toalha, patinho |
-| Quarto | Vestir | 3 acessórios (chapéu, capa, botas) |
-| Quarto | Bola | bola macia + cesto |
+**Testes** (Node 20+ e Python; instala o Playwright numa pasta temporária):
 
-Mais: navegação entre cômodos, álbum de descobertas, controles de áudio
-(música/efeitos/falas separados), redução de movimento, área dos responsáveis
-(3 modos: Explorar/Experimentar/Resolver), e salvamento local.
+```powershell
+powershell -ExecutionPolicy Bypass -File test\verify.ps1            # todas as suítes
+powershell -ExecutionPolicy Bypass -File test\verify.ps1 features   # uma só
+```
 
-## Reações implementadas
+**APK** (Linux/WSL com JDK 17, Node 20+ e Android SDK em `~/android-sdk`):
 
-- **Frutinha azul** → corpo azul (persiste até enxágue/outra cor).
-- **Morango** → bolhas em formato de coração.
-- **Banana** → tufo vira lua crescente por um instante.
-- **Pera** → bochechas infladas + assobio.
-- **Banho:** esponja faz espuma (azul se o Nubi estiver tingido); chuveirinho
-  enxágua (espuma some, **cor volta à base**); toalha seca e deixa o **pelo
-  fofo**; patinho faz som.
-- **Vestir:** chapéu/capa/botas encaixam com folga; trocar substitui só a peça
-  do mesmo espaço; **combinam** entre si; com pelo fofo o chapéu sobe e desce
-  devagar.
-- **Bola:** quica ao toque, arrasta para reposicionar, desliza para rolar;
-  cair no cesto comemora (assistência discreta perto do cesto); nunca "derrota".
+```bash
+bash scripts/build-apk.sh
+adb install -r nubi-casa-magica-debug.apk     # aparelho com depuração USB
+```
 
-Combinações prioritárias do briefing cobertas: fruta azul + esponja (espuma
-azul, enxágue restaura), banho + toalha + chapéu (pelo fofo sustenta o chapéu),
-capa + bola (pose antes de devolver — a capa muda a pose/visual).
+O APK gerado é **debug** (assinado com a chave de debug), bom para testar, não
+para a loja.
 
-## Arquitetura (data-driven, modular)
+## O que tem no jogo
+
+| Espaço | Brincadeiras |
+|---|---|
+| Cozinha | 4 frutas com reações próprias; cascas vão para a lixeira; saquinho cheio sai pela janela e o caminhão do lixo passa |
+| Banheiro | esponja (espuma, lavar as orelhas), chuveirinho, toalha, patinho, pente (pelo brilhando); cocô estilizado vai para o vaso com descarga |
+| Quarto | guarda-roupa com 10 páginas: 27 peças em 6 espaços, 6 looks prontos e presentes; bola e cesto; varal de conquistas |
+| Consultório dos dentinhos | escovar placas, espantar "bichinhos de açúcar" com a varinha, encaixar o dente torto, enxaguar; sorriso brilhante no fim |
+| Salão de beleza | 5 penteados, 5 cores, enfeites, esmalte por patinha, maquiagem leve, pinturas de rosto (bigode, herói, estrelas, sardas, barba); lencinho limpa |
+
+**Bichinhos:** vitrine no canto superior. Cada um guarda a própria aparência
+(cor, roupas, beleza); o progresso dos capítulos é da criança e vale para todos.
+Nenhuma opção é travada por gênero.
+
+**Capítulos e pedidos:** o bichinho mostra num balão de pensamento o que quer
+(desenho, sem texto). Temporada 1: recepção, cozinha, banho, desfile, bola e
+festa. Temporada 2: novos amigos, looks, dentista, rotina de limpeza e salão.
+Depois disso vêm pedidos livres. Pedido é convite: nada é bloqueado e ignorar
+não custa nada.
+- O capítulo segue a criança: entrou no salão, o pedido vira o do salão.
+- Ajuda por inatividade em degraus: olhar do bichinho -> objeto pula -> mãozinha.
+- Modos dos responsáveis (Explorar / Experimentar / Resolver) mudam os pedidos e
+  a paciência da ajuda.
+
+**Gamificação adequada à idade:** sem pontos, porcentagem, sequência diária ou
+recompensa aleatória. Cada capítulo concluído dá um adesivo (álbum + varal) e
+um **presente fixo** para o guarda-roupa (óculos de estrela, coroa de ouro,
+botas brilhantes, capa arco-íris, medalha, chifre de unicórnio, asas de fada).
+O presente é sempre o mesmo pelo mesmo capítulo e nunca se perde.
+
+## Arquitetura
 
 ```
 src/
-  main.js                   bootstrap: Nubi + 3 cômodos + sistemas + loop
-  core/events.js            barramento de eventos
-  core/viewport.js          canvas responsivo paisagem + design->px
-  core/input.js             um dedo: arraste E toque-e-destino
-  core/scene_manager.js     troca de cômodos (Nubi compartilhado/persistente)
-  entities/nubi.js          personagem: estado + efeitos de aparência + animação
-  entities/food_item.js     alimento arrastável, volta-para-casa
-  scenes/kitchen.js         fundo da cozinha
-  scenes/kitchen_room.js    cômodo cozinha (alimentar)
-  scenes/bathroom_room.js   cômodo banheiro (banho)
-  scenes/bedroom_room.js    cômodo quarto (vestir + bola)
-  systems/effects.js        partículas + aplicação de efeitos
-  systems/audio.js          vocalizações originais, canais separados
-  systems/save.js           salvamento local (cor, roupas, descobertas, modo)
-  data/foods.js             DADOS: alimentos e regras de reação
-  ui/album.js               álbum de descobertas (overlay)
-  ui/parent_gate.js         área dos responsáveis (segurar p/ abrir) + modos
-  ui/hand_demo.js           mãozinha demonstrando o gesto
+  main.js                  bootstrap: bichinho, 5 cômodos, sistemas, loop
+  core/                    eventos, viewport, input (1 dedo), cenas, animação
+  entities/nubi.js         personagem (espécie, estado, aparência, animação)
+  entities/wear.js         pintores de roupas e beleza (personagem e ícones)
+  entities/food_item.js    alimento arrastável
+  scenes/*_room.js         cozinha, banheiro, quarto, dentista, salão
+  systems/                 efeitos, áudio, save, pedidos/capítulos (quests)
+  data/                    alimentos, capítulos, bichinhos, guarda-roupa, salão
+  ui/                      guia (balão, dicas, presentes), álbum, vitrine,
+                           ícones, área dos responsáveis, mãozinha
+test/                      6 suítes Playwright + verify.ps1
+scripts/build-apk.sh       build do APK
 ```
 
-Estado principal (parado/comendo/banho/vestindo/brincando) é **separado** dos
-efeitos de aparência (cor, espuma, umidade, pelo fofo, acessórios). Cada efeito
-tem encerramento seguro. Adicionar um alimento = **uma entrada** em
-`data/foods.js`.
+Tudo é dirigido por dados: uma peça nova é uma entrada em `data/wardrobe.js`;
+um penteado ou esmalte novo, em `data/salon.js`; um capítulo, em
+`data/chapters.js`.
 
-## Como executar
+## Testes
 
-```bash
-cd nubi-casa-magica
-python -m http.server 8000 --bind 127.0.0.1
-# abra http://127.0.0.1:8000 e gire para paisagem
-```
-Precisa ser via servidor (ES modules não carregam de `file://`).
+`play`, `stage2`, `mvp`, `visual`, `quests` e `features` (Playwright headless,
+interações reais de ponteiro). `features` cobre a vitrine e a aparência por
+bichinho, páginas do guarda-roupa, looks, presente de capítulo, o dentista
+completo, lixo/caminhão/cocô/pente e o salão com persistência após recarregar.
+Capturas em `previews/`.
 
-## Testes realizados (de verdade — Playwright headless)
+**Não testado:** desempenho em celular real e teste com crianças. Os ~60 FPS
+foram medidos no Chromium headless de um PC.
 
-- `test/play.test.js` — Etapa 1: arrasta a fruta, confirma mudança de cor + descoberta.
-- `test/stage2.test.js` — Etapa 2: os 4 alimentos geram as 4 descobertas distintas.
-- `test/mvp.test.js` — **aceitação do MVP**, 10 verificações, todas **PASS**:
-  3 cômodos; alimentar→azul; banho (espuma→enxágue restaura cor→toalha fofo→patinho);
-  vestir os 3 acessórios com substituição; bola no cesto; descobertas e roupas
-  persistem após recarregar; **zero erros de página**.
+## Arte
 
-Capturas reais: `preview-etapa1.png`, `preview-etapa2.png`, `preview-mvp.png`,
-`preview-vestido.png`.
-
-**Não executado** (declarado honestamente): build/instalação em aparelho
-Android, medição de desempenho em dispositivo real, e teste com crianças. Não há
-dados sobre esses itens porque não foram rodados neste ambiente (sem Android SDK).
-
-## Provisório (não é arte final)
-
-Toda a arte (Nubi, objetos, cômodos) é **formas 2D provisórias**; vocalizações
-são tons sintetizados, não locução final. A silhueta do Nubi foi mantida
-reconhecível em todas as combinações.
-
-## Próximo incremento
-
-Etapa 6 (validação Android: empacotar via Capacitor/TWA, testar em aparelho,
-medir desempenho) e Etapa 7 (expansões: jardim, música, ateliê, sonhos, festa —
-um capítulo por vez, reaproveitando o núcleo).
+Toda a arte é procedural (desenhada em código) e as vozes são tons
+sintetizados: é arte de protótipo caprichada, não arte final.

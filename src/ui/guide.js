@@ -11,7 +11,9 @@
 import { HINT_TIMING, MODE_PATIENCE, PRAISE, CHAPTER_PRAISE } from "../data/chapters.js";
 import { drawIcon, drawSticker } from "./icons.js";
 import { HandDemo } from "./hand_demo.js";
-import { Ease, clamp, damp, Motion } from "../core/anim.js";
+import { Ease, clamp, damp, Motion, roundRect } from "../core/anim.js";
+import { giftFor } from "../data/wardrobe.js";
+import { wearIcon } from "../entities/wear.js";
 
 const NUBI_ACTS = { wake: "head", pet: "head", tummy: "belly" };
 
@@ -95,6 +97,8 @@ export class Guide {
     const to = this._albumPoint();
     this.flights.push({ chapter, t: -500, from: { x: n.px(), y: n.py() - n.radius() * 1.4 }, to });
     this.garlandPop[chapter.id] = 0;
+    const gift = giftFor(chapter.id);
+    if (gift) { this.giftShow = { def: gift, t: -1100 }; this.bus.emit("gift:new", gift); }
     if (finale) setTimeout(() => { this.audio.fanfare(); this.bus.emit("fx:confetti", { amount: 1.5 }); }, 1600);
   }
 
@@ -119,6 +123,16 @@ export class Guide {
       this._navWish = navWish;
       document.querySelectorAll("[data-room]").forEach(b => b.classList.toggle("wish", b.getAttribute("data-room") === navWish));
     }
+    // pedido de interface (ex.: escolher bichinho): o botão correspondente pulsa
+    const domWish = w && w.dom ? w.dom : null;
+    if (domWish !== this._domWish) {
+      if (this._domWish) { const el = document.querySelector(this._domWish); if (el) el.classList.remove("wish"); }
+      this._domWish = domWish;
+      if (domWish) { const el = document.querySelector(domWish); if (el) el.classList.add("wish"); }
+    }
+    // o pedido precisa de algo no cômodo (cocô, casca, saquinho): o cômodo garante
+    if (w && inRoom && room && room.ensure) room.ensure(w.act);
+    if (this.giftShow) { this.giftShow.t += dt; if (this.giftShow.t > 2600) this.giftShow = null; }
 
     // fala de elogio (depois da fala da reação)
     if (this.praiseIn > 0) {
@@ -221,6 +235,48 @@ export class Guide {
     if (this.bubbleK > 0.01 && w) this._bubble(ctx, w, inRoom);
     if (this.demo) this.demo.draw();
     for (const f of this.flights) this._flight(ctx, f);
+    if (this.giftShow && this.giftShow.t >= 0) this._gift(ctx, this.giftShow);
+  }
+
+  /* Presente do capítulo: caixinha que pula, tampa voa, a peça nova sobe com raios. */
+  _gift(ctx, G) {
+    // fica ao lado do bichinho, nunca por cima do rosto dele
+    const t = G.t, s = this.vp.s(0.12);
+    const right = this.nubi.px() < this.vp.w * 0.55;
+    const cx = right ? Math.min(this.vp.w * 0.8, this.nubi.px() + this.nubi.radius() * 2.6) : Math.max(this.vp.w * 0.22, this.nubi.px() - this.nubi.radius() * 2.6);
+    const cy = this.vp.h * 0.42;
+    const appear = Ease.outBack(clamp(t / 350), 2.2);
+    const fade = 1 - clamp((t - 2100) / 500);
+    const open = clamp((t - 650) / 350);
+    ctx.save(); ctx.globalAlpha = fade;
+    // raios de luz
+    if (open > 0) {
+      ctx.save(); ctx.translate(cx, cy - s * 0.4); ctx.rotate(Motion.reduce ? 0 : t * 0.0008);
+      ctx.fillStyle = `rgba(255,230,120,${0.35 * open})`;
+      for (let i = 0; i < 10; i++) { ctx.rotate(Math.PI / 5); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-s * 0.18, -s * 2.2); ctx.lineTo(s * 0.18, -s * 2.2); ctx.closePath(); ctx.fill(); }
+      ctx.restore();
+    }
+    // caixa
+    const shake = open === 0 && t > 300 && !Motion.reduce ? Math.sin(t * 0.06) * 0.08 : 0;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(shake); ctx.scale(appear, appear);
+    roundRect(ctx, -s * 0.7, -s * 0.2, s * 1.4, s * 0.95, s * 0.12);
+    ctx.fillStyle = "#ff6b9d"; ctx.fill(); ctx.strokeStyle = "#a8325c"; ctx.lineWidth = Math.max(2, s * 0.05); ctx.stroke();
+    ctx.fillStyle = "#ffd54a"; ctx.fillRect(-s * 0.12, -s * 0.2, s * 0.24, s * 0.95);
+    // tampa voando
+    ctx.save(); ctx.translate(open * s * 0.9, -s * 0.35 - open * s * 0.9); ctx.rotate(open * 0.9);
+    roundRect(ctx, -s * 0.8, -s * 0.18, s * 1.6, s * 0.32, s * 0.1); ctx.fillStyle = "#ff8fb1"; ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#ffd54a"; ctx.fillRect(-s * 0.12, -s * 0.18, s * 0.24, s * 0.32);
+    ctx.restore();
+    ctx.restore();
+    // peça nova subindo
+    if (open > 0) {
+      const rise = Ease.outBack(open, 1.6);
+      const y = cy - s * 0.2 - rise * s * 0.9;
+      const bob = Motion.reduce ? 0 : Math.sin(t * 0.006) * s * 0.05;
+      wearIcon(ctx, G.def, cx, y + bob, s * 0.75 * rise, t);
+      this._spark(ctx, cx + s * 0.7, y - s * 0.4, s * 0.12 * (0.6 + 0.4 * Math.sin(t * 0.01)), "#fff");
+    }
+    ctx.restore();
   }
 
   _targetGlow(ctx, tg, s) {

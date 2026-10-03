@@ -4,6 +4,9 @@
 import { FoodItem } from "../entities/food_item.js";
 import { FOODS } from "../data/foods.js";
 import { roundRect, lighten, darken } from "../core/anim.js";
+import { ITEMS } from "../data/wardrobe.js";
+import { wearIcon, paintHair, paintHairAcc, paintMakeupUnder, paintMakeupOver } from "../entities/wear.js";
+import { Nubi } from "../entities/nubi.js";
 
 const foodCache = new Map();
 
@@ -51,6 +54,207 @@ export function drawIcon(ctx, key, x, y, r) {
     ctx.restore();
     return;
   }
+  if (key.startsWith("wear:")) {
+    const def = ITEMS[key.slice(5)];
+    if (def && def.shape) wearIcon(ctx, def, x, y, r * 0.75);
+    else if (def) drawIcon(ctx, def.id, x, y, r);
+    ctx.restore();
+    return;
+  }
+  if (key.startsWith("pet:")) {
+    drawPetIcon(ctx, key.slice(4), x, y, r);
+    ctx.restore();
+    return;
+  }
+  if (key.startsWith("hair:")) {
+    ctx.translate(x, y + r * 0.55);
+    const rr = r * 0.62;
+    ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); fs(ctx, "#f3e6d4", "#7a6a5a", ow);
+    paintHair(ctx, key.slice(5), "#8a5a36", rr, 0);
+    ctx.restore();
+    return;
+  }
+  if (key.startsWith("color:")) {
+    const c = key.slice(6);
+    ctx.translate(x, y);
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.62, 0, Math.PI * 2); fs(ctx, c, darken(c, 0.45), ow);
+    ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.beginPath(); ctx.ellipse(-r * 0.2, -r * 0.22, r * 0.16, r * 0.1, -0.5, 0, 7); ctx.fill();
+    ctx.restore();
+    return;
+  }
+  if (key.startsWith("acc:")) {
+    const a = key.slice(4);
+    const [ox, oy] = { bow: [0.5, -0.92], flower: [-0.55, -0.88], starclip: [0.55, -0.8], headband: [0, -0.62] }[a] || [0, 0];
+    const R = a === "headband" ? r * 0.75 : r * 1.6;
+    ctx.translate(x - ox * R, y - oy * R);
+    paintHairAcc(ctx, a, R, 0);
+    ctx.restore();
+    return;
+  }
+  if (key.startsWith("polish:")) {
+    const c = key.slice(7);
+    ctx.translate(x, y);
+    roundRect(ctx, -r * 0.42, -r * 0.15, r * 0.84, r * 0.85, r * 0.25); fs(ctx, c, darken(c, 0.45), ow);
+    ctx.fillStyle = "rgba(255,255,255,.5)"; roundRect(ctx, -r * 0.3, -r * 0.05, r * 0.14, r * 0.55, r * 0.07); ctx.fill();
+    roundRect(ctx, -r * 0.2, -r * 0.75, r * 0.4, r * 0.62, r * 0.1); fs(ctx, "#3a2f4f", "#15111e", ow);
+    ctx.restore();
+    return;
+  }
+  if (key.startsWith("makeup:") || key.startsWith("paint:")) {
+    drawBeautyIcon(ctx, key, x, y, r, ow);
+    ctx.restore();
+    return;
+  }
+  ctx.translate(x, y);
+  switch (key) {
+    case "looks": {
+      roundRect(ctx, -r * 0.75, -r * 0.8, r * 1.5, r * 1.6, r * 0.3); fs(ctx, "#fff7d6", "#e0a21c", ow);
+      drawIcon(ctx, "cape", -r * 0.2, r * 0.1, r * 0.45);
+      drawIcon(ctx, "hat", r * 0.2, -r * 0.2, r * 0.45);
+      star(ctx, r * 0.45, r * 0.45, r * 0.18, "#ffd54a");
+      break;
+    }
+    case "gift": {
+      roundRect(ctx, -r * 0.7, -r * 0.25, r * 1.4, r * 0.95, r * 0.12); fs(ctx, "#ff6b9d", "#a8325c", ow);
+      roundRect(ctx, -r * 0.8, -r * 0.5, r * 1.6, r * 0.32, r * 0.1); fs(ctx, "#ff8fb1", "#a8325c", ow);
+      ctx.fillStyle = "#ffd54a"; ctx.fillRect(-r * 0.12, -r * 0.5, r * 0.24, r * 1.2);
+      for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(s * r * 0.25, -r * 0.65, r * 0.25, r * 0.15, s * 0.5, 0, 7); fs(ctx, "#ffd54a", "#a8791a", ow * 0.7); }
+      break;
+    }
+    case "tooth": case "teeth:align": case "teeth:all": {
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.55, -r * 0.45); ctx.quadraticCurveTo(-r * 0.6, -r * 0.8, -r * 0.2, -r * 0.75); ctx.quadraticCurveTo(0, -r * 0.65, r * 0.2, -r * 0.75);
+      ctx.quadraticCurveTo(r * 0.6, -r * 0.8, r * 0.55, -r * 0.45); ctx.quadraticCurveTo(r * 0.5, r * 0.1, r * 0.35, r * 0.75); ctx.quadraticCurveTo(r * 0.2, r * 0.85, r * 0.12, r * 0.45);
+      ctx.quadraticCurveTo(0, r * 0.2, -r * 0.12, r * 0.45); ctx.quadraticCurveTo(-r * 0.2, r * 0.85, -r * 0.35, r * 0.75); ctx.quadraticCurveTo(-r * 0.5, r * 0.1, -r * 0.55, -r * 0.45); ctx.closePath();
+      fs(ctx, "#ffffff", "#8fa3b8", ow);
+      if (key === "teeth:align") { ctx.strokeStyle = "#62c370"; ctx.lineWidth = ow * 1.6; ctx.beginPath(); ctx.moveTo(-r * 0.9, r * 0.1); ctx.lineTo(-r * 0.65, r * 0.1); ctx.moveTo(-r * 0.75, 0); ctx.lineTo(-r * 0.65, r * 0.1); ctx.lineTo(-r * 0.75, r * 0.2); ctx.stroke(); }
+      else { ctx.fillStyle = "#ffe27a"; star(ctx, r * 0.5, -r * 0.7, r * 0.2, "#ffe27a"); }
+      break;
+    }
+    case "teeth:plaque": case "brush": {
+      ctx.rotate(-0.6);
+      roundRect(ctx, -r * 0.14, -r * 0.2, r * 0.28, r * 1.1, r * 0.12); fs(ctx, "#5bc0eb", "#2d6f8f", ow);
+      roundRect(ctx, -r * 0.2, -r * 0.75, r * 0.4, r * 0.55, r * 0.1); fs(ctx, "#ffffff", "#8fa3b8", ow);
+      ctx.fillStyle = "#7fd6ff"; for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(0, -r * (0.65 - i * 0.17), r * 0.08, 0, 7); ctx.fill(); }
+      break;
+    }
+    case "teeth:bugs": case "bug": {
+      ctx.beginPath(); ctx.ellipse(0, r * 0.1, r * 0.6, r * 0.5, 0, 0, 7); fs(ctx, "#9be564", "#4f8a2a", ow);
+      ctx.fillStyle = "#fff"; for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(s * r * 0.22, -r * 0.02, r * 0.15, 0, 7); ctx.fill(); }
+      ctx.fillStyle = "#2a2148"; for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(s * r * 0.22, 0, r * 0.07, 0, 7); ctx.fill(); }
+      ctx.strokeStyle = "#4f8a2a"; ctx.lineWidth = ow; for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(s * r * 0.2, -r * 0.35); ctx.lineTo(s * r * 0.35, -r * 0.7); ctx.stroke(); }
+      ctx.strokeStyle = "#2a2148"; ctx.beginPath(); ctx.arc(0, r * 0.25, r * 0.12, 0.2, Math.PI - 0.2); ctx.stroke();
+      break;
+    }
+    case "teeth:rinse": case "cup": {
+      ctx.beginPath(); ctx.moveTo(-r * 0.5, -r * 0.6); ctx.lineTo(r * 0.5, -r * 0.6); ctx.lineTo(r * 0.38, r * 0.7); ctx.lineTo(-r * 0.38, r * 0.7); ctx.closePath(); fs(ctx, "#ff9bc4", "#b3406f", ow);
+      ctx.fillStyle = "#7cc4ff"; ctx.beginPath(); ctx.ellipse(0, -r * 0.55, r * 0.46, r * 0.1, 0, 0, 7); ctx.fill();
+      break;
+    }
+    case "poop": case "poop:flush": {
+      for (const [yy, rx] of [[0.45, 0.65], [0.05, 0.48], [-0.32, 0.3]]) { ctx.beginPath(); ctx.ellipse(0, yy * r, rx * r, r * 0.24, 0, 0, 7); fs(ctx, "#a86b3c", "#5e3818", ow); }
+      ctx.beginPath(); ctx.moveTo(-r * 0.05, -r * 0.5); ctx.quadraticCurveTo(r * 0.15, -r * 0.8, r * 0.2, -r * 0.62); ctx.strokeStyle = "#5e3818"; ctx.lineWidth = ow * 1.6; ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.beginPath(); ctx.ellipse(-r * 0.25, r * 0.0, r * 0.12, r * 0.06, -0.3, 0, 7); ctx.fill();
+      if (key === "poop:flush") { ctx.strokeStyle = "#5bc0eb"; ctx.lineWidth = ow * 1.4; ctx.beginPath(); ctx.arc(r * 0.75, -r * 0.4, r * 0.22, 0, Math.PI * 1.5); ctx.stroke(); }
+      break;
+    }
+    case "trash": case "trash:bin": {
+      roundRect(ctx, -r * 0.5, -r * 0.4, r * 1.0, r * 1.1, r * 0.15); fs(ctx, "#62c370", "#2f7a3d", ow);
+      roundRect(ctx, -r * 0.6, -r * 0.6, r * 1.2, r * 0.24, r * 0.1); fs(ctx, "#7fd88a", "#2f7a3d", ow);
+      ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = ow;
+      for (const xx of [-0.2, 0, 0.2]) { ctx.beginPath(); ctx.moveTo(xx * r, -r * 0.25); ctx.lineTo(xx * r, r * 0.55); ctx.stroke(); }
+      if (key === "trash:bin") drawIcon(ctx, "food:banana", -r * 0.45, -r * 0.85, r * 0.4);
+      break;
+    }
+    case "bag": case "trash:out": {
+      ctx.beginPath(); ctx.moveTo(-r * 0.15, -r * 0.55); ctx.quadraticCurveTo(-r * 0.75, -r * 0.2, -r * 0.6, r * 0.5); ctx.quadraticCurveTo(0, r * 0.85, r * 0.6, r * 0.5);
+      ctx.quadraticCurveTo(r * 0.75, -r * 0.2, r * 0.15, -r * 0.55); ctx.closePath(); fs(ctx, "#4a5568", "#1d2330", ow);
+      ctx.beginPath(); ctx.moveTo(-r * 0.15, -r * 0.55); ctx.lineTo(-r * 0.3, -r * 0.8); ctx.moveTo(r * 0.15, -r * 0.55); ctx.lineTo(r * 0.3, -r * 0.8); ctx.strokeStyle = "#1d2330"; ctx.lineWidth = ow * 1.4; ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,.2)"; ctx.beginPath(); ctx.ellipse(-r * 0.28, r * 0.05, r * 0.1, r * 0.22, 0.2, 0, 7); ctx.fill();
+      if (key === "trash:out") { ctx.strokeStyle = "#62c370"; ctx.lineWidth = ow * 1.8; ctx.beginPath(); ctx.moveTo(r * 0.55, -r * 0.1); ctx.lineTo(r * 0.95, -r * 0.1); ctx.lineTo(r * 0.82, -r * 0.25); ctx.moveTo(r * 0.95, -r * 0.1); ctx.lineTo(r * 0.82, r * 0.05); ctx.stroke(); }
+      break;
+    }
+    case "comb": {
+      ctx.rotate(-0.3);
+      roundRect(ctx, -r * 0.8, -r * 0.35, r * 1.6, r * 0.32, r * 0.12); fs(ctx, "#ff9bc4", "#b3406f", ow);
+      ctx.strokeStyle = "#b3406f"; ctx.lineWidth = ow * 1.2;
+      for (let i = 0; i < 9; i++) { const xx = -r * 0.68 + i * r * 0.17; ctx.beginPath(); ctx.moveTo(xx, -r * 0.05); ctx.lineTo(xx, r * 0.4); ctx.stroke(); }
+      break;
+    }
+    case "wipe": {
+      roundRect(ctx, -r * 0.65, -r * 0.55, r * 1.3, r * 1.1, r * 0.2); fs(ctx, "#ffffff", "#9aa9bd", ow);
+      ctx.strokeStyle = "#cfe6ff"; ctx.lineWidth = ow; for (const yy of [-0.25, 0, 0.25]) { ctx.beginPath(); ctx.moveTo(-r * 0.45, yy * r); ctx.quadraticCurveTo(0, yy * r + r * 0.08, r * 0.45, yy * r); ctx.stroke(); }
+      for (const [a, b] of [[0.5, -0.6], [0.7, -0.35]]) { ctx.beginPath(); ctx.arc(a * r, b * r, r * 0.09, 0, 7); fs(ctx, "#e3f4ff", "#7cc4ff", ow * 0.5); }
+      break;
+    }
+    case "room:dentist": {
+      ctx.translate(0, 0); ctx.restore(); ctx.save(); drawIcon(ctx, "tooth", x, y, r); break;
+    }
+    case "room:salon": {
+      ctx.restore(); ctx.save();
+      drawIcon(ctx, "hair:curls", x - r * 0.15, y, r * 0.9);
+      drawBeautyIcon(ctx, "makeup:lips", x + r * 0.55, y + r * 0.45, r * 0.5, ow);
+      break;
+    }
+    case "hair": case "beauty": case "nails": {
+      ctx.restore(); ctx.save();
+      drawIcon(ctx, key === "nails" ? "polish:#ff6bb5" : key === "hair" ? "hair:ponytail" : "makeup:lips", x, y, r);
+      break;
+    }
+    default: {
+      ctx.restore(); ctx.save();
+      drawIconBase(ctx, key, x, y, r, ow);
+      break;
+    }
+  }
+  ctx.restore();
+}
+
+function drawBeautyIcon(ctx, key, x, y, r, ow) {
+  ctx.save(); ctx.translate(x, y);
+  const v = key.split(":")[1];
+  if (v === "lips") {
+    ctx.beginPath(); ctx.moveTo(-r * 0.6, 0); ctx.quadraticCurveTo(-r * 0.3, -r * 0.4, 0, -r * 0.15); ctx.quadraticCurveTo(r * 0.3, -r * 0.4, r * 0.6, 0);
+    ctx.quadraticCurveTo(0, r * 0.55, -r * 0.6, 0); ctx.closePath(); fs(ctx, "#e8426b", "#8a1f3a", ow);
+  } else if (v === "blush") {
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.62, 0, 7); fs(ctx, "#ffd0e3", "#c7709a", ow);
+    ctx.fillStyle = "#ff7aa8"; ctx.beginPath(); ctx.arc(0, 0, r * 0.42, 0, 7); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.5)"; ctx.beginPath(); ctx.arc(-r * 0.14, -r * 0.14, r * 0.12, 0, 7); ctx.fill();
+  } else if (v === "shadow") {
+    roundRect(ctx, -r * 0.7, -r * 0.45, r * 1.4, r * 0.9, r * 0.2); fs(ctx, "#ffffff", "#9aa9bd", ow);
+    ["#9a7bff", "#5bc0eb", "#ff9fc4"].forEach((c, i) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc((i - 1) * r * 0.42, 0, r * 0.17, 0, 7); ctx.fill(); });
+  } else if (v === "glitter") {
+    for (const [a, b, s, c] of [[0, 0, 0.45, "#ffd54a"], [-0.45, -0.4, 0.22, "#ff9fc4"], [0.45, 0.4, 0.25, "#9be5ff"]]) {
+      ctx.beginPath(); for (let i = 0; i < 4; i++) { const t = (i * Math.PI) / 2; ctx.lineTo(a * r + Math.cos(t) * s * r, b * r + Math.sin(t) * s * r); ctx.lineTo(a * r + Math.cos(t + 0.78) * s * r * 0.3, b * r + Math.sin(t + 0.78) * s * r * 0.3); } ctx.closePath(); ctx.fillStyle = c; ctx.fill();
+    }
+  } else {
+    // pinturas de rosto: a pintura em close, grande, sobre um círculo de pele
+    const rr = r * 0.7;
+    ctx.beginPath(); ctx.arc(0, 0, rr, 0, 7); fs(ctx, "#f3e6d4", "#7a6a5a", ow);
+    ctx.save(); ctx.beginPath(); ctx.arc(0, 0, rr * 0.94, 0, 7); ctx.clip();
+    const fit = { mustache: [2.1, 0.27], hero: [1.0, 0.13], stars: [1.15, 0.05], freckles: [1.2, 0.1], beard: [1.15, 0.47] }[v] || [1, 0];
+    const R = r * fit[0];
+    ctx.translate(0, -fit[1] * R);
+    paintMakeupUnder(ctx, {}, { [v]: 1 }, R, 0, {});
+    paintMakeupOver(ctx, {}, { [v]: 1 }, R, 0, {});
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+/* Retrato pequeno do bichinho (vitrine e balão de pensamento). */
+const petCache = new Map();
+export function drawPetIcon(ctx, id, x, y, r, opts = {}) {
+  let n = petCache.get(id);
+  const vp = { ctx, w: 1, h: 1, s: (v) => v * (r / 0.17) * 0.78, dx: (v) => x + (v - 0.5) * 0, dy: (v) => y + (v - 0.5) * 0 };
+  if (!n) { n = new Nubi(vp); n.setSpecies(id); petCache.set(id, n); }
+  n.vp = vp; n.pos = { x: 0.5, y: 0.5 };
+  if (opts.t !== undefined) n.t = opts.t;
+  n.draw();
+}
+
+function drawIconBase(ctx, key, x, y, r, ow) {
+  ctx.save();
   ctx.translate(x, y);
   switch (key) {
     case "sponge": {
@@ -194,7 +398,8 @@ export function drawIcon(ctx, key, x, y, r) {
 }
 
 /* Adesivo redondo de capítulo (álbum, voo de recompensa e varal). */
-export const STICKER_ICON = { nuvem: "cloud", fruta: "food:blueberry", bolha: "duck", chapeu: "hat", bola: "ball", festa: "star" };
+export const STICKER_ICON = { nuvem: "cloud", fruta: "food:blueberry", bolha: "duck", chapeu: "hat", bola: "ball", festa: "star",
+  amigos: "pet:bunny", looks: "looks", dente: "tooth", limpeza: "trash", salao: "hair:curls" };
 
 export function drawSticker(ctx, sticker, color, x, y, r) {
   ctx.save();

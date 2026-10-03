@@ -8,7 +8,7 @@
    para o lado enquanto some, revelando o cômodo novo. */
 import { Ease, Motion, clamp } from "./anim.js";
 
-const ORDER = ["kitchen", "bathroom", "bedroom"];
+const ORDER = ["kitchen", "bathroom", "bedroom", "dentist", "salon"];
 const DURATION = 520;
 
 export class SceneManager {

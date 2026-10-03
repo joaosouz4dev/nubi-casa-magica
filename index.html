@@ -59,6 +59,14 @@
     #btnSound { top: calc(env(safe-area-inset-top, 0px) + 10px); right: 12px; }
     #btnAlbum { top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(20px + min(12vw, 54px)); }
     #btnParent { top: calc(env(safe-area-inset-top, 0px) + 10px); left: 12px; }
+    #btnPets { top: calc(env(safe-area-inset-top, 0px) + 10px); left: calc(20px + min(12vw, 54px)); }
+    #btnPets.wish { animation: wish 1.3s ease-in-out infinite; box-shadow: 0 4px 0 #cdb8f0, 0 0 0 5px rgba(255,214,90,.7), 0 0 18px 6px rgba(255,214,90,.55); }
+    #petsGrid { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin-top: 2vh; }
+    .petCard { border: 3px solid #e3d6fb; border-radius: 26px; background: #faf6ff; padding: 8px 10px; cursor: pointer; font: inherit; color: #4a3f5c; transition: transform .15s; }
+    .petCard:active { transform: scale(.92); }
+    .petCard.active { border-color: #ffc93a; background: #fff7d6; }
+    .overlay.show .petCard { animation: cardIn .45s cubic-bezier(.34,1.56,.64,1) backwards; }
+    .petName { font-size: 18px; margin-top: 2px; }
     .corner button { position: fixed; width: min(12vw, 54px); height: min(12vw, 54px); }
     #btnSound .slash { opacity: 0; transition: opacity .2s; }
     #btnSound.off .slash { opacity: 1; }
@@ -167,6 +175,22 @@
         <path d="M9 36v4M41 36v4" stroke="#6e4aa3" stroke-width="3" stroke-linecap="round"/>
       </svg>
     </button>
+    <button class="toy" data-room="dentist" aria-label="Consultório dos dentinhos">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M12 12c-4 2-4 9-2 15 1.5 5 2 12 5 12 2.5 0 2.5-8 5-8h8c2.5 0 2.5 8 5 8 3 0 3.5-7 5-12 2-6 2-13-2-15-4-2-7 1-12 1s-8-3-12-1z" fill="#fff" stroke="#7fa3b8" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M37 9l1.4 3 3.2.4-2.3 2.2.6 3.2-2.9-1.6-2.9 1.6.6-3.2-2.3-2.2 3.2-.4z" fill="#ffd54a"/>
+      </svg>
+    </button>
+    <button class="toy" data-room="salon" aria-label="Salão de beleza">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <circle cx="16" cy="14" r="6" fill="#f6cf3f" stroke="#a8791a" stroke-width="2.5"/>
+        <circle cx="25" cy="10" r="6" fill="#f6cf3f" stroke="#a8791a" stroke-width="2.5"/>
+        <circle cx="33" cy="15" r="6" fill="#f6cf3f" stroke="#a8791a" stroke-width="2.5"/>
+        <rect x="16" y="24" width="10" height="16" rx="4" fill="#ff6bb5" stroke="#a8325c" stroke-width="2.5"/>
+        <rect x="18" y="18" width="6" height="7" rx="2" fill="#3a2f4f"/>
+        <path d="M30 34c2-4 8-4 10 0-2 3-8 3-10 0z" fill="#e8426b" stroke="#8a1f3a" stroke-width="2"/>
+      </svg>
+    </button>
   </nav>
 
   <div class="corner"><button class="toy" id="btnSound" aria-label="Som">
@@ -185,6 +209,17 @@
       <path d="M33 19l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z" fill="#ffd54a"/>
     </svg>
   </button></div>
+  <div class="corner"><button class="toy" id="btnPets" aria-label="Escolher bichinho">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <ellipse cx="17" cy="9" rx="4" ry="9" fill="#ffe3ee" stroke="#c7709a" stroke-width="2.5"/>
+      <ellipse cx="27" cy="9" rx="4" ry="9" fill="#ffe3ee" stroke="#c7709a" stroke-width="2.5"/>
+      <circle cx="22" cy="27" r="13" fill="#ffe3ee" stroke="#c7709a" stroke-width="3"/>
+      <circle cx="17" cy="25" r="2.2" fill="#3a2f4f"/><circle cx="27" cy="25" r="2.2" fill="#3a2f4f"/>
+      <path d="M20 31l2 2 2-2" fill="none" stroke="#3a2f4f" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="38" cy="34" r="7" fill="#d9a273" stroke="#7a4a1f" stroke-width="2.5"/>
+      <circle cx="33.5" cy="28.5" r="2.6" fill="#d9a273" stroke="#7a4a1f" stroke-width="2"/><circle cx="42.5" cy="28.5" r="2.6" fill="#d9a273" stroke="#7a4a1f" stroke-width="2"/>
+    </svg>
+  </button></div>
   <div class="corner"><button class="toy" id="btnParent" aria-label="Área dos responsáveis (segure)">
     <svg viewBox="0 0 48 48" aria-hidden="true">
       <path d="M24 6l4 4h6v6l4 4-4 4v6h-6l-4 4-4-4h-6v-6l-4-4 4-4v-6h6z" fill="#cdb8f0" stroke="#6e4aa3" stroke-width="3" stroke-linejoin="round"/>
@@ -199,6 +234,15 @@
       <h2>Descobertas do Nubi</h2>
       <div id="albumStickers"></div>
       <div id="albumGrid"></div>
+    </div>
+  </div>
+
+  <!-- Vitrine de bichinhos -->
+  <div class="overlay" id="pets">
+    <div class="panel">
+      <button class="close" id="petsClose" aria-label="Fechar">✕</button>
+      <h2>Com quem vamos brincar?</h2>
+      <div id="petsGrid"></div>
     </div>
   </div>
 

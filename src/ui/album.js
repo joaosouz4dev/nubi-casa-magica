@@ -18,7 +18,22 @@ const CATALOG = {
   nubi_hat:      { title: "Chapéu",        color: "#8a3bff", icon: "hat" },
   nubi_cape:     { title: "Capa de herói", color: "#e5484d", icon: "cape" },
   nubi_boots:    { title: "Botas",         color: "#5b6ee8", icon: "boots" },
-  nubi_cesto:    { title: "Na cesta!",     color: "#ff7a59", icon: "basket" }
+  nubi_cesto:    { title: "Na cesta!",     color: "#ff7a59", icon: "basket" },
+  dente_limpo:   { title: "Dentes limpos", color: "#7fd0bd", icon: "brush" },
+  dente_bichinho:{ title: "Tchau, bichinho", color: "#9be564", icon: "bug" },
+  dente_alinhado:{ title: "Dente no lugar", color: "#bfe6ff", icon: "teeth:align" },
+  sorriso_brilhante: { title: "Sorriso brilhante", color: "#ffe27a", icon: "tooth" },
+  descarga:      { title: "Descarga!",     color: "#9fd3ff", icon: "poop:flush" },
+  lixeira:       { title: "Lixo no lixo",  color: "#7fd88a", icon: "trash:bin" },
+  caminhao:      { title: "Caminhão",      color: "#62c370", icon: "trash:out" },
+  pelo_penteado: { title: "Penteadinho",   color: "#ffd0e3", icon: "comb" },
+  orelhas_limpas:{ title: "Orelhinhas",    color: "#ffe14d", icon: "sponge" },
+  penteado:      { title: "Penteado",      color: "#f6cf3f", icon: "hair:curls" },
+  unhas_coloridas:{ title: "Unhas coloridas", color: "#ff6bb5", icon: "polish:#ff6bb5" },
+  maquiagem:     { title: "Maquiagem",     color: "#ffb3d9", icon: "makeup:lips" },
+  pintura:       { title: "Pintura de rosto", color: "#5bc0eb", icon: "paint:mustache" },
+  amigo_bunny:   { title: "Lili",          color: "#ffe3ee", icon: "pet:bunny" },
+  amigo_bear:    { title: "Tito",          color: "#f3d3b0", icon: "pet:bear" }
 };
 const MAX_MYSTERY = 3;   // poucos "?" para convidar, nunca uma lista do que falta
 

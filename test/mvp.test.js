@@ -112,7 +112,7 @@ async function dragAccessory(page, slotIdx) {
   console.log('erros:', errors.length ? errors : 'nenhum');
 
   const ok =
-    results.rooms === 'bathroom,bedroom,kitchen' &&
+    ['bathroom', 'bedroom', 'kitchen'].every(r => results.rooms.split(',').includes(r)) &&
     results.fedBlue === '#5b8def' &&
     results.foam === true &&
     results.rinsedBase === null &&
