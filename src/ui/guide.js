@@ -393,7 +393,9 @@ export class Guide {
      vazios nem contagem: o varal só cresce. Depois da festa, luzinhas piscam. */
   drawGarland(ctx, w, h) {
     const done = this.quests.completed();
-    const x0 = w * 0.17, x1 = w * 0.6, y0 = h * 0.05, sag = h * 0.07;
+    // fica na parede livre entre o guarda-roupa e o bichinho: abaixo dos
+    // botões do topo e longe do chapéu (antes atravessava por trás dele)
+    const x0 = w * 0.16, x1 = w * 0.385, y0 = h * 0.2, sag = h * 0.045;
     const at = (u) => ({ x: x0 + (x1 - x0) * u, y: y0 + Math.sin(u * Math.PI) * sag });
     ctx.save();
     ctx.strokeStyle = "#a98bd6"; ctx.lineWidth = Math.max(2, this.vp.s(0.006));
@@ -419,12 +421,14 @@ export class Guide {
       const p = at(u);
       const k = Ease.outBack(clamp(this.garlandPop[c.id] === undefined ? 1 : this.garlandPop[c.id]), 2.6);
       const sway = Motion.reduce ? 0 : Math.sin(this.t * 0.0016 + i) * 0.08;
-      const rr = this.vp.s(0.042) * k;
+      const rr = this.vp.s(n > 5 ? 0.03 : 0.038) * k;
       if (rr < 1) return;
+      // com muitos enfeites, alterna cordão curto/longo para não se sobreporem
+      const drop = n > 5 && i % 2 ? rr * 2.3 : 0;
       ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(sway);
       ctx.strokeStyle = "#a98bd6"; ctx.lineWidth = Math.max(1.5, this.vp.s(0.004));
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, rr * 0.9); ctx.stroke();
-      drawSticker(ctx, c.sticker, c.color, 0, rr * 1.9, rr);
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, rr * 0.9 + drop); ctx.stroke();
+      drawSticker(ctx, c.sticker, c.color, 0, rr * 1.9 + drop, rr);
       ctx.restore();
     });
     ctx.restore();

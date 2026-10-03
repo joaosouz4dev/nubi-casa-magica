@@ -84,20 +84,45 @@ const P = {
     shine(ctx, -r * 0.42, -r * 0.15, r * 0.12, r * 0.22, -0.4);
   },
   banana(ctx, d, r, ow) {
+    // banana gordinha em meia-lua: barriga cheia embaixo, curva interna em
+    // cima, cabinho verde-marrom à direita e pontinha escura à esquerda
+    const c = d.color, edge = darken(c, 0.6);
+    ctx.save(); ctx.rotate(-0.12);
+    // cabinho (atrás do corpo)
     ctx.beginPath();
-    ctx.moveTo(-r * 0.95, -r * 0.4);
-    ctx.quadraticCurveTo(-r * 0.25, r * 1.0, r * 0.98, -r * 0.22);
-    ctx.quadraticCurveTo(r * 0.78, r * 0.15, r * 0.5, r * 0.32);
-    ctx.quadraticCurveTo(-r * 0.28, r * 0.58, -r * 0.8, -r * 0.5);
-    ctx.closePath();
-    outlineFill(ctx, vertical(ctx, -r * 0.3, r * 0.7, lighten(d.color, 0.35), darken(d.color, 0.12)), darken(d.color, 0.6), ow);
-    // gomos e pontinhas
-    ctx.strokeStyle = darken(d.color, 0.25); ctx.lineWidth = ow * 0.8;
-    ctx.beginPath(); ctx.moveTo(-r * 0.7, -r * 0.25); ctx.quadraticCurveTo(-r * 0.1, r * 0.55, r * 0.7, r * 0.0); ctx.stroke();
-    dot(ctx, -r * 0.9, -r * 0.46, r * 0.1, "#6b4520"); dot(ctx, r * 0.95, -r * 0.24, r * 0.07, "#6b4520");
-    for (const [x, y] of [[-0.2, 0.3], [0.25, 0.28], [0.5, 0.12]]) dot(ctx, x * r, y * r, r * 0.03, "rgba(120,80,20,.4)");
-    ctx.strokeStyle = "rgba(255,255,255,.6)"; ctx.lineWidth = ow * 1.1;
-    ctx.beginPath(); ctx.moveTo(-r * 0.6, -r * 0.12); ctx.quadraticCurveTo(-r * 0.15, r * 0.35, r * 0.3, r * 0.2); ctx.stroke();
+    ctx.moveTo(r * 0.7, -r * 0.42); ctx.lineTo(r * 0.98, -r * 0.82); ctx.lineTo(r * 1.1, -r * 0.74); ctx.lineTo(r * 0.88, -r * 0.3); ctx.closePath();
+    outlineFill(ctx, vertical(ctx, -r * 0.8, -r * 0.3, "#9bb04a", "#7a6a2a"), "#4a3a14", ow);
+    // corpo
+    const body = () => {
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.96, -r * 0.5);
+      ctx.bezierCurveTo(-r * 0.95, r * 0.55, r * 0.55, r * 0.95, r * 0.92, -r * 0.36);
+      ctx.bezierCurveTo(r * 0.8, -r * 0.28, r * 0.7, -r * 0.32, r * 0.66, -r * 0.42);
+      ctx.bezierCurveTo(r * 0.4, r * 0.25, -r * 0.5, r * 0.2, -r * 0.72, -r * 0.6);
+      ctx.quadraticCurveTo(-r * 0.86, -r * 0.62, -r * 0.96, -r * 0.5);
+      ctx.closePath();
+    };
+    body();
+    outlineFill(ctx, vertical(ctx, -r * 0.4, r * 0.6, lighten(c, 0.3), darken(c, 0.1)), edge, ow);
+    // faceta de baixo mais escura (dá volume)
+    ctx.save(); body(); ctx.clip();
+    ctx.beginPath();
+    ctx.moveTo(-r * 1.0, -r * 0.3);
+    ctx.bezierCurveTo(-r * 0.8, r * 0.42, r * 0.5, r * 0.62, r * 0.95, -r * 0.3);
+    ctx.lineTo(r * 1.2, r * 1.2); ctx.lineTo(-r * 1.2, r * 1.2); ctx.closePath();
+    ctx.fillStyle = "rgba(200,130,20,.28)"; ctx.fill();
+    ctx.restore();
+    // aresta da faceta
+    ctx.strokeStyle = darken(c, 0.28); ctx.lineWidth = ow * 0.8;
+    ctx.beginPath(); ctx.moveTo(-r * 0.86, -r * 0.42); ctx.bezierCurveTo(-r * 0.74, r * 0.36, r * 0.48, r * 0.56, r * 0.84, -r * 0.32); ctx.stroke();
+    // pontinha escura e pintinhas de banana madura
+    ctx.beginPath(); ctx.ellipse(-r * 0.86, -r * 0.56, r * 0.11, r * 0.08, -0.6, 0, Math.PI * 2);
+    ctx.fillStyle = "#5a3a18"; ctx.fill();
+    for (const [x, y] of [[-0.35, 0.3], [0.1, 0.42], [0.45, 0.2]]) dot(ctx, x * r, y * r, r * 0.035, "rgba(110,70,20,.45)");
+    // brilho ao longo da curva interna
+    ctx.strokeStyle = "rgba(255,255,255,.7)"; ctx.lineWidth = ow * 1.3;
+    ctx.beginPath(); ctx.moveTo(-r * 0.62, -r * 0.3); ctx.bezierCurveTo(-r * 0.45, r * 0.12, r * 0.1, r * 0.2, r * 0.4, r * 0.02); ctx.stroke();
+    ctx.restore();
   },
   pear(ctx, d, r, ow) {
     ctx.strokeStyle = "#6b4a24"; ctx.lineWidth = Math.max(2, r * 0.12);
@@ -184,10 +209,12 @@ const P = {
     // queijo e tomate
     ctx.fillStyle = "#ffd54a"; ctx.beginPath(); ctx.moveTo(-r * 0.85, r * 0.32); ctx.lineTo(r * 0.85, r * 0.32); ctx.lineTo(r * 0.55, r * 0.5); ctx.lineTo(r * 0.3, r * 0.4); ctx.lineTo(-r * 0.6, r * 0.5); ctx.closePath(); ctx.fill();
     dot(ctx, -r * 0.35, r * 0.3, r * 0.16, "#e8424b"); dot(ctx, r * 0.3, r * 0.3, r * 0.15, "#e8424b");
-    tri(0, 0.95); outlineFill(ctx, vertical(ctx, -r * 0.8, r * 0.5, "#fff1d0", "#f2d29a"), "#8a5a24", ow);
+    // fatia de cima mais alta: o recheio aparece por baixo dela
+    const up = -r * 0.24;
+    tri(up, 0.95); outlineFill(ctx, vertical(ctx, -r * 0.8 + up, r * 0.5 + up, "#fff1d0", "#f2d29a"), "#8a5a24", ow);
     ctx.strokeStyle = "#d9a056"; ctx.lineWidth = ow * 1.6;
-    ctx.beginPath(); ctx.moveTo(-r * 0.8, r * 0.5); ctx.lineTo(0, -r * 0.72); ctx.lineTo(r * 0.8, r * 0.5); ctx.stroke();
-    for (const [x, y] of [[-0.15, 0.05], [0.12, -0.2], [0.2, 0.25]]) dot(ctx, x * r, y * r, r * 0.03, "rgba(170,120,60,.5)");
+    ctx.beginPath(); ctx.moveTo(-r * 0.8, r * 0.5 + up); ctx.lineTo(0, -r * 0.72 + up); ctx.lineTo(r * 0.8, r * 0.5 + up); ctx.stroke();
+    for (const [x, y] of [[-0.15, 0.05], [0.12, -0.2], [0.2, 0.25]]) dot(ctx, x * r, y * r + up, r * 0.03, "rgba(170,120,60,.5)");
   },
   pizza(ctx, d, r, ow) {
     ctx.save(); ctx.rotate(0.15);
@@ -269,9 +296,15 @@ const P = {
     ctx.strokeStyle = "#5a7a9a"; ctx.lineWidth = ow;
     ctx.beginPath(); ctx.moveTo(-r * 0.58, -r * 0.6); ctx.lineTo(r * 0.58, -r * 0.6); ctx.stroke();
     shine(ctx, -r * 0.32, r * 0.1, r * 0.06, r * 0.5, 0.05, 0.75);
-    // vaquinha estampada
-    ctx.fillStyle = "#3a2f4f"; ctx.beginPath(); ctx.ellipse(r * 0.18, r * 0.35, r * 0.14, r * 0.1, 0.4, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(-r * 0.05, r * 0.65, r * 0.09, r * 0.07, -0.3, 0, Math.PI * 2); ctx.fill();
+    // rotulinho azul com coração (as manchas de vaquinha pareciam sujeira)
+    ctx.beginPath(); ctx.ellipse(r * 0.02, r * 0.42, r * 0.3, r * 0.22, 0, 0, Math.PI * 2);
+    outlineFill(ctx, "#bfe6ff", "#5a7a9a", ow * 0.7);
+    ctx.fillStyle = "#ff6b9d"; ctx.beginPath();
+    const hx = r * 0.02, hy = r * 0.36, hs = r * 0.12;
+    ctx.moveTo(hx, hy + hs * 1.1);
+    ctx.bezierCurveTo(hx - hs * 1.6, hy, hx - hs * 0.7, hy - hs * 1.1, hx, hy - hs * 0.2);
+    ctx.bezierCurveTo(hx + hs * 0.7, hy - hs * 1.1, hx + hs * 1.6, hy, hx, hy + hs * 1.1);
+    ctx.fill();
   },
   juice(ctx, d, r, ow) {
     // canudinho
@@ -313,16 +346,24 @@ const P = {
     shine(ctx, -r * 0.25, -r * 0.3, r * 0.1, r * 0.05, -0.6, 0.6);
   },
   icecream(ctx, d, r, ow) {
-    ctx.beginPath(); ctx.moveTo(-r * 0.55, -r * 0.1); ctx.lineTo(r * 0.55, -r * 0.1); ctx.lineTo(0, r * 1.05); ctx.closePath();
-    outlineFill(ctx, vertical(ctx, 0, r, "#f2c27a", "#c98a3a"), "#7a4a14", ow);
-    ctx.strokeStyle = "rgba(122,74,20,.55)"; ctx.lineWidth = ow * 0.8;
-    for (const k of [-0.3, 0, 0.3]) { ctx.beginPath(); ctx.moveTo(k * r - r * 0.25, -r * 0.1); ctx.lineTo(k * r + r * 0.2, r * 0.6); ctx.stroke(); ctx.beginPath(); ctx.moveTo(k * r + r * 0.25, -r * 0.1); ctx.lineTo(k * r - r * 0.2, r * 0.6); ctx.stroke(); }
-    for (const [y, c] of [[-0.3, "#ff9fc4"], [-0.72, "#bfe6ff"]]) {
-      ctx.beginPath(); ctx.arc(0, y * r, r * 0.5, 0, Math.PI * 2); outlineFill(ctx, radial(ctx, r * 0.5, c), darken(c, 0.45), ow);
+    const cone = () => { ctx.beginPath(); ctx.moveTo(-r * 0.55, -r * 0.1); ctx.lineTo(r * 0.55, -r * 0.1); ctx.lineTo(0, r * 1.05); ctx.closePath(); };
+    cone(); outlineFill(ctx, vertical(ctx, 0, r, "#f2c27a", "#c98a3a"), "#7a4a14", ow);
+    // xadrez da casquinha, recortado pelo próprio cone
+    ctx.save(); cone(); ctx.clip();
+    ctx.strokeStyle = "rgba(122,74,20,.5)"; ctx.lineWidth = ow * 0.8;
+    for (let k = -1; k <= 1; k += 0.32) {
+      ctx.beginPath(); ctx.moveTo(k * r - r * 0.5, -r * 0.1); ctx.lineTo(k * r + r * 0.5, r * 1.1); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(k * r + r * 0.5, -r * 0.1); ctx.lineTo(k * r - r * 0.5, r * 1.1); ctx.stroke();
     }
-    ctx.fillStyle = "#ff9fc4"; ctx.beginPath(); ctx.ellipse(r * 0.3, -r * 0.02, r * 0.08, r * 0.14, 0, 0, Math.PI * 2); ctx.fill();
-    star(ctx, 0, -r * 1.15, r * 0.18, 0.3); outlineFill(ctx, "#ffd54a", "#a8791a", ow * 0.7);
-    shine(ctx, -r * 0.2, -r * 0.85, r * 0.1, r * 0.06, -0.5, 0.7);
+    ctx.restore();
+    // bola de cima (menor, atrás) e bola de baixo (maior, na frente)
+    ctx.beginPath(); ctx.arc(0, -r * 0.78, r * 0.38, 0, Math.PI * 2); outlineFill(ctx, radial(ctx, r * 0.38, "#bfe6ff"), darken("#bfe6ff", 0.45), ow);
+    ctx.beginPath(); ctx.arc(0, -r * 0.28, r * 0.5, 0, Math.PI * 2); outlineFill(ctx, radial(ctx, r * 0.5, "#ff9fc4"), darken("#ff9fc4", 0.45), ow);
+    // gotinha escorrendo na casquinha
+    ctx.fillStyle = "#ff9fc4"; ctx.beginPath(); ctx.ellipse(r * 0.28, r * 0.08, r * 0.07, r * 0.13, 0, 0, Math.PI * 2); ctx.fill();
+    star(ctx, 0, -r * 1.18, r * 0.17, 0.3); outlineFill(ctx, "#ffd54a", "#a8791a", ow * 0.7);
+    shine(ctx, -r * 0.18, -r * 0.42, r * 0.12, r * 0.07, -0.5, 0.6);
+    shine(ctx, -r * 0.14, -r * 0.9, r * 0.08, r * 0.05, -0.5, 0.7);
   },
   donut(ctx, d, r, ow) {
     ctx.beginPath(); ctx.arc(0, 0, r * 0.95, 0, Math.PI * 2); ctx.arc(0, 0, r * 0.32, 0, Math.PI * 2, true);

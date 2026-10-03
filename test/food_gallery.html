@@ -1,0 +1,17 @@
+<!doctype html>
+<!-- Galeria de todas as comidas (ferramenta de revisão visual; usada pelo teste "foods"). -->
+<html><body style="margin:0;background:#fdf3e7">
+<canvas id="c" width="1500" height="640"></canvas>
+<script type="module">
+import { paintFood, FOOD_SHAPES } from "../src/entities/food_art.js";
+import { FOODS } from "../src/data/foods.js";
+const c = document.getElementById("c"), ctx = c.getContext("2d");
+const list = Object.values(FOODS);
+list.forEach((d, i) => {
+  const x = 75 + (i % 10) * 150, y = 110 + Math.floor(i / 10) * 200;
+  ctx.save(); ctx.translate(x, y); paintFood(ctx, d, 52); ctx.restore();
+  ctx.fillStyle = "#5a4a6a"; ctx.font = "16px sans-serif"; ctx.textAlign = "center";
+  ctx.fillText(d.id || d.shape, x, y + 85);
+});
+window.__done = true;
+</script></body></html>
