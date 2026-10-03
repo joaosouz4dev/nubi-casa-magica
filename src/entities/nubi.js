@@ -115,7 +115,7 @@ export class Nubi {
     this.hairColorShown = hexToRgb(this.cosmetics.hairColor || "#8a5a36");
   }
   comb() { this.shine = 1; this.sq.kick(1.2); }
-  radius() { return this.vp.s(0.17); }
+  radius() { return this.vp.s(0.17 * (this.sizeK || 1)); }
 
   // ---- controle de estado (API preservada) ----
   setState(s) { this.state = s; this.stateT = 0; }

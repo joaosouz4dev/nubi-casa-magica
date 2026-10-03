@@ -108,6 +108,31 @@ export const CHAPTERS = [
       experiment: [{ act: "haircolor", icon: "color:#ff6b9d" }, { act: "nails", icon: "nails" }, { act: "paint", icon: "paint:mustache" }],
       solve:      [{ act: "hair", icon: "hair" }, { act: "hairacc", icon: "acc:bow" }, { act: "beauty", icon: "beauty" }]
     }
+  },
+  /* ---------- Temporada 3: cardápio, salão por estações, estrelinhas ---------- */
+  {
+    id: "cardapio", room: "kitchen", sticker: "fruta", color: "#ff9a2e",
+    steps: {
+      explore:    [{ act: "feedgroup:frutas2", icon: "food:watermelon" }, { act: "feedgroup:salgados", icon: "food:sandwich" }, { act: "feedgroup:doces", icon: "food:cupcake" }],
+      experiment: [{ act: "feed:carrot", icon: "food:carrot" }, { act: "feed:milk", icon: "food:milk" }, { act: "feed:grapes", icon: "food:grapes" }],
+      solve:      [{ act: "feed:broccoli", icon: "food:broccoli" }, { act: "feed:orange", icon: "food:orange" }, { act: "feed:popsicle", icon: "food:popsicle" }]
+    }
+  },
+  {
+    id: "salao2", room: "salon", sticker: "salao", color: "#b49cff",
+    steps: {
+      explore:    [{ act: "nails:full", icon: "station:nails" }, { act: "nailart", icon: "star" }, { act: "makeup", icon: "station:makeup" }],
+      experiment: [{ act: "haircolor", icon: "station:hair" }, { act: "nails:full", icon: "station:nails" }, { act: "paint", icon: "station:makeup" }],
+      solve:      [{ act: "hair", icon: "station:hair" }, { act: "nails:full", icon: "station:nails" }, { act: "makeup", icon: "station:makeup" }]
+    }
+  },
+  {
+    id: "estrelinhas", room: null, sticker: "festa", color: "#ffd54a",
+    steps: { all: [
+      { act: "hub:visit", icon: "map", dom: "#btnHome" },
+      { act: "prize",     icon: "shop", dom: "#btnShop" },
+      { act: "feed:special", icon: "food:starcookie", room: "kitchen" }
+    ] }
   }
 ];
 
@@ -127,7 +152,12 @@ export const FREE_WISHES = [
   { act: "nails", icon: "nails", room: "salon" },
   { act: "hair", icon: "hair", room: "salon" },
   { act: "trash:bin", icon: "trash:bin", room: "kitchen" },
-  { act: "comb", icon: "comb", room: "bathroom" }
+  { act: "comb", icon: "comb", room: "bathroom" },
+  { act: "feed:pizza", icon: "food:pizza", room: "kitchen" },
+  { act: "feed:watermelon", icon: "food:watermelon", room: "kitchen" },
+  { act: "feed:juice", icon: "food:juice", room: "kitchen" },
+  { act: "nails:full", icon: "station:nails", room: "salon" },
+  { act: "makeup", icon: "station:makeup", room: "salon" }
 ];
 
 // Ajuda escalonada por inatividade (ms). O modo multiplica os tempos.

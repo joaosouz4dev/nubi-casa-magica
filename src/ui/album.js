@@ -6,6 +6,7 @@
      atrasada: só aparece o que já foi descoberto, mais alguns "?" convidativos. */
 import { drawIcon, drawSticker } from "./icons.js";
 import { CHAPTERS } from "../data/chapters.js";
+import { FOODS } from "../data/foods.js";
 
 const CATALOG = {
   nubi_azul:     { title: "Nubi azul",     color: "#5b8def", icon: "food:blueberry" },
@@ -35,6 +36,11 @@ const CATALOG = {
   amigo_bunny:   { title: "Lili",          color: "#ffe3ee", icon: "pet:bunny" },
   amigo_bear:    { title: "Tito",          color: "#f3d3b0", icon: "pet:bear" }
 };
+// cada comida nova ganha seu cartão automaticamente
+for (const f of Object.values(FOODS)) {
+  const id = f.effect && f.effect.discovery;
+  if (id && !CATALOG[id]) CATALOG[id] = { title: f.label.charAt(0).toUpperCase() + f.label.slice(1), color: f.effect.color || f.color, icon: "food:" + f.id };
+}
 const MAX_MYSTERY = 3;   // poucos "?" para convidar, nunca uma lista do que falta
 
 function iconCanvas(size, paint) {

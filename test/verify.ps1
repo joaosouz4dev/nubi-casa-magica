@@ -26,12 +26,12 @@ Start-Sleep -Seconds 2
 
 # 4) testes (copiados para o scratch, onde está o node_modules)
 $tests = $args
-if (-not $tests -or $tests.Count -eq 0) { $tests = @("play","stage2","mvp","visual","quests") }
+if (-not $tests -or $tests.Count -eq 0) { $tests = @("play","stage2","mvp","visual","quests","features","growth") }
 foreach ($t in $tests) {
   Copy-Item (Join-Path $proj "test\$t.test.js") (Join-Path $scratch "$t.test.js") -Force
   Push-Location $scratch
   Write-Output "===== $t ====="
-  & node "$t.test.js" 2>&1 | Select-Object -Last 25
+  & node "$t.test.js" 2>&1 | Select-Object -Last 70
   Write-Output "exit: $LASTEXITCODE"
   Pop-Location
 }

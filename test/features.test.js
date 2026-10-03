@@ -134,18 +134,39 @@ fs.mkdirSync(OUT, { recursive: true });
   await rub(comb, await nubiC(), 12, 40);
   R.comb = (await acts()).includes('comb');
 
-  // ================= SALÃO =================
+  // ================= SALÃO (recepção + 3 estações, com ida e volta) =================
   await go('salon');
   const sslot = (k) => ev((i) => { const s = window.__nubi.salon; return s.slotPos(s.slots[i]); }, k);
   const toSalon = async (id) => { for (let i = 0; i < 12; i++) { if ((await ev(() => window.__nubi.salon.page().id)) === id) return true; const b = await ev(() => window.__nubi.salon.pageBtnPos()); await page.mouse.click(b.x, b.y); await wait(300); } return false; };
+  const door = async (id) => { const d = await ev((s) => window.__nubi.salon.doorPos(s), id); await page.mouse.click(d.x, d.y); await wait(600); };
+  const station = () => ev(() => window.__nubi.salon.station);
+  R.salonReception = (await station()) === null;
+  await shot('f10a-salao-recepcao');
+  await door('hair');
+  R.stationHair = (await station()) === 'hair';
   sp = await sslot(0); await page.mouse.click(sp.x, sp.y); await wait(500);
   R.hair = await ev(() => window.__nubi.nubi.cosmetics.hair === 'ponytail');
   await toSalon('cores'); sp = await sslot(2); await page.mouse.click(sp.x, sp.y); await wait(400);
   R.hairColor = await ev(() => window.__nubi.nubi.cosmetics.hairColor === '#ff6b9d');
-  await toSalon('unhas');
-  const paw = await ev(() => window.__nubi.salon.pawPos(1));
-  await drag(await sslot(0), paw); await wait(400);
-  R.nails = await ev(() => window.__nubi.nubi.cosmetics.nails.R === '#e5484d');
+  await shot('f10b-salao-cabelo');
+  await page.click('#btnBack'); await wait(500);                                   // voltar: sai da estação, fica no salão
+  R.backToReception = (await station()) === null && (await ev(() => window.__nubi.room)) === 'salon';
+  await door('nails');
+  R.stationNails = (await station()) === 'nails';
+  for (let i = 0; i < 4; i++) {
+    const toe = await ev((k) => { const s = window.__nubi.salon; return s.toePos(s.pawSide, k); }, i);
+    await drag(await sslot(0), toe); await wait(250);
+  }
+  R.nails = await ev(() => { const c = window.__nubi.nubi.cosmetics; return c.nails.R === '#e5484d' && c.toes.R.every(v => v === '#e5484d'); });
+  R.nailsFull = (await acts()).includes('nails:full');
+  await toSalon('unhas3');
+  const pawC = await ev(() => { const p = window.__nubi.salon.bigPaw(); return { x: p.x, y: p.y }; });
+  await drag(await sslot(0), pawC); await wait(400);
+  R.nailArt = await ev(() => window.__nubi.nubi.cosmetics.nailArt.R === 'star');
+  await shot('f10c-salao-unhas');
+  const chip = await ev(() => window.__nubi.salon.chipPos(3));                     // atalho direto para a maquiagem
+  await page.mouse.click(chip.x, chip.y); await wait(600);
+  R.chipToMakeup = (await station()) === 'makeup';
   await toSalon('maquiagem');
   const face = await ev(() => window.__nubi.salon.faceCenter());
   await drag(await sslot(2), face); await wait(300);

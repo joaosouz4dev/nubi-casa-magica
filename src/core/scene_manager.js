@@ -8,7 +8,7 @@
    para o lado enquanto some, revelando o cômodo novo. */
 import { Ease, Motion, clamp } from "./anim.js";
 
-const ORDER = ["kitchen", "bathroom", "bedroom", "dentist", "salon"];
+const ORDER = ["hub", "kitchen", "bathroom", "bedroom", "dentist", "salon"];
 const DURATION = 520;
 
 export class SceneManager {
@@ -21,19 +21,44 @@ export class SceneManager {
     this.snap = null;        // canvas com o último quadro do cômodo anterior
     this.trans = null;       // { t, dir }
     this.hasDrawn = false;
+    this.history = [];       // pilha de "voltar" (cômodos visitados)
+    this.onBeforeEnter = null;
     bus.on("room:go", (id) => this.go(id));
+    bus.on("room:back", () => this.back());
   }
   register(id, room) { this.rooms.set(id, room); }
   get transitioning() { return !!this.trans; }
 
-  go(id) {
+  /* Pode voltar? (sub-tela do cômodo, ou algum cômodo na pilha) */
+  canBack() {
+    if (this.current && typeof this.current.canBack === "function" && this.current.canBack()) return true;
+    return this.currentId !== "hub" && this.rooms.has("hub");
+  }
+
+  /* Voltar: primeiro a sub-tela do cômodo (ex.: estação do salão), depois o
+     cômodo anterior; sem histórico, volta para o mapa da casa. */
+  back() {
+    if (this.current && typeof this.current.back === "function" && this.current.back()) { this.bus.emit("room:sub", this.currentId); return; }
+    let prev = null;
+    while (this.history.length && !prev) { const h = this.history.pop(); if (h !== this.currentId && this.rooms.has(h)) prev = h; }
+    if (!prev && this.currentId !== "hub" && this.rooms.has("hub")) prev = "hub";
+    if (prev) this.go(prev, { fromBack: true });
+  }
+
+  go(id, opts = {}) {
     if (id === this.currentId) return;
     const next = this.rooms.get(id);
     if (!next) return;
     this._capture(id);
     if (this.current && this.current.exit) this.current.exit();
+    if (this.currentId && !opts.fromBack) {
+      this.history.push(this.currentId);
+      if (this.history.length > 12) this.history.shift();
+    }
+    if (id === "hub") this.history = [];   // o mapa é a raiz: dele não se "volta"
     this.current = next;
     this.currentId = id;
+    if (this.onBeforeEnter) this.onBeforeEnter(id);
     if (next.enter) next.enter();
     this.bus.emit("room:changed", id);
   }

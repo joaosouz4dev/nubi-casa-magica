@@ -44,11 +44,12 @@ para a loja.
 
 | Espaço | Brincadeiras |
 |---|---|
-| Cozinha | 4 frutas com reações próprias; cascas vão para a lixeira; saquinho cheio sai pela janela e o caminhão do lixo passa |
+| Mapa da casa | tela inicial (depois da primeira visita): a casa em corte, com os 5 cômodos como janelas; um toque entra; o cômodo do pedido brilha com uma estrela; enfeites ganhos na lojinha aparecem aqui |
+| Cozinha | 20 comidas em 5 abas (frutas, mais frutas, salgados, doces e bebidas, especiais), cada uma com reação própria; cascas vão para a lixeira; saquinho cheio sai pela janela e o caminhão do lixo passa |
 | Banheiro | esponja (espuma, lavar as orelhas), chuveirinho, toalha, patinho, pente (pelo brilhando); cocô estilizado vai para o vaso com descarga |
 | Quarto | guarda-roupa com 10 páginas: 27 peças em 6 espaços, 6 looks prontos e presentes; bola e cesto; varal de conquistas |
 | Consultório dos dentinhos | escovar placas, espantar "bichinhos de açúcar" com a varinha, encaixar o dente torto, enxaguar; sorriso brilhante no fim |
-| Salão de beleza | 5 penteados, 5 cores, enfeites, esmalte por patinha, maquiagem leve, pinturas de rosto (bigode, herói, estrelas, sardas, barba); lencinho limpa |
+| Salão de beleza | recepção com 3 portas: **Cabelo**, **Unhas** (close da patinha, dedinho por dedinho, adesivinhos de estrela/coração) e **Maquiagem** (rosto em destaque); fileira embaixo com voltar e atalhos entre estações; 5 penteados, 5 cores, enfeites, esmalte por patinha, maquiagem leve, pinturas de rosto (bigode, herói, estrelas, sardas, barba); lencinho limpa |
 
 **Bichinhos:** vitrine no canto superior. Cada um guarda a própria aparência
 (cor, roupas, beleza); o progresso dos capítulos é da criança e vale para todos.
@@ -64,7 +65,20 @@ não custa nada.
 - Modos dos responsáveis (Explorar / Experimentar / Resolver) mudam os pedidos e
   a paciência da ajuda.
 
-**Gamificação adequada à idade:** sem pontos, porcentagem, sequência diária ou
+**Ir e voltar:** botão de voltar no topo (sai da estação do salão, depois refaz
+o caminho e por fim volta ao mapa), botão do mapa e a barra lateral de cômodos.
+Esc/Backspace também voltam no computador.
+
+**Estrelinhas (temporada 3):** contador no topo. Só sobem: nunca se perdem nem
+se gastam, e não existe errar. Brincar dá 1 (a mesma ação seguida não conta de
+novo por 2,5s), cada pedido 2, cada capítulo 5, cada missão do dia 5.
+- **Lojinha de prêmios:** 12 prêmios (comidas especiais, roupas, enfeites da casa)
+  abrem quando o total alcança o preço; um toque ganha. Nada do jogo básico fica trancado.
+- **Carinho:** coração por bichinho que enche com cuidados; cada nível tem festa.
+- **Missões do dia:** 3 sugestões que trocam pela data, sem sequência nem cobrança;
+  tocar numa missão leva até o cômodo dela.
+
+**Capítulos sem pressão:** além das estrelinhas, nada de porcentagem, sequência diária ou
 recompensa aleatória. Cada capítulo concluído dá um adesivo (álbum + varal) e
 um **presente fixo** para o guarda-roupa (óculos de estrela, coroa de ouro,
 botas brilhantes, capa arco-íris, medalha, chifre de unicórnio, asas de fada).

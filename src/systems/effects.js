@@ -12,6 +12,7 @@ export class Effects {
     this.save = save;
     this.particles = [];
     this.rings = [];
+    this.overlays = [];      // efeitos que acompanham o bichinho (bigode de leite, arco-íris...)
     this.reduceMotion = false;
     bus.on("effect:apply", ({ effect, at, nubi }) => this.apply(effect, at, nubi));
     bus.on("effect:discoveryOnly", ({ id }) => {
@@ -66,10 +67,132 @@ export class Effects {
       nubi.puffCheeks();
       this.notes(at.x + nubi.radius() * 0.3, at.y);
       this.bus.emit("audio:whistle");
+    } else {
+      this._applyExtra(effect, at, nubi);
     }
     if (effect.say) nubi.say(this._pickSay(effect));
     const isNew = this.save.addDiscovery(effect.discovery);
     this.bus.emit("discovery", { id: effect.discovery, isNew });
+  }
+
+  /* Reações das comidas novas. Todas são temporárias e terminam sozinhas
+     (só "tint" muda a cor salva, e o banho a restaura). */
+  _applyExtra(effect, at, nubi) {
+    const r = nubi.radius(), cx = nubi.px(), cy = nubi.py();
+    const head = { x: cx, y: cy - r * 1.05 };
+    switch (effect.kind) {
+      case "bubbles":
+        for (let i = 0; i < (this.reduce ? 5 : 14); i++) this.bubble(cx + (Math.random() - 0.5) * r * 1.6, cy + (Math.random() - 0.2) * r, effect.color);
+        nubi.giggle(); this.bus.emit("audio:pop");
+        break;
+      case "sunny":
+        this.ring(cx, cy, effect.color, r * 2.1);
+        this.ring(cx, cy, "#ffe27a", r * 1.5);
+        this.overlays.push({ kind: "sun", nubi, age: 0, life: 1800 });
+        nubi.startHop(0.3, 520); this.bus.emit("audio:sparkle");
+        break;
+      case "crunch":
+        nubi.sq.kick(2.6);
+        this.burst(at.x, at.y, "#ffe7a8", 0.6);
+        this.bus.emit("audio:click"); setTimeout(() => this.bus.emit("audio:click"), 160);
+        break;
+      case "dance":
+        nubi.dance(); this.notes(cx + r * 0.6, cy - r * 0.6); this.bus.emit("audio:magic");
+        break;
+      case "stretch":
+        nubi.sq.kick(-3.2); nubi.puffCheeks();
+        this.burst(at.x, at.y, "#ffd86b", 0.5); this.bus.emit("audio:bounce");
+        break;
+      case "ears":
+        nubi.earL.kick(-14); nubi.earR.kick(14); nubi.startHop(0.18, 380);
+        this.burst(cx, cy - r * 1.2, "#ff8a2a", 0.5); this.bus.emit("audio:pop");
+        break;
+      case "strong":
+        nubi.pose(); this.burst(head.x, head.y, "#ffd54a", 0.9);
+        this.ring(cx, cy, "#4fae4a", r * 1.8); this.bus.emit("audio:magic");
+        break;
+      case "party":
+        this.confetti(0.35); this.heartsBurst(head.x, head.y); nubi.celebrate(); this.bus.emit("audio:magic");
+        break;
+      case "cold":
+        nubi.giggleT = 900; nubi.sq.kick(1.2);
+        for (let i = 0; i < (this.reduce ? 4 : 10); i++) this.bubble(cx + (Math.random() - 0.5) * r * 2, cy - r * (0.6 + Math.random() * 0.6), "#bfe6ff");
+        this.overlays.push({ kind: "frost", nubi, age: 0, life: 1500 });
+        this.bus.emit("audio:sparkle");
+        break;
+      case "milk":
+        this.overlays.push({ kind: "milk", nubi, age: 0, life: 2600 });
+        nubi.happyT = 1200; this.bus.emit("audio:plop");
+        break;
+      case "music":
+        this.notes(cx + r * 0.4, cy - r * 0.4); this.notes(cx - r * 0.6, cy - r * 0.5);
+        nubi.dance(); this.bus.emit("audio:whistle");
+        break;
+      case "rainbow":
+        this.overlays.push({ kind: "rainbow", nubi, age: 0, life: 2600 });
+        this.confetti(0.5); nubi.celebrate(); this.bus.emit("audio:magic");
+        break;
+      case "stars":
+        for (let i = 0; i < 3; i++) setTimeout(() => this.burst(cx + (i - 1) * r * 0.8, head.y - r * 0.2, "#ffd54a", 0.7), i * 140);
+        nubi.pulse.kick(2); this.bus.emit("audio:sparkle");
+        break;
+      case "float":
+        nubi.startHop(0.75, 1300);
+        for (let i = 0; i < 6; i++) this.bubble(cx + (Math.random() - 0.5) * r, cy + r * 0.9, "#ffd9ec");
+        this.bus.emit("audio:magic");
+        break;
+      case "spin":
+        nubi.dance();
+        this.overlays.push({ kind: "swirl", nubi, age: 0, life: 1500 });
+        this.heartsBurst(head.x, head.y); this.bus.emit("audio:bounce");
+        break;
+      default:
+        this.burst(at.x, at.y, effect.color || "#ffd54a", 0.6);
+    }
+  }
+
+  _drawOverlays(ctx) {
+    for (const o of this.overlays) {
+      const n = o.nubi, r = n.radius(), x = n.px(), y = n.py();
+      const u = clamp(o.age / o.life);
+      const a = u < 0.15 ? u / 0.15 : u > 0.8 ? (1 - u) / 0.2 : 1;
+      ctx.save(); ctx.globalAlpha = clamp(a);
+      if (o.kind === "milk") {
+        // bigodinho de leite logo acima da boca
+        const my = y + r * 0.12;
+        ctx.fillStyle = "#ffffff"; ctx.strokeStyle = "rgba(150,170,200,.8)"; ctx.lineWidth = Math.max(1.5, r * 0.025);
+        for (const s of [-1, 1]) {
+          ctx.beginPath(); ctx.ellipse(x + s * r * 0.15, my, r * 0.17, r * 0.07, s * 0.25, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        }
+        ctx.beginPath(); ctx.arc(x + r * 0.05, my + r * 0.08, r * 0.035, 0, Math.PI * 2); ctx.fill();
+      } else if (o.kind === "rainbow") {
+        const cols = ["#ff6b6b", "#ffb04a", "#ffe14d", "#7fd88a", "#5bc0eb", "#b49cff"];
+        const grow = Ease.outCubic(clamp(o.age / 600));
+        ctx.lineCap = "round";
+        cols.forEach((c, i) => {
+          ctx.strokeStyle = c; ctx.lineWidth = r * 0.09;
+          ctx.beginPath(); ctx.arc(x, y + r * 0.2, r * (1.65 - i * 0.1), Math.PI, Math.PI + Math.PI * grow); ctx.stroke();
+        });
+      } else if (o.kind === "sun") {
+        ctx.strokeStyle = "#ffcc4a"; ctx.lineWidth = Math.max(2, r * 0.06); ctx.lineCap = "round";
+        const rot = Motion.reduce ? 0 : o.age * 0.002;
+        for (let i = 0; i < 12; i++) {
+          const ang = rot + (i / 12) * Math.PI * 2;
+          ctx.beginPath(); ctx.moveTo(x + Math.cos(ang) * r * 1.3, y + Math.sin(ang) * r * 1.3); ctx.lineTo(x + Math.cos(ang) * r * 1.55, y + Math.sin(ang) * r * 1.55); ctx.stroke();
+        }
+      } else if (o.kind === "frost") {
+        ctx.strokeStyle = "rgba(190,230,255,.95)"; ctx.lineWidth = Math.max(1.5, r * 0.03);
+        for (const [dx, dy] of [[-0.9, -0.7], [0.95, -0.5], [-0.7, 0.6], [0.8, 0.7]]) {
+          const fx = x + dx * r, fy = y + dy * r, s = r * 0.14;
+          for (let k = 0; k < 3; k++) { const ang = (k * Math.PI) / 3; ctx.beginPath(); ctx.moveTo(fx - Math.cos(ang) * s, fy - Math.sin(ang) * s); ctx.lineTo(fx + Math.cos(ang) * s, fy + Math.sin(ang) * s); ctx.stroke(); }
+        }
+      } else if (o.kind === "swirl") {
+        ctx.strokeStyle = "#ff7ab8"; ctx.lineWidth = Math.max(2, r * 0.05); ctx.lineCap = "round";
+        const rot = Motion.reduce ? 0 : o.age * 0.01;
+        for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(x, y, r * 1.35, rot + i * 2.1, rot + i * 2.1 + 0.9); ctx.stroke(); }
+      }
+      ctx.restore();
+    }
   }
 
   /* Variação nas repetições: a fala nunca se repete duas vezes seguidas. */
@@ -179,11 +302,14 @@ export class Effects {
     this.particles = this.particles.filter(p => p.age < p.life);
     for (const r of this.rings) r.age += dt;
     this.rings = this.rings.filter(r => r.age < r.life);
+    for (const o of this.overlays) o.age += dt;
+    this.overlays = this.overlays.filter(o => o.age < o.life);
     if (this.particles.length > 400) this.particles.splice(0, this.particles.length - 400);
   }
 
   draw() {
     const ctx = this.vp.ctx;
+    this._drawOverlays(ctx);
     // anéis de onda
     for (const r of this.rings) {
       const u = clamp(r.age / r.life);

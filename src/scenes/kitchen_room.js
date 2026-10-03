@@ -5,7 +5,8 @@
    principal; antes o voo usava um requestAnimationFrame paralelo. */
 import { KitchenScene } from "./kitchen.js";
 import { FoodItem } from "../entities/food_item.js";
-import { FOODS, KITCHEN_FOOD_SLOTS, MOUTH_OFFSET } from "../data/foods.js";
+import { FOODS, KITCHEN_FOOD_SLOTS, MOUTH_OFFSET, FOOD_TABS, SLOT_X, SLOT_Y, TAB_Y, TAB_X0, TAB_DX, tabOf } from "../data/foods.js";
+import { drawIcon } from "../ui/icons.js";
 import { touchNubi } from "./nubi_touch.js";
 import { Spring, Spring2, clamp, Ease, Motion, softShadow, roundRect, darken } from "../core/anim.js";
 
@@ -20,6 +21,9 @@ export class KitchenRoom {
     this.vp = vp; this.bus = bus; this.nubi = nubi; this.save = save;
     this.scene = new KitchenScene(vp);
     this.items = KITCHEN_FOOD_SLOTS.map(s => new FoodItem(FOODS[s.food], vp, s.x, s.y));
+    this.tabIdx = 0;
+    this.tabSprings = FOOD_TABS.map(() => new Spring(0, { stiffness: 320, damping: 11 }));
+    this.prizeOwned = () => false;   // ligado pela lojinha (comidas especiais)
     this.held = null; this.selected = null; this.busy = false;
     this.unsub = [];
     const tr = (save && save.state.trash) || {};
@@ -65,6 +69,37 @@ export class KitchenRoom {
     if (act === "trash:out" && !this.bagReady()) { this.fill = BIN_FULL; this._persistTrash(); }
   }
 
+  // ---------------- abas da geladeira (grupos de comida) ----------------
+  /* Abas visíveis: a de especiais só aparece com algum especial ganho. */
+  tabs() { return FOOD_TABS.filter(t => !t.special || t.foods.some(f => this.prizeOwned("food:" + f))); }
+  tab() { const v = this.tabs(); return v[Math.min(this.tabIdx, v.length - 1)]; }
+  tabFoods(t) { return t.special ? t.foods.filter(f => this.prizeOwned("food:" + f)) : t.foods; }
+  tabPos(i) { return { x: this.vp.dx(TAB_X0 + i * TAB_DX), y: this.vp.dy(TAB_Y), r: this.vp.s(0.045) }; }
+  tabAt(px, py) {
+    const v = this.tabs();
+    for (let i = 0; i < v.length; i++) { const p = this.tabPos(i); if (Math.hypot(px - p.x, py - p.y) <= p.r * 1.3) return i; }
+    return -1;
+  }
+  setTab(i) {
+    const v = this.tabs();
+    if (i < 0 || i >= v.length) return;
+    const k = FOOD_TABS.indexOf(v[i]);
+    this.tabSprings[k].kick(12);
+    if (i === this.tabIdx) return;
+    this.tabIdx = i;
+    if (this.selected) this.selected.selected = false;
+    this.selected = null;
+    this.items = this.tabFoods(v[i]).map((f, j) => {
+      const it = new FoodItem(FOODS[f], this.vp, SLOT_X[j], SLOT_Y);
+      it.pop = 0; it.popT = -j * 0.18;   // brotam em sequência
+      return it;
+    });
+    this.bus.emit("audio:bounce");
+    this.nubi.look({ x: SLOT_X[1], y: SLOT_Y });
+    setTimeout(() => this.nubi.stopLook(), 700);
+    this.bus.emit("act", "tab:" + v[i].id);
+  }
+
   enter() {
     this.nubi.pos = { x: 0.68, y: 0.52 };
     this.nubi.arrive();
@@ -96,6 +131,7 @@ export class KitchenRoom {
 
   onDown(p) {
     if (this.busy) return;
+    if (this.tabAt(p.x, p.y) >= 0) return;   // aba: tratada no toque
     const it = this.topItemAt(p.x, p.y);
     if (it) {
       this.held = it; it.dragging = true; it.returning = false;
@@ -154,6 +190,8 @@ export class KitchenRoom {
   }
   onTap(p) {
     if (this.busy) return;
+    const ti = this.tabAt(p.x, p.y);
+    if (ti >= 0) { this.setTab(ti); return; }
     // toque-e-destino também na rotina de limpeza
     const pl = this.peelAt(p.x, p.y);
     if (pl) { this.selPeel = this.selPeel === pl ? null : pl; this.lid.target = this.selPeel ? 0.6 : 0; return; }
@@ -190,6 +228,9 @@ export class KitchenRoom {
       this.busy = false;
       this._spawnPeel(item.def.id);
       this.bus.emit("act", "feed:" + item.def.id);
+      const t = tabOf(item.def.id);
+      if (t) this.bus.emit("act", "feedgroup:" + t.id);
+      if (item.def.special) this.bus.emit("act", "feed:special");
     });
   }
 
@@ -204,16 +245,33 @@ export class KitchenRoom {
       const w = this.scene.window();
       return { from: this.bagHome(), to: { x: w.x + w.w / 2, y: w.y + w.h / 2 } };
     }
+    if (act.startsWith("feedgroup:") || act === "feed:special") {
+      const id = act === "feed:special" ? "especiais" : act.slice(10);
+      const v = this.tabs(), i = v.findIndex(t => t.id === id);
+      if (i < 0) return null;
+      if (i !== this.tabIdx) { const tp = this.tabPos(i); return { from: { x: tp.x, y: tp.y }, to: null, tab: i }; }
+      const it = this.items[0]; if (!it) return null;
+      const m = this.mouthPoint();
+      return { from: { x: it.pos.x, y: it.pos.y }, to: { x: m.x, y: m.y } };
+    }
     if (!act.startsWith("feed:")) return null;
     const it = this.items.find(i => i.def.id === act.slice(5));
-    if (!it) return null;
+    if (!it) {
+      // a comida pedida está em outra aba: a dica aponta a aba certa
+      const t = tabOf(act.slice(5)); const v = this.tabs(); const i = t ? v.indexOf(t) : -1;
+      if (i < 0) return null;
+      const tp = this.tabPos(i);
+      return { from: { x: tp.x, y: tp.y }, to: null, tab: i };
+    }
     const m = this.mouthPoint();
     return { from: { x: it.pos.x, y: it.pos.y }, to: { x: m.x, y: m.y } };
   }
   nudge(act) {
     if (act === "trash:bin") { this.lid.kick(10); return; }
     if (act === "trash:out") { this.bagLift.kick(12); return; }
-    const it = this.items.find(i => "feed:" + i.def.id === act);
+    const tg = this.hintTarget(act);
+    if (tg && tg.tab !== undefined) { this.tabSprings[FOOD_TABS.indexOf(this.tabs()[tg.tab])].kick(14); return; }
+    const it = this.items.find(i => "feed:" + i.def.id === act) || (act.startsWith("feedgroup:") || act === "feed:special" ? this.items[0] : null);
     if (it) it.lift.kick(9);
   }
   holdDest() {
@@ -229,6 +287,7 @@ export class KitchenRoom {
     this.t += dt;
     this.scene.update(dt); this.items.forEach(i => i.update(dt));
     this.lid.update(dt); this.bagLift.update(dt);
+    for (const s of this.tabSprings) s.update(dt);
     for (const p of this.peels) {
       if (p.pop < 1) p.pop = Math.min(1, p.pop + dt / 420);
       if (p.disp && !p.held) { const h = this.peelPos(p); p.disp.to(h.x, h.y); p.disp.update(dt); }
@@ -237,6 +296,7 @@ export class KitchenRoom {
   }
   draw() {
     this.scene.draw();
+    this._tabs(this.vp.ctx);
     this._truck(this.vp.ctx);
     this._bin(this.vp.ctx);
     // itens no prato atrás; item pego/voando por cima do Nubi
@@ -248,8 +308,35 @@ export class KitchenRoom {
     this._bag(this.vp.ctx);
   }
 
+  // ---------------- desenho das abas da geladeira ----------------
+  _tabs(ctx) {
+    const v = this.tabs();
+    if (v.length < 2) return;
+    // trilho de madeira atrás das abas
+    const a = this.tabPos(0), b = this.tabPos(v.length - 1);
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,.45)";
+    roundRect(ctx, a.x - a.r * 1.35, a.y - a.r * 1.3, b.x - a.x + a.r * 2.7, a.r * 2.6, a.r * 1.3); ctx.fill();
+    v.forEach((t, i) => {
+      const p = this.tabPos(i), k = FOOD_TABS.indexOf(t);
+      const on = i === this.tabIdx;
+      const s = 1 + this.tabSprings[k].x * 0.025 + (on ? 0.12 : 0);
+      ctx.save(); ctx.translate(p.x, p.y - (on ? p.r * 0.12 : 0)); ctx.scale(s, s);
+      ctx.shadowColor = "rgba(90,50,20,.25)"; ctx.shadowBlur = p.r * 0.4; ctx.shadowOffsetY = p.r * 0.15;
+      ctx.fillStyle = on ? t.color : "#ffffff";
+      ctx.beginPath(); ctx.arc(0, 0, p.r, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowColor = "transparent";
+      ctx.strokeStyle = on ? darken(t.color, 0.35) : "#e6cfae"; ctx.lineWidth = Math.max(2, p.r * (on ? 0.14 : 0.09)); ctx.stroke();
+      drawIcon(ctx, t.icon, 0, 0, p.r * 0.72);
+      ctx.restore();
+    });
+    ctx.restore();
+  }
+
   // ---------------- desenho da rotina de limpeza ----------------
   _peel(ctx, p) {
+    const WRAP = { sandwich: "#fff1d0", pizza: "#f2d29a", cupcake: "#7fd0ff", popsicle: null, milk: "#ffffff", juice: "#ffb347", rainbowcake: "#ffd6ea", starcookie: "#ffe48a", icecream: "#f2c27a", donut: "#ffd6ea" };
+    if (p.food in WRAP) return this._wrapper(ctx, p, WRAP[p.food]);
     const q = p.disp || this.peelPos(p);
     const r = this.peelR() * Ease.outBack(clamp(p.pop), 2.2) * (p.held ? 1.15 : 1);
     if (r < 0.5) return;
@@ -278,6 +365,32 @@ export class KitchenRoom {
       ctx.strokeStyle = "#4caf6a"; ctx.lineWidth = ow * 2;
       ctx.beginPath(); ctx.moveTo(-r * 0.4, r * 0.2); ctx.quadraticCurveTo(0, -r * 0.5, r * 0.4, r * 0.1); ctx.stroke();
       ctx.fillStyle = "#4caf6a"; ctx.beginPath(); ctx.ellipse(r * 0.1, -r * 0.3, r * 0.28, r * 0.14, -0.4, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /* Embalagem amassada (doces/bebidas) ou palito de picolé, no lugar da casca. */
+  _wrapper(ctx, p, color) {
+    const q = p.disp || this.peelPos(p);
+    const r = this.peelR() * Ease.outBack(clamp(p.pop), 2.2) * (p.held ? 1.15 : 1);
+    if (r < 0.5) return;
+    if (!p.held) softShadow(ctx, q.x, q.y + r * 0.6, r * 0.9, r * 0.2, 0.18);
+    ctx.save(); ctx.translate(q.x, q.y);
+    if (this.selPeel === p) {
+      ctx.strokeStyle = "rgba(80,80,140,.7)"; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -this.t * 0.03;
+      ctx.beginPath(); ctx.arc(0, 0, r * 1.6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.lineJoin = "round"; const ow = Math.max(1.5, r * 0.09);
+    if (!color) {
+      ctx.rotate(0.6); roundRect(ctx, -r * 0.16, -r * 0.7, r * 0.32, r * 1.4, r * 0.16);
+      ctx.fillStyle = "#f2d29a"; ctx.fill(); ctx.strokeStyle = "#9a6a2a"; ctx.lineWidth = ow; ctx.stroke();
+    } else {
+      ctx.beginPath();
+      const pts = [[-0.7, -0.3], [-0.3, -0.65], [0.15, -0.5], [0.65, -0.6], [0.7, -0.05], [0.55, 0.5], [0.05, 0.62], [-0.45, 0.55], [-0.65, 0.15]];
+      pts.forEach(([x, y], i) => (i ? ctx.lineTo(x * r, y * r) : ctx.moveTo(x * r, y * r)));
+      ctx.closePath(); ctx.fillStyle = color; ctx.fill(); ctx.strokeStyle = darken(color, 0.45); ctx.lineWidth = ow; ctx.stroke();
+      ctx.strokeStyle = "rgba(0,0,0,.18)"; ctx.lineWidth = ow * 0.7;
+      ctx.beginPath(); ctx.moveTo(-r * 0.3, -r * 0.4); ctx.lineTo(r * 0.1, r * 0.1); ctx.lineTo(r * 0.45, -r * 0.2); ctx.moveTo(-r * 0.4, r * 0.3); ctx.lineTo(r * 0.05, r * 0.15); ctx.stroke();
     }
     ctx.restore();
   }

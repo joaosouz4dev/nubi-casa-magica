@@ -60,7 +60,8 @@ export class Guide {
   get patience() { return MODE_PATIENCE[this.quests.mode] || 1; }
 
   room() { return this.scenes.rooms.get(this.scenes.currentId); }
-  inRoom(w) { return !!w && (!w.room || w.room === this.scenes.currentId); }
+  // no mapa da casa, todo pedido "está aqui": a janela do cômodo é o alvo
+  inRoom(w) { return !!w && (!w.room || w.room === this.scenes.currentId || this.scenes.currentId === "hub"); }
 
   /* Onde fica o alvo do pedido em pixels: { from, to }. */
   target(w) {
@@ -70,7 +71,7 @@ export class Guide {
     if (part === "head") return { from: { x: n.px(), y: n.py() - r * 0.5 }, to: null, nubi: true };
     if (part === "belly") return { from: { x: n.px(), y: n.py() + r * 0.45 }, to: null, nubi: true };
     const room = this.room();
-    return room && room.hintTarget ? room.hintTarget(w.act) : null;
+    return room && room.hintTarget ? room.hintTarget(w.act, w) : null;
   }
 
   _design(p) { return { x: p.x / this.vp.w, y: p.y / this.vp.h }; }
