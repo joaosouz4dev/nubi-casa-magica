@@ -405,7 +405,7 @@ function drawIconBase(ctx, key, x, y, r, ow) {
 
 /* Adesivo redondo de capítulo (álbum, voo de recompensa e varal). */
 export const STICKER_ICON = { nuvem: "cloud", fruta: "food:blueberry", bolha: "duck", chapeu: "hat", bola: "ball", festa: "star",
-  amigos: "pet:bunny", looks: "looks", dente: "tooth", limpeza: "trash", salao: "hair:curls" };
+  amigos: "pet:bunny", looks: "looks", dente: "tooth", limpeza: "trash", salao: "hair:curls", jogos: "games" };
 
 export function drawSticker(ctx, sticker, color, x, y, r) {
   ctx.save();
@@ -492,5 +492,74 @@ const EXTRA = {
     ctx.beginPath(); ctx.moveTo(0, r * 0.8);
     ctx.bezierCurveTo(-r * 1.1, 0, -r * 0.6, -r * 0.9, 0, -r * 0.35);
     ctx.bezierCurveTo(r * 0.6, -r * 0.9, r * 1.1, 0, 0, r * 0.8); ctx.closePath(); fs(ctx, "#ff6b9d", "#a8325c", ow);
+  },
+  // ---------- minijogos, troféu, sol e baú (temporada 4) ----------
+  trophy(ctx, r, ow) {
+    ctx.beginPath(); ctx.arc(-r * 0.55, -r * 0.35, r * 0.28, Math.PI * 0.5, Math.PI * 1.5); ctx.arc(r * 0.55, -r * 0.35, r * 0.28, -Math.PI * 0.5, Math.PI * 0.5);
+    ctx.strokeStyle = "#b8860b"; ctx.lineWidth = ow * 1.6; ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-r * 0.6, -r * 0.75); ctx.lineTo(r * 0.6, -r * 0.75); ctx.quadraticCurveTo(r * 0.6, r * 0.15, 0, r * 0.25); ctx.quadraticCurveTo(-r * 0.6, r * 0.15, -r * 0.6, -r * 0.75); ctx.closePath();
+    fs(ctx, "#ffd54a", "#b8860b", ow);
+    roundRect(ctx, -r * 0.14, r * 0.2, r * 0.28, r * 0.35, r * 0.05); fs(ctx, "#ffcf3a", "#b8860b", ow);
+    roundRect(ctx, -r * 0.45, r * 0.52, r * 0.9, r * 0.3, r * 0.08); fs(ctx, "#c98a52", "#7a4a1f", ow);
+    ctx.fillStyle = "rgba(255,255,255,.6)"; ctx.beginPath(); ctx.ellipse(-r * 0.25, -r * 0.45, r * 0.08, r * 0.2, 0.1, 0, 7); ctx.fill();
+  },
+  sun(ctx, r, ow) {
+    ctx.strokeStyle = "#ffb000"; ctx.lineWidth = ow * 1.6;
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; ctx.beginPath(); ctx.moveTo(Math.cos(a) * r * 0.65, Math.sin(a) * r * 0.65); ctx.lineTo(Math.cos(a) * r * 0.95, Math.sin(a) * r * 0.95); ctx.stroke(); }
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.5, 0, 7); fs(ctx, "#ffe14d", "#e09a00", ow);
+    ctx.fillStyle = "#7a4a1f"; for (const xx of [-0.17, 0.17]) { ctx.beginPath(); ctx.arc(xx * r, -r * 0.05, r * 0.06, 0, 7); ctx.fill(); }
+    ctx.strokeStyle = "#7a4a1f"; ctx.lineWidth = ow; ctx.beginPath(); ctx.arc(0, r * 0.05, r * 0.18, 0.3, Math.PI - 0.3); ctx.stroke();
+  },
+  chest(ctx, r, ow) {
+    roundRect(ctx, -r * 0.85, -r * 0.1, r * 1.7, r * 0.85, r * 0.12); fs(ctx, "#c98a52", "#7a4a1f", ow);
+    ctx.beginPath(); ctx.moveTo(-r * 0.85, -r * 0.05); ctx.quadraticCurveTo(-r * 0.85, -r * 0.7, 0, -r * 0.7); ctx.quadraticCurveTo(r * 0.85, -r * 0.7, r * 0.85, -r * 0.05); ctx.closePath(); fs(ctx, "#e0a46a", "#7a4a1f", ow);
+    ctx.fillStyle = "#ffd54a"; for (const xx of [-0.55, 0.55]) ctx.fillRect(xx * r - r * 0.08, -r * 0.68, r * 0.16, r * 1.42);
+    roundRect(ctx, -r * 0.18, -r * 0.2, r * 0.36, r * 0.36, r * 0.08); fs(ctx, "#ffd54a", "#a8791a", ow);
+    ctx.fillStyle = "#7a4a1f"; ctx.beginPath(); ctx.arc(0, -r * 0.04, r * 0.06, 0, 7); ctx.fill();
+  },
+  games(ctx, r, ow) {
+    ctx.beginPath(); ctx.moveTo(0, -r * 0.95); ctx.lineTo(r * 0.85, r * 0.15); ctx.lineTo(-r * 0.85, r * 0.15); ctx.closePath(); fs(ctx, "#ff8fb8", "#a8325c", ow);
+    ctx.fillStyle = "#ffffff"; for (const xx of [-0.28, 0.28]) { ctx.beginPath(); ctx.moveTo(0, -r * 0.9); ctx.lineTo(xx * r + r * 0.1, r * 0.13); ctx.lineTo(xx * r - r * 0.1, r * 0.13); ctx.closePath(); ctx.fill(); }
+    roundRect(ctx, -r * 0.75, r * 0.12, r * 1.5, r * 0.7, r * 0.1); fs(ctx, "#fff4e2", "#a8325c", ow);
+    ctx.beginPath(); ctx.moveTo(-r * 0.25, r * 0.82); ctx.quadraticCurveTo(0, r * 0.2, r * 0.25, r * 0.82); ctx.closePath(); fs(ctx, "#5b3a7a", "#3a2f4f", ow * 0.6);
+    ctx.fillStyle = "#ffd54a"; ctx.beginPath(); ctx.moveTo(0, -r * 0.95); ctx.lineTo(r * 0.35, -r * 0.82); ctx.lineTo(0, -r * 0.7); ctx.closePath(); ctx.fill();
+  },
+  "game:catch"(ctx, r, ow) {
+    // fruta caindo (com risquinhos de movimento) dentro de um cesto trançado
+    ctx.strokeStyle = "rgba(255,154,91,.7)"; ctx.lineWidth = ow * 1.2;
+    for (const xx of [-0.22, 0, 0.22]) { ctx.beginPath(); ctx.moveTo(xx * r, -r * 0.98); ctx.lineTo(xx * r, -r * 0.78); ctx.stroke(); }
+    drawIcon(ctx, "food:apple", 0, -r * 0.4, r * 0.4);
+    ctx.beginPath(); ctx.moveTo(-r * 0.8, r * 0.05); ctx.lineTo(r * 0.8, r * 0.05); ctx.lineTo(r * 0.6, r * 0.85); ctx.lineTo(-r * 0.6, r * 0.85); ctx.closePath();
+    fs(ctx, "#e0a46a", "#7a4a1f", ow);
+    ctx.strokeStyle = "rgba(122,74,31,.55)"; ctx.lineWidth = ow * 0.9;
+    for (const yy of [0.3, 0.58]) { ctx.beginPath(); ctx.moveTo(-r * (0.78 - yy * 0.25), yy * r); ctx.lineTo(r * (0.78 - yy * 0.25), yy * r); ctx.stroke(); }
+    for (const xx of [-0.35, 0, 0.35]) { ctx.beginPath(); ctx.moveTo(xx * r, r * 0.08); ctx.lineTo(xx * r * 0.85, r * 0.83); ctx.stroke(); }
+    roundRect(ctx, -r * 0.9, -r * 0.05, r * 1.8, r * 0.18, r * 0.09); fs(ctx, "#c98a52", "#7a4a1f", ow);
+  },
+  "game:bubbles"(ctx, r, ow) {
+    for (const [xx, yy, rr, c] of [[-0.35, 0.25, 0.42, "#8fd3ff"], [0.4, -0.05, 0.36, "#ff8fb8"], [-0.05, -0.55, 0.28, "#b49cff"]]) {
+      ctx.beginPath(); ctx.arc(xx * r, yy * r, rr * r, 0, 7);
+      ctx.fillStyle = c + "88"; ctx.fill(); ctx.strokeStyle = c; ctx.lineWidth = ow * 1.2; ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.beginPath(); ctx.ellipse(xx * r - rr * r * 0.35, yy * r - rr * r * 0.4, rr * r * 0.22, rr * r * 0.12, -0.7, 0, 7); ctx.fill();
+    }
+  },
+  "game:memory"(ctx, r, ow) {
+    ctx.save(); ctx.rotate(-0.18);
+    roundRect(ctx, -r * 0.85, -r * 0.6, r * 0.8, r * 1.1, r * 0.12); fs(ctx, "#9a7ff0", "#6e4aa3", ow);
+    drawIcon(ctx, "star", -r * 0.45, -r * 0.05, r * 0.2);
+    ctx.restore();
+    ctx.save(); ctx.rotate(0.15);
+    roundRect(ctx, r * 0.02, -r * 0.65, r * 0.8, r * 1.1, r * 0.12); fs(ctx, "#ffffff", "#b49cff", ow);
+    drawIcon(ctx, "food:strawberry", r * 0.42, -r * 0.1, r * 0.3);
+    ctx.restore();
+  },
+  "game:music"(ctx, r, ow) {
+    ctx.beginPath();
+    ctx.moveTo(-r * 0.75, r * 0.55); ctx.quadraticCurveTo(-r * 0.5, r * 0.4, -r * 0.48, -r * 0.1);
+    ctx.quadraticCurveTo(-r * 0.45, -r * 0.65, 0, -r * 0.65); ctx.quadraticCurveTo(r * 0.45, -r * 0.65, r * 0.48, -r * 0.1);
+    ctx.quadraticCurveTo(r * 0.5, r * 0.4, r * 0.75, r * 0.55); ctx.closePath(); fs(ctx, "#7fd88a", "#2f7a3e", ow);
+    ctx.fillStyle = "#2f7a3e"; ctx.beginPath(); ctx.arc(0, r * 0.72, r * 0.15, 0, 7); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.45)"; ctx.beginPath(); ctx.ellipse(-r * 0.2, -r * 0.2, r * 0.08, r * 0.2, 0.15, 0, 7); ctx.fill();
+    drawIcon(ctx, "note", r * 0.75, -r * 0.6, r * 0.32);
   }
 };

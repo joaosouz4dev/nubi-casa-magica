@@ -118,6 +118,24 @@
     .mission:active { transform: scale(.92); }
     .mission.done { border-color: #bfe8c6; background: #f1fff3; }
     .missionState { display: flex; align-items: center; gap: 4px; font-size: 18px; font-weight: bold; color: #b8860b; }
+    /* baú do dia (abre com as 3 missões) */
+    .chestRow { display: flex; align-items: center; justify-content: center; gap: 14px; flex: 0 0 100%; max-width: 360px; margin: 12px auto 0; padding: 6px 18px; border: 3px dashed #e0c08a; border-radius: 22px; background: #fffaf0; cursor: pointer; font: inherit; opacity: .75; }
+    .chestRow.ready { opacity: 1; border-style: solid; border-color: #ffc93a; background: linear-gradient(180deg, #fff7c2, #ffe680); animation: chestPulse 1.4s ease-in-out infinite; }
+    @keyframes chestPulse { 0%,100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,201,58,.5); } 50% { transform: scale(1.04); box-shadow: 0 0 0 8px rgba(255,201,58,0); } }
+    .chestRow.opened { opacity: .6; }
+    .chestRow.nope { animation: nope .35s; }
+    .chestDots { display: flex; gap: 8px; align-items: center; }
+    .chestDots i { width: 16px; height: 16px; border-radius: 50%; background: #e9e1f5; border: 2px solid #c9b8e6; }
+    .chestDots i.on { background: #62c370; border-color: #2f7a3e; }
+    /* presente do dia: pula no canto, não bloqueia o jogo */
+    #dailyGift { position: fixed; z-index: 7; left: 18px; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); width: 72px; height: 72px;
+      background: linear-gradient(180deg, #fff7c2, #ffe680); box-shadow: 0 4px 0 #e0a21c, 0 0 0 6px rgba(255,214,90,.45), 0 8px 18px rgba(160,100,10,.3);
+      animation: giftHop 1.2s cubic-bezier(.34,1.56,.64,1) infinite; }
+    #dailyGift canvas { pointer-events: none; }
+    #dailyGift.open { animation: giftOpen .42s ease-in forwards; }
+    @keyframes giftHop { 0%,100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-14px) rotate(-8deg); } 60% { transform: translateY(0) rotate(6deg); } }
+    @keyframes giftOpen { to { transform: scale(1.8); opacity: 0; } }
+    body.reduce-motion #dailyGift, body.reduce-motion .chestRow.ready { animation: none; }
     #btnPets.wish { animation: wish 1.3s ease-in-out infinite; box-shadow: 0 4px 0 #cdb8f0, 0 0 0 5px rgba(255,214,90,.7), 0 0 18px 6px rgba(255,214,90,.55); }
     #petsGrid { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin-top: calc(2 * var(--vh)); }
     .petCard { border: 3px solid #e3d6fb; border-radius: 26px; background: #faf6ff; padding: 8px 10px; cursor: pointer; font: inherit; color: #4a3f5c; transition: transform .15s; }
@@ -319,6 +337,15 @@
         <rect x="16" y="24" width="10" height="16" rx="4" fill="#ff6bb5" stroke="#a8325c" stroke-width="2.5"/>
         <rect x="18" y="18" width="6" height="7" rx="2" fill="#3a2f4f"/>
         <path d="M30 34c2-4 8-4 10 0-2 3-8 3-10 0z" fill="#e8426b" stroke="#8a1f3a" stroke-width="2"/>
+      </svg>
+    </button>
+    <button class="toy" data-room="games" aria-label="Brincadeiras">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M24 5L42 25H6z" fill="#ff8fb8" stroke="#a8325c" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M24 6l-5 19h10z" fill="#fff"/>
+        <rect x="9" y="25" width="30" height="16" rx="3" fill="#fff4e2" stroke="#a8325c" stroke-width="3"/>
+        <path d="M19 41c1-8 9-8 10 0z" fill="#5b3a7a"/>
+        <path d="M24 5l7 3-7 3z" fill="#ffd54a"/>
       </svg>
     </button>
   </nav>

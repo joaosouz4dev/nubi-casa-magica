@@ -50,6 +50,8 @@ export class ProgressUI {
     bus.on("love:up", (e) => this._loveUp(e));
     bus.on("pet:choose", () => setTimeout(() => this._renderLove(), 50));
     bus.on("mission:done", (e) => this._missionDone(e));
+    bus.on("chest:ready", () => { this._missionBadge(); this.audio.chime(5); bump(document.getElementById("btnMissions")); });
+    bus.on("chest:opened", () => this._chestOpened());
     this._renderCount(); this._renderLove(); this._badge(); this._missionBadge();
   }
 
@@ -105,7 +107,7 @@ export class ProgressUI {
   }
   _missionBadge() {
     const b = document.getElementById("btnMissions");
-    if (b) b.classList.toggle("ready", this.progress.missions().some(m => !m.done));
+    if (b) b.classList.toggle("ready", this.progress.missions().some(m => !m.done) || this.progress.chestReady());
   }
 
   // ---------------- carinho ----------------
@@ -186,6 +188,50 @@ export class ProgressUI {
       row.addEventListener("click", () => { this.missEl.classList.remove("show"); if (!m.done && m.room) this.bus.emit("room:go", m.room); });
       ul.appendChild(row);
     }
+    // baú do dia: abre com as 3 missões feitas (as bolinhas mostram quantas faltam)
+    const ms = this.progress.missions();
+    const opened = this.progress.chestOpened(), ready = this.progress.chestReady();
+    const chest = document.createElement("button");
+    chest.className = "chestRow" + (opened ? " opened" : ready ? " ready" : "");
+    chest.setAttribute("aria-label", opened ? "Baú aberto" : ready ? "Abrir o baú" : "Baú do dia");
+    chest.appendChild(iconCanvas(64, "chest"));
+    const dots = document.createElement("div"); dots.className = "chestDots";
+    if (opened) dots.innerHTML = '<span class="ok">✓</span>';
+    else ms.forEach(m => { const d = document.createElement("i"); if (m.done) d.className = "on"; dots.appendChild(d); });
+    chest.appendChild(dots);
+    chest.addEventListener("click", () => {
+      if (!this.progress.chestReady()) { bump(chest, "nope"); this.audio.hint(); return; }
+      const b = this.vp.rectToStage(chest.getBoundingClientRect());
+      this.missEl.classList.remove("show");
+      this.progress.openChest({ x: b.left + b.width / 2, y: b.top + b.height / 2 });
+    });
+    ul.appendChild(chest);
+  }
+  _chestOpened() {
+    this._missionBadge();
+    this.audio.fanfare();
+    this.bus.emit("fx:confetti", { amount: 1.2 });
+    this.nubi.dance();
+    this.nubi.say("Baú do dia!");
+  }
+
+  // ---------------- presente do dia ----------------
+  /* Um presentinho pula no canto ao abrir o jogo (uma vez por dia). Não é
+     modal: a criança pode ignorar; tocar dá estrelinhas com festa. */
+  offerDailyGift() {
+    if (!this.progress.dailyGiftReady() || document.getElementById("dailyGift")) return false;
+    const b = document.createElement("button");
+    b.id = "dailyGift"; b.className = "toy"; b.setAttribute("aria-label", "Presente do dia");
+    b.appendChild(iconCanvas(52, "gift"));
+    b.addEventListener("click", () => {
+      const r = this.vp.rectToStage(b.getBoundingClientRect());
+      const n = this.progress.claimDailyGift({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
+      b.classList.add("open");
+      setTimeout(() => b.remove(), 420);
+      if (n) { this.audio.fanfare(); this.bus.emit("fx:confetti", { amount: 0.8 }); this.nubi.celebrate(); this.nubi.say("Presente do dia!"); }
+    });
+    (document.getElementById("stage") || document.body).appendChild(b);
+    return true;
   }
   _missionDone({ all }) {
     this._missionBadge();

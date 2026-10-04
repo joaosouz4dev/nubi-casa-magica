@@ -16,6 +16,8 @@ import { BedroomRoom } from "./scenes/bedroom_room.js";
 import { DentistRoom } from "./scenes/dentist_room.js";
 import { SalonRoom } from "./scenes/salon_room.js";
 import { HubRoom } from "./scenes/hub_room.js";
+import { GamesRoom } from "./scenes/games_room.js";
+import { STAR_RULES } from "./data/prizes.js";
 import { Progress } from "./systems/progress.js";
 import { ProgressUI } from "./ui/progress_ui.js";
 import { ITEMS } from "./data/wardrobe.js";
@@ -51,6 +53,7 @@ export function boot() {
   scenes.register("dentist", new DentistRoom({ vp, bus, nubi, save }));
   scenes.register("salon", new SalonRoom({ vp, bus, nubi, save }));
   scenes.register("hub", new HubRoom({ vp, bus, nubi, save }));
+  scenes.register("games", new GamesRoom({ vp, bus, nubi, save }));
   // cada cômodo escolhe o próprio enquadramento; por padrão, tamanho normal
   scenes.onBeforeEnter = () => { nubi.sizeK = 1; };
 
@@ -74,6 +77,9 @@ export function boot() {
     }
   });
   bus.on("gift:new", () => { bedroom.newGift = true; });
+  // minijogos e surpresas viram estrelinhas (sempre somam; nunca tiram)
+  bus.on("game:reward", (e) => progress.add(e.stars, "game", e.at));
+  bus.on("surprise:pop", (at) => progress.add(STAR_RULES.surprise, "surprise", at));
 
   // vitrine de bichinhos: cada um guarda a própria aparência
   new PetPicker(bus, save);
@@ -131,7 +137,9 @@ export function boot() {
   bus.on("audio:bounce", () => audio.bounce());
   bus.on("audio:giggle", () => audio.giggle());
   bus.on("audio:purr", () => audio.purr());
-  for (const s of ["scrub", "sparkle", "pop", "click", "flush", "plop", "honk"]) bus.on("audio:" + s, () => audio[s]());
+  for (const s of ["scrub", "sparkle", "pop", "click", "flush", "plop", "honk", "tada", "whoosh"]) bus.on("audio:" + s, () => audio[s]());
+  bus.on("audio:note", (i) => audio.note(i || 0));
+  bus.on("audio:coin", (n) => audio.coin((n || 0) % 8));
   bus.on("discovery", ({ isNew }) => { if (isNew) audio.voiceHappy(); });
 
   // álbum vivo: tocar num adesivo repete a reação (sem mudar o estado salvo)
@@ -175,6 +183,8 @@ export function boot() {
     window.__titleDone = true;
     if (guide._activity) guide._activity();
     bus.emit("title:start");
+    // presente do dia (depois da recepção, para não atrapalhar a 1ª visita)
+    if (quests.isDone("recepcao")) setTimeout(() => progressUI.offerDailyGift(), 1200);
   } });
 
   // loop
@@ -207,6 +217,7 @@ export function boot() {
     get dentist() { return scenes.rooms.get("dentist"); },
     get salon() { return scenes.rooms.get("salon"); },
     get hub() { return scenes.rooms.get("hub"); },
+    get games() { return scenes.rooms.get("games"); },
     get items() { return scenes.rooms.get("kitchen").items; },  // compat Etapa 1/2
     get interactions() { return scenes.rooms.get("kitchen"); },
     nubi, bus, vp, save, effects, album, quests, guide, progress, progressUI, scenes, go: (id) => scenes.go(id), back: () => scenes.back()

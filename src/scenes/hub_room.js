@@ -15,9 +15,12 @@ export const HUB_TILES = [
   { id: "bedroom",  x: 0.33, y: 0.30, w: 0.18, h: 0.25, wall: "#cfe8ff", icons: ["hat", "ball"] },
   { id: "salon",    x: 0.51, y: 0.30, w: 0.18, h: 0.25, wall: "#ffd6ea", icons: ["hair:curls", "polish:#ff6bb5"] },
   { id: "dentist",  x: 0.69, y: 0.30, w: 0.18, h: 0.25, wall: "#d4f3ec", icons: ["tooth", "brush"] },
-  { id: "kitchen",  x: 0.33, y: 0.57, w: 0.27, h: 0.27, wall: "#fff0c9", icons: ["food:apple", "food:pizza"] },
-  { id: "bathroom", x: 0.60, y: 0.57, w: 0.27, h: 0.27, wall: "#d8efff", icons: ["duck", "sponge"] }
+  { id: "kitchen",  x: 0.33, y: 0.57, w: 0.18, h: 0.27, wall: "#fff0c9", icons: ["food:apple", "food:pizza"] },
+  { id: "bathroom", x: 0.51, y: 0.57, w: 0.18, h: 0.27, wall: "#d8efff", icons: ["duck", "sponge"] },
+  { id: "games",    x: 0.69, y: 0.57, w: 0.18, h: 0.27, wall: "#f1e4ff", icons: ["game:catch", "game:music"] }
 ];
+
+const SURPRISE_MS = 9000;   // tempo que o balão-surpresa leva para sair pelo céu
 
 export class HubRoom {
   constructor({ vp, bus, nubi }) {
@@ -36,6 +39,9 @@ export class HubRoom {
     this.nubi.pos = { x: 0.15, y: 0.64 };
     this.nubi.arrive();
     this.pending = null;
+    // surpresa em ~metade das visitas, alguns segundos depois de chegar
+    this.surprise = null;
+    this.surpriseIn = Math.random() < 0.5 ? 2500 + Math.random() * 3000 : 0;
     this.unsub = [
       this.bus.on("tap", (p) => this.onTap(p)),
       this.bus.on("pointer:down", (p) => { const i = this.tileAt(p.x, p.y); if (i >= 0) this.press[i].target = 1; }),
@@ -52,6 +58,21 @@ export class HubRoom {
   }
 
   onTap(p) {
+    // surpresa: balão com presentinho subindo pelo jardim
+    const S = this.surprise;
+    if (S && !S.popped) {
+      const sp = this.surprisePos();
+      if (Math.hypot(p.x - sp.x, p.y - sp.y) < this.vp.s(0.075)) {
+        S.popped = true;
+        this.bus.emit("audio:pop");
+        this.bus.emit("fx:burst", { x: sp.x, y: sp.y, color: S.color });
+        this.bus.emit("fx:confetti", { amount: 0.5 });
+        this.bus.emit("surprise:pop", { x: sp.x, y: sp.y });
+        this.bus.emit("act", "surprise");
+        this.nubi.celebrate(); this.nubi.say(["Surpresa!", "Oba, presente!", "Uau!"][Math.floor(Math.random() * 3)]);
+        return;
+      }
+    }
     const i = this.tileAt(p.x, p.y);
     if (i >= 0) {
       if (this.pending) return;
@@ -80,6 +101,38 @@ export class HubRoom {
   update(dt) {
     this.t += dt;
     for (const s of this.press) s.update(dt);
+    if (this.surpriseIn > 0) { this.surpriseIn -= dt; if (this.surpriseIn <= 0) this.spawnSurprise(); }
+    if (this.surprise) {
+      this.surprise.t += dt;
+      if (this.surprise.t > (this.surprise.popped ? 0 : SURPRISE_MS)) this.surprise = null;
+    }
+  }
+
+  /* Surpresa por visita: às vezes um balão com presentinho sobe pelo jardim.
+     Pegar é bônus; deixar passar não custa nada. */
+  spawnSurprise() {
+    const cols = ["#ff6b9d", "#5bc0eb", "#ffd54a", "#b49cff", "#7fd88a"];
+    this.surpriseIn = 0;
+    this.surprise = { t: 0, x0: 0.06 + Math.random() * 0.16, color: cols[Math.floor(Math.random() * cols.length)], popped: false };
+  }
+  surprisePos() {
+    const S = this.surprise, k = S.t / SURPRISE_MS;
+    const sway = Motion.reduce ? 0 : Math.sin(S.t * 0.0018) * 0.035;
+    return { x: this.vp.dx(S.x0 + sway + k * 0.06), y: this.vp.dy(1.05 - k * 1.25) };
+  }
+  _surprise(ctx, m) {
+    const S = this.surprise; if (!S || S.popped) return;
+    const p = this.surprisePos(), r = m * 0.05;
+    ctx.save();
+    ctx.strokeStyle = "rgba(90,70,110,.6)"; ctx.lineWidth = Math.max(1, m * 0.003);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y + r * 1.2); ctx.quadraticCurveTo(p.x + r * 0.4, p.y + r * 1.8, p.x, p.y + r * 2.4); ctx.stroke();
+    const g = ctx.createRadialGradient(p.x - r * 0.35, p.y - r * 0.4, r * 0.1, p.x, p.y, r * 1.2);
+    g.addColorStop(0, lighten(S.color, 0.5)); g.addColorStop(1, S.color);
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(p.x, p.y, r, r * 1.2, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = darken(S.color, 0.3); ctx.lineWidth = Math.max(1.5, m * 0.004); ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.beginPath(); ctx.ellipse(p.x - r * 0.35, p.y - r * 0.45, r * 0.18, r * 0.28, -0.5, 0, Math.PI * 2); ctx.fill();
+    drawIcon(ctx, "gift", p.x, p.y + r * 2.75, r * 0.55);
+    ctx.restore();
   }
 
   draw() {
@@ -92,6 +145,7 @@ export class HubRoom {
     if (this.decor("decor:flowers")) this._flowers(ctx, w, h, m);
     if (this.decor("decor:balloons")) this._balloons(ctx, w, h, m);
     this.nubi.draw();
+    this._surprise(ctx, m);
   }
 
   // ---------------- casa ----------------

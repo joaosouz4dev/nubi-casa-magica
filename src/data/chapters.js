@@ -133,6 +133,15 @@ export const CHAPTERS = [
       { act: "prize",     icon: "shop", dom: "#btnShop" },
       { act: "feed:special", icon: "food:starcookie", room: "kitchen" }
     ] }
+  },
+  /* ---------- Temporada 4: brincadeiras (minijogos) ---------- */
+  {
+    id: "brincadeiras", room: "games", sticker: "jogos", color: "#ff8fb8",
+    steps: {
+      explore:    [{ act: "game:bubbles", icon: "game:bubbles" }, { act: "game:catch", icon: "game:catch" }, { act: "game:memory", icon: "game:memory" }],
+      experiment: [{ act: "game:catch", icon: "game:catch" }, { act: "game:memory", icon: "game:memory" }, { act: "game:music", icon: "game:music" }],
+      solve:      [{ act: "game:memory", icon: "game:memory" }, { act: "game:music", icon: "game:music" }, { act: "game:catch", icon: "game:catch" }]
+    }
   }
 ];
 
@@ -157,7 +166,11 @@ export const FREE_WISHES = [
   { act: "feed:watermelon", icon: "food:watermelon", room: "kitchen" },
   { act: "feed:juice", icon: "food:juice", room: "kitchen" },
   { act: "nails:full", icon: "station:nails", room: "salon" },
-  { act: "makeup", icon: "station:makeup", room: "salon" }
+  { act: "makeup", icon: "station:makeup", room: "salon" },
+  { act: "game:catch", icon: "game:catch", room: "games" },
+  { act: "game:bubbles", icon: "game:bubbles", room: "games" },
+  { act: "game:memory", icon: "game:memory", room: "games" },
+  { act: "game:music", icon: "game:music", room: "games" }
 ];
 
 // Ajuda escalonada por inatividade (ms). O modo multiplica os tempos.

@@ -11,11 +11,11 @@
    ============================================================ */
 
 // Quantas estrelinhas cada coisa dá.
-export const STAR_RULES = { act: 1, step: 2, chapter: 5, mission: 5, loveUp: 3 };
+export const STAR_RULES = { act: 1, step: 2, chapter: 5, mission: 5, loveUp: 3, chest: 10, dailyGift: 5, surprise: 3 };
 export const ACT_COOLDOWN = 2500;   // a mesma ação seguida não conta de novo antes disso
 
 // Ações que não são "brincar" (navegação, troca de aba): não dão estrelinha.
-export const NO_STAR = [/^hub:/, /^tab:/, /^salon:/, /^wake$/, /^prize$/, /^mission/];
+export const NO_STAR = [/^hub:/, /^tab:/, /^salon:/, /^wake$/, /^prize$/, /^mission/, /^game:any$/, /^chest/, /^daily/];
 
 // Ações de cuidado: enchem o coração do bichinho atual.
 export const LOVE_ACTS = [/^feed:/, /^foam/, /^rinse$/, /^dry$/, /^comb$/, /^ears$/, /^teeth:/, /^pet$/, /^tummy$/, /^nails$/, /^hair$/, /^makeup$/, /^paint$/, /^poop:flush$/, /^duck$/];
@@ -51,5 +51,9 @@ export const MISSION_POOL = [
   { act: "hair",         icon: "station:hair", room: "salon" },
   { act: "nails",        icon: "station:nails", room: "salon" },
   { act: "makeup",       icon: "station:makeup", room: "salon" },
-  { act: "trash:bin",    icon: "trash:bin",    room: "kitchen" }
+  { act: "trash:bin",    icon: "trash:bin",    room: "kitchen" },
+  { act: "game:catch",   icon: "game:catch",   room: "games" },
+  { act: "game:bubbles", icon: "game:bubbles", room: "games" },
+  { act: "game:memory",  icon: "game:memory",  room: "games" },
+  { act: "game:music",   icon: "game:music",   room: "games" }
 ];

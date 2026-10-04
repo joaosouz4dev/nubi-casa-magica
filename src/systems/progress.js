@@ -98,8 +98,11 @@ export class Progress {
     const d = today();
     if (this.state.daily && this.state.daily.date === d) return;
     const rnd = seeded("nubi" + d);
-    const pool = MISSION_POOL.slice(), pick = [];
-    while (pick.length < 3 && pool.length) pick.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0].act);
+    // sempre uma de cuidar/brincar pela casa + uma de minijogo
+    const isGame = (m) => m.act.startsWith("game:");
+    const pool = MISSION_POOL.filter(m => !isGame(m)), games = MISSION_POOL.filter(isGame), pick = [];
+    while (pick.length < 2 && pool.length) pick.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0].act);
+    if (games.length) pick.push(games[Math.floor(rnd() * games.length)].act);
     this.state.daily = { date: d, acts: pick, done: {} };
     this._persist();
   }
@@ -114,7 +117,33 @@ export class Progress {
     if (!dd.acts.includes(a) || dd.done[a]) return;
     dd.done[a] = true;
     this._persist();
-    this.bus.emit("mission:done", { act: a, all: dd.acts.every(x => dd.done[x]) });
+    const all = dd.acts.every(x => dd.done[x]);
+    this.bus.emit("mission:done", { act: a, all });
     this.add(STAR_RULES.mission, "mission");
+    if (all && !dd.chest) this.bus.emit("chest:ready");
+  }
+
+  /* Baú do dia: abre quando as 3 missões do dia estão feitas (uma vez por dia).
+     Não é cobrança: se a criança não fizer, amanhã há outras missões e nada se perde. */
+  chestReady() { this._ensureDaily(); const dd = this.state.daily; return !dd.chest && dd.acts.every(x => dd.done[x]); }
+  chestOpened() { this._ensureDaily(); return !!this.state.daily.chest; }
+  openChest(at) {
+    if (!this.chestReady()) return 0;
+    this.state.daily.chest = true;
+    this._persist();
+    this.add(STAR_RULES.chest, "chest", at);
+    this.bus.emit("chest:opened", { stars: STAR_RULES.chest });
+    return STAR_RULES.chest;
+  }
+
+  /* Presente de boas-vindas do dia: aparece na primeira abertura de cada dia.
+     Sem sequência: não importa quantos dias a criança ficou sem jogar. */
+  dailyGiftReady() { this._ensureDaily(); return !this.state.daily.gift; }
+  claimDailyGift(at) {
+    if (!this.dailyGiftReady()) return 0;
+    this.state.daily.gift = true;
+    this._persist();
+    this.add(STAR_RULES.dailyGift, "daily", at);
+    return STAR_RULES.dailyGift;
   }
 }

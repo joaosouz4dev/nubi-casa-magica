@@ -222,6 +222,14 @@ export class Guide {
     const dest = room && room.holdDest ? room.holdDest() : null;
     if (dest) this._destGlow(ctx, dest);
 
+    // durante um minijogo o guia não desenha balão/destaque/mãozinha: só
+    // as recompensas (voo de adesivo, presente) continuam aparecendo
+    if (room && room.quiet && room.quiet()) {
+      for (const f of this.flights) this._flight(ctx, f);
+      if (this.giftShow && this.giftShow.t >= 0) this._gift(ctx, this.giftShow);
+      return;
+    }
+
     // destaque pulsante no alvo do pedido (aparece cedo e cresce com a espera)
     if (w && inRoom && !dest) {
       const tg = this.target(w);
