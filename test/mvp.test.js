@@ -46,7 +46,7 @@ async function dragAccessory(page, slotIdx) {
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console.error: ' + m.text()); });
 
   const results = {};
-  await page.goto('http://127.0.0.1:8742/index.html', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:8742/index.html?notitle', { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.__nubi && window.__nubi.room, null, { timeout: 6000 });
   await page.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
   await page.reload({ waitUntil: 'networkidle' });
@@ -112,7 +112,7 @@ async function dragAccessory(page, slotIdx) {
   console.log('erros:', errors.length ? errors : 'nenhum');
 
   const ok =
-    results.rooms === 'bathroom,bedroom,kitchen' &&
+    ['bathroom', 'bedroom', 'kitchen'].every(r => results.rooms.split(',').includes(r)) &&
     results.fedBlue === '#5b8def' &&
     results.foam === true &&
     results.rinsedBase === null &&

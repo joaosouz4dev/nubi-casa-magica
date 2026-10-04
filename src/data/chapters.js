@@ -65,6 +65,83 @@ export const CHAPTERS = [
       { act: "equip:hat:fluffy", icon: "combo:fluffy-hat", room: "bedroom" },
       { act: "basket:cape",      icon: "combo:cape-ball", room: "bedroom" }
     ] }
+  },
+  /* ---------- Temporada 2: novos amigos, looks, dentista, rotina, salão ----------
+     Ficam disponíveis desde o início (o capítulo segue o cômodo onde a criança
+     está), mas a ordem sugerida vem depois da festa. */
+  {
+    id: "amigos", room: null, sticker: "amigos", color: "#ff9fc4",
+    steps: { all: [
+      { act: "pet:bunny", icon: "pet:bunny", dom: "#btnPets" },
+      { act: "pet:bear",  icon: "pet:bear",  dom: "#btnPets" },
+      { act: "pet:nubi",  icon: "pet:nubi",  dom: "#btnPets" }
+    ] }
+  },
+  {
+    id: "looks", room: "bedroom", sticker: "looks", color: "#ffc93a",
+    steps: {
+      explore:    [{ act: "equip:face", icon: "wear:sunglasses" }, { act: "equip:body", icon: "wear:tutu" }, { act: "look", icon: "looks" }],
+      experiment: [{ act: "equip:neck", icon: "wear:bowtie" }, { act: "look", icon: "looks" }, { act: "wear:gift", icon: "gift" }],
+      solve:      [{ act: "look", icon: "looks" }, { act: "equip:face", icon: "wear:sunglasses" }, { act: "wear:gift", icon: "gift" }]
+    }
+  },
+  {
+    id: "dentista", room: "dentist", sticker: "dente", color: "#7fd0bd",
+    steps: {
+      explore:    [{ act: "teeth:plaque", icon: "brush" }, { act: "teeth:bugs", icon: "bug" }, { act: "teeth:align", icon: "teeth:align" }],
+      experiment: [{ act: "teeth:plaque", icon: "brush" }, { act: "teeth:align", icon: "teeth:align" }, { act: "teeth:rinse", icon: "cup" }],
+      solve:      [{ act: "teeth:bugs", icon: "bug" }, { act: "teeth:plaque", icon: "brush" }, { act: "teeth:all", icon: "tooth" }]
+    }
+  },
+  {
+    id: "rotina", room: null, sticker: "limpeza", color: "#62c370",
+    steps: {
+      explore:    [{ act: "poop:flush", icon: "poop:flush", room: "bathroom" }, { act: "trash:bin", icon: "trash:bin", room: "kitchen" }, { act: "comb", icon: "comb", room: "bathroom" }],
+      experiment: [{ act: "trash:bin", icon: "trash:bin", room: "kitchen" }, { act: "trash:out", icon: "trash:out", room: "kitchen" }, { act: "poop:flush", icon: "poop:flush", room: "bathroom" }],
+      solve:      [{ act: "poop:flush", icon: "poop:flush", room: "bathroom" }, { act: "ears", icon: "sponge", room: "bathroom" }, { act: "trash:out", icon: "trash:out", room: "kitchen" }]
+    }
+  },
+  {
+    id: "salao", room: "salon", sticker: "salao", color: "#ff6bb5",
+    steps: {
+      explore:    [{ act: "hair", icon: "hair" }, { act: "nails", icon: "nails" }, { act: "beauty", icon: "beauty" }],
+      experiment: [{ act: "haircolor", icon: "color:#ff6b9d" }, { act: "nails", icon: "nails" }, { act: "paint", icon: "paint:mustache" }],
+      solve:      [{ act: "hair", icon: "hair" }, { act: "hairacc", icon: "acc:bow" }, { act: "beauty", icon: "beauty" }]
+    }
+  },
+  /* ---------- Temporada 3: cardápio, salão por estações, estrelinhas ---------- */
+  {
+    id: "cardapio", room: "kitchen", sticker: "fruta", color: "#ff9a2e",
+    steps: {
+      explore:    [{ act: "feedgroup:frutas2", icon: "food:watermelon" }, { act: "feedgroup:salgados", icon: "food:sandwich" }, { act: "feedgroup:doces", icon: "food:cupcake" }],
+      experiment: [{ act: "feed:carrot", icon: "food:carrot" }, { act: "feed:milk", icon: "food:milk" }, { act: "feed:grapes", icon: "food:grapes" }],
+      solve:      [{ act: "feed:broccoli", icon: "food:broccoli" }, { act: "feed:orange", icon: "food:orange" }, { act: "feed:popsicle", icon: "food:popsicle" }]
+    }
+  },
+  {
+    id: "salao2", room: "salon", sticker: "salao", color: "#b49cff",
+    steps: {
+      explore:    [{ act: "nails:full", icon: "station:nails" }, { act: "nailart", icon: "star" }, { act: "makeup", icon: "station:makeup" }],
+      experiment: [{ act: "haircolor", icon: "station:hair" }, { act: "nails:full", icon: "station:nails" }, { act: "paint", icon: "station:makeup" }],
+      solve:      [{ act: "hair", icon: "station:hair" }, { act: "nails:full", icon: "station:nails" }, { act: "makeup", icon: "station:makeup" }]
+    }
+  },
+  {
+    id: "estrelinhas", room: null, sticker: "festa", color: "#ffd54a",
+    steps: { all: [
+      { act: "hub:visit", icon: "map", dom: "#btnHome" },
+      { act: "prize",     icon: "shop", dom: "#btnShop" },
+      { act: "feed:special", icon: "food:starcookie", room: "kitchen" }
+    ] }
+  },
+  /* ---------- Temporada 4: brincadeiras (minijogos) ---------- */
+  {
+    id: "brincadeiras", room: "games", sticker: "jogos", color: "#ff8fb8",
+    steps: {
+      explore:    [{ act: "game:bubbles", icon: "game:bubbles" }, { act: "game:catch", icon: "game:catch" }, { act: "game:memory", icon: "game:memory" }],
+      experiment: [{ act: "game:catch", icon: "game:catch" }, { act: "game:memory", icon: "game:memory" }, { act: "game:music", icon: "game:music" }],
+      solve:      [{ act: "game:memory", icon: "game:memory" }, { act: "game:music", icon: "game:music" }, { act: "game:catch", icon: "game:catch" }]
+    }
   }
 ];
 
@@ -78,7 +155,22 @@ export const FREE_WISHES = [
   { act: "foam", icon: "sponge", room: "bathroom" },
   { act: "duck", icon: "duck", room: "bathroom" },
   { act: "equip:hat", icon: "hat", room: "bedroom" },
-  { act: "basket", icon: "basket", room: "bedroom" }
+  { act: "basket", icon: "basket", room: "bedroom" },
+  { act: "look", icon: "looks", room: "bedroom" },
+  { act: "teeth:all", icon: "tooth", room: "dentist" },
+  { act: "nails", icon: "nails", room: "salon" },
+  { act: "hair", icon: "hair", room: "salon" },
+  { act: "trash:bin", icon: "trash:bin", room: "kitchen" },
+  { act: "comb", icon: "comb", room: "bathroom" },
+  { act: "feed:pizza", icon: "food:pizza", room: "kitchen" },
+  { act: "feed:watermelon", icon: "food:watermelon", room: "kitchen" },
+  { act: "feed:juice", icon: "food:juice", room: "kitchen" },
+  { act: "nails:full", icon: "station:nails", room: "salon" },
+  { act: "makeup", icon: "station:makeup", room: "salon" },
+  { act: "game:catch", icon: "game:catch", room: "games" },
+  { act: "game:bubbles", icon: "game:bubbles", room: "games" },
+  { act: "game:memory", icon: "game:memory", room: "games" },
+  { act: "game:music", icon: "game:music", room: "games" }
 ];
 
 // Ajuda escalonada por inatividade (ms). O modo multiplica os tempos.

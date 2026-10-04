@@ -15,7 +15,7 @@ fs.mkdirSync(OUT, { recursive: true });
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console.error: ' + m.text()); });
   const shot = (name) => page.screenshot({ path: path.join(OUT, name + '.png') });
 
-  await page.goto('http://127.0.0.1:8742/index.html', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:8742/index.html?notitle', { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.__nubi && window.__nubi.room);
   await page.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
   await page.reload({ waitUntil: 'networkidle' });

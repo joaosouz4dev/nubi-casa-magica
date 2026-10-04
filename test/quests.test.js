@@ -29,7 +29,7 @@ fs.mkdirSync(OUT, { recursive: true });
   };
   const nubiPt = (dy) => ev((k) => { const n = window.__nubi.nubi; return { x: n.px(), y: n.py() + n.radius() * k }; }, dy);
 
-  await page.goto('http://127.0.0.1:8742/index.html', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:8742/index.html?notitle', { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.__nubi && window.__nubi.room);
   await ev(() => { try { localStorage.clear(); } catch (e) {} });
   await page.reload({ waitUntil: 'networkidle' });
@@ -105,7 +105,8 @@ fs.mkdirSync(OUT, { recursive: true });
 
   // ---- festa final ----
   for (const a of ['foam:tinted', 'equip:hat:fluffy', 'basket:cape']) { await ev((x) => window.__nubi.bus.emit('act', x), a); await wait(250); }
-  R.finale = await ev(() => window.__nubi.quests.state.finaleDone && window.__nubi.quests.current().chapter === null);
+  // depois da festa, o mundo continua: começa a temporada 2 (novos amigos)
+  R.finale = await ev(() => { const q = window.__nubi.quests; const c = q.current(); return q.state.finaleDone && !!c.chapter && c.chapter.id === 'amigos'; });
   await wait(900);
   await shot('q07-festa');
   await wait(2600);
@@ -114,7 +115,8 @@ fs.mkdirSync(OUT, { recursive: true });
   await page.click('#btnAlbum'); await wait(700);
   R.albumStickers = (await page.$$('#albumStickers .sticker')).length === 6;
   await shot('q08-album');
-  await page.click('#albumStickers .sticker'); await wait(700);
+  if (!R.albumStickers) { console.log('parcial:', JSON.stringify(R), 'pedido:', await wish(), errors); }
+  await page.click('#albumStickers .sticker', { timeout: 4000 }); await wait(700);
   R.albumReplay = await ev(() => !document.getElementById('album').classList.contains('show') && window.__nubi.nubi.danceT > 0);
 
   // ---- progresso persiste e modo muda a paciência ----

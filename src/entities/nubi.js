@@ -15,9 +15,19 @@ import {
   Spring, damp, clamp, lerp, invLerp, Ease, Motion,
   hexToRgb, rgbToHex, mix, lighten, darken, rgba, roundRect, softShadow
 } from "../core/anim.js";
+import {
+  ANCHORS, paintHat, paintFace, paintNeck, paintBody, paintTutu, paintWings, paintFeet,
+  paintHair, paintHairAcc, paintNails, paintMakeupUnder, paintMakeupOver, rainbowGradient
+} from "./wear.js";
+import { PETS } from "../data/pets.js";
+import { MAKEUP_COLORS } from "../data/salon.js";
 
 const BASE_BODY = "#f3e6d4";   // creme
 const BASE_TUFT = "#cdb8f0";   // lilás suave
+
+export function emptyCosmetics() {
+  return { hair: null, hairColor: "#8a5a36", hairAcc: null, nails: { L: null, R: null }, makeup: {}, paint: {} };
+}
 const IRIS = "#4a3b78";
 const INK = "#3a2f4f";
 const BLUSH = "#ff8fb1";
@@ -46,6 +56,15 @@ export class Nubi {
 
     // ---- apresentação ----
     this.color = hexToRgb(BASE_BODY);           // cor mostrada (crossfade)
+    // ---- espécie e beleza ----
+    this.species = "nubi";
+    this.petDef = PETS.nubi;
+    this.baseBody = BASE_BODY;
+    this.baseTuft = BASE_TUFT;
+    this.cosmetics = emptyCosmetics();
+    this.cosShown = { hair: 0, makeup: {}, paint: {}, nailsL: 0, nailsR: 0 };
+    this.hairColorShown = hexToRgb("#8a5a36");
+    this.shine = 0;                              // brilho do pelo penteado
     this._lastTint = null;
     this.pulse = new Spring(0, { stiffness: 220, damping: 9 });   // "boing" ao mudar de cor
     this.sq = new Spring(0, { stiffness: 340, damping: 13 });     // squash (+) / stretch (-)
@@ -81,8 +100,22 @@ export class Nubi {
   _nextBlink() { return 2000 + Math.random() * 2800; }
 
   /* Volta acolhedora: aplica a cor salva sem animar a transição. */
-  restoreTint(c) { this.tint = c; this._lastTint = c; this.color = hexToRgb(c || BASE_BODY); }
-  radius() { return this.vp.s(0.17); }
+  restoreTint(c) { this.tint = c; this._lastTint = c; this.color = hexToRgb(c || this.baseBody); }
+
+  /* Troca de bichinho: muda espécie e cor-base (sem animação de cor). */
+  setSpecies(id) {
+    const p = PETS[id] || PETS.nubi;
+    this.species = p.id; this.petDef = p;
+    this.baseBody = p.body; this.baseTuft = p.tuft || p.body;
+    this.color = hexToRgb(this.tint || this.baseBody);
+  }
+  setCosmetics(c) {
+    const e = emptyCosmetics();
+    this.cosmetics = c ? { ...e, ...c, nails: { ...e.nails, ...(c.nails || {}) }, makeup: { ...(c.makeup || {}) }, paint: { ...(c.paint || {}) } } : e;
+    this.hairColorShown = hexToRgb(this.cosmetics.hairColor || "#8a5a36");
+  }
+  comb() { this.shine = 1; this.sq.kick(1.2); }
+  radius() { return this.vp.s(0.17 * (this.sizeK || 1)); }
 
   // ---- controle de estado (API preservada) ----
   setState(s) { this.state = s; this.stateT = 0; }
@@ -252,8 +285,24 @@ export class Nubi {
 
     // -- cor: crossfade suave + "boing" quando muda
     if (this.tint !== this._lastTint) { this._lastTint = this.tint; this.pulse.kick(reduce ? 0.6 : 2.2); }
-    const target = hexToRgb(this.tint || BASE_BODY);
+    const target = hexToRgb(this.tint || this.baseBody);
     for (let i = 0; i < 3; i++) this.color[i] = damp(this.color[i], target[i], 5.5, dt);
+    // beleza: tudo entra e sai suave
+    const cs = this.cosShown, cm = this.cosmetics;
+    cs.hair = damp(cs.hair, cm.hair ? 1 : 0, 9, dt);
+    if (cm.hair) cs.hairStyle = cm.hair;
+    const hc = hexToRgb(cm.hairColor || "#8a5a36");
+    for (let i = 0; i < 3; i++) this.hairColorShown[i] = damp(this.hairColorShown[i], hc[i], 7, dt);
+    for (const grp of ["makeup", "paint"]) {
+      const keys = new Set([...Object.keys(cm[grp]), ...Object.keys(cs[grp])]);
+      for (const k of keys) {
+        cs[grp][k] = damp(cs[grp][k] || 0, cm[grp][k] ? 1 : 0, 7, dt);
+        if (!cm[grp][k] && cs[grp][k] < 0.01) delete cs[grp][k];
+      }
+    }
+    cs.nailsL = damp(cs.nailsL, cm.nails.L ? 1 : 0, 8, dt); if (cm.nails.L) cs.colorL = cm.nails.L;
+    cs.nailsR = damp(cs.nailsR, cm.nails.R ? 1 : 0, 8, dt); if (cm.nails.R) cs.colorR = cm.nails.R;
+    if (this.shine > 0) this.shine = Math.max(0, this.shine - dt / 2600);
     this.pulse.update(dt);
 
     // -- valores mostrados perseguem os lógicos
@@ -288,12 +337,21 @@ export class Nubi {
     const reduce = Motion.reduce;
 
     const body = this.bodyColor();
-    const tuft = this.tint ? lighten(body, 0.32) : mix(BASE_TUFT, body, 0.15);
+    const tuft = this.tint ? lighten(body, 0.32) : mix(this.baseTuft, body, 0.15);
     const outline = darken(body, 0.62);
     const ow = Math.max(2, r * 0.055);
 
     // respiração + balanço + squash/stretch (ancorados nos pés)
-    const breathe = reduce ? 0 : Math.sin(this.t * (this.sleeping ? 0.0013 : 0.0024)) * (this.sleeping ? 0.035 : 0.022);
+    // respiração assimétrica: inspira devagar, solta mais rápido e faz uma pausa
+    // curta no fim (um seno puro parece "mecânico")
+    let breathe = 0;
+    if (!reduce) {
+      const ph = (this.t * (this.sleeping ? 0.0013 : 0.0024) / (Math.PI * 2)) % 1;
+      const k = ph < 0.55 ? Math.sin((ph / 0.55) * Math.PI / 2)            // inspira
+              : ph < 0.85 ? Math.cos(((ph - 0.55) / 0.3) * Math.PI / 2)    // expira
+              : 0;                                                         // pausa
+      breathe = (k * 2 - 1) * (this.sleeping ? 0.035 : 0.022);
+    }
     const pulse = this.pulse.x * 0.05;
     const s = this.sq.x;
     const sx = 1 + s + breathe * -0.5 + pulse;
@@ -315,9 +373,14 @@ export class Nubi {
     ctx.translate(0, -r);
     ctx.lineJoin = "round"; ctx.lineCap = "round";
 
-    // capa: atrás do corpo
+    // capa / asas: atrás do corpo
     const cape = this.accShown.cape;
-    if (cape) this._capeBack(ctx, r, cape, outline, ow);
+    if (cape) {
+      if (cape.def.shape === "wings") {
+        const k = this._accK(cape);
+        ctx.save(); ctx.scale(k, k); paintWings(ctx, cape.def, r, this.t); ctx.restore();
+      } else this._capeBack(ctx, r, cape, outline, ow);
+    }
 
     // --- silhueta única: todos os contornos primeiro, depois os preenchimentos
     const tuftSquash = clamp((this.hopY - this.tuftLag.x) / r, -0.5, 0.5);
@@ -331,12 +394,13 @@ export class Nubi {
       ctx.fill();
     }
 
-    // interior das orelhas
-    ctx.fillStyle = rgba(BLUSH, 0.45);
+    // interior das orelhas (forma depende da espécie)
+    ctx.fillStyle = rgba(this.petDef.inner || BLUSH, 0.45);
     for (const side of [-1, 1]) {
       const tw = (side < 0 ? this.earL.x : this.earR.x) * 0.06;
-      ctx.save(); ctx.translate(side * r * 0.66, -r * 0.6); ctx.rotate(side * 0.35 + tw);
-      ctx.beginPath(); ctx.ellipse(0, r * 0.02, r * 0.12, r * 0.17, 0, 0, Math.PI * 2); ctx.fill();
+      const E = this._earGeom(side, r);
+      ctx.save(); ctx.translate(E.x, E.y); ctx.rotate(E.rot + tw);
+      ctx.beginPath(); ctx.ellipse(0, r * 0.02, E.rx * 0.55, E.ry * 0.58, 0, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
     }
 
@@ -354,22 +418,71 @@ export class Nubi {
 
     // pelo fofo: tufinhos extras ao redor
     if (this.fluffyShown > 0.02) this._fur(ctx, r, body, outline, ow);
+    // pelo penteado: brilho que passa pelo corpo
+    if (this.shine > 0.01) this._shine(ctx, r);
+
+    // roupa do corpo (recortada na silhueta) e saia de tule
+    const bodyWear = this.accShown.body;
+    if (bodyWear) {
+      const k = this._accK(bodyWear);
+      ctx.save();
+      ctx.globalAlpha = clamp(k);
+      if (bodyWear.def.shape === "tutu") { ctx.translate(0, r * 0.65); ctx.scale(k, k); ctx.translate(0, -r * 0.65); paintTutu(ctx, bodyWear.def, r, this.t); }
+      else { this._bodyPath(ctx, r); ctx.clip(); ctx.translate(0, (1 - clamp(k)) * r * 0.4); paintBody(ctx, bodyWear.def, r, this.t); }
+      ctx.restore();
+    }
+    // focinho (urso) / narizinho (coelha)
+    this._snout(ctx, r, body, outline);
+    // cabelo (some o tufo de nuvem enquanto houver penteado)
+    if (this.cosShown.hair > 0.02 && this.cosShown.hairStyle) {
+      const k = Ease.outBack(clamp(this.cosShown.hair), 2);
+      ctx.save(); ctx.translate(0, -r * 0.7); ctx.scale(k, k); ctx.translate(0, r * 0.7);
+      paintHair(ctx, this.cosmetics.hair || this.cosShown.hairStyle, rgbToHex(this.hairColorShown), r, this.t);
+      ctx.restore();
+    }
 
     // bochechas coradas (sempre) + bochechas infladas (pera)
     this._cheeks(ctx, r, body, outline, ow);
+    const mk = this.cosShown.makeup, pt = this.cosShown.paint;
+    paintMakeupUnder(ctx, mk, pt, r, this.t, MAKEUP_COLORS);
 
     // rosto
     this._eyes(ctx, r, body, outline);
+    paintMakeupOver(ctx, mk, {}, r, this.t, MAKEUP_COLORS);
     this._mouth(ctx, r);
+    paintMakeupOver(ctx, {}, pt, r, this.t, MAKEUP_COLORS);
+
+    // pescoço e rosto (acessórios)
+    this._slot(ctx, r, "neck", paintNeck);
+    this._slot(ctx, r, "face", paintFace);
 
     // brilho molhado + gotas escorrendo
     if (this.wetShown > 0.02) this._wet(ctx, r);
     // espuma
     if (this.foamShown > 0.02) this._foam(ctx, r);
 
+    // unhas (ficam por baixo dos calçados)
+    const step = this.state === "celebrate" ? Math.sin(this.stateT * 0.03) * r * 0.03 : 0;
+    const cs = this.cosShown;
+    paintNails(ctx, [
+      { x: -r * 0.46, y: r * 0.93 - step, color: cs.colorL, k: cs.nailsL },
+      { x: r * 0.46, y: r * 0.93 + step, color: cs.colorR, k: cs.nailsR }
+    ], r);
+
     // acessórios na frente
-    if (this.accShown.boots) this._boots(ctx, r, this.accShown.boots, outline, ow);
-    if (this.accShown.hat) this._hat(ctx, r, this.accShown.hat, outline, ow, tuftSquash);
+    const feet = this.accShown.boots;
+    if (feet) {
+      if (feet.def.shape) {
+        const k = this._accK(feet);
+        ctx.save(); ctx.translate(0, r * ANCHORS.boots[1]); ctx.scale(k, k); paintFeet(ctx, feet.def, r, this.t, step); ctx.restore();
+      } else this._boots(ctx, r, feet, outline, ow);
+    }
+    if (this.cosmetics.hairAcc) paintHairAcc(ctx, this.cosmetics.hairAcc, r, this.t);
+    const head = this.accShown.hat;
+    if (head) {
+      if (head.def.shape) this._shapedHat(ctx, r, head, tuftSquash);
+      else this._hat(ctx, r, head, outline, ow, tuftSquash);
+    }
 
     ctx.restore();
 
@@ -388,7 +501,8 @@ export class Nubi {
     // tufo (nuvem <-> lua crescente, com crossfade de escala)
     const tScaleY = 1 - tuftSquash * 0.8;
     const tWob = Motion.reduce ? 0 : Math.sin(this.t * 0.003) * 0.05;
-    if (moon < 0.98) {
+    const hasTuft = this.petDef.tuft && !(this.cosmetics.hair && this.cosShown.hair > 0.5);
+    if (moon < 0.98 && hasTuft) {
       const k = (1 - moon) * (1 + fl * 0.28);
       parts.push({ kind: "tuft", path: (c) => {
         c.save(); c.translate(0, -r * 0.92); c.rotate(tWob); c.scale(k, k * tScaleY);
@@ -404,12 +518,13 @@ export class Nubi {
         c.closePath(); c.restore();
       } });
     }
-    // orelhas
+    // orelhas (forma por espécie)
     for (const side of [-1, 1]) {
       const tw = (side < 0 ? this.earL.x : this.earR.x) * 0.06;
+      const E = this._earGeom(side, r);
       parts.push({ kind: "body", path: (c) => {
-        c.save(); c.translate(side * r * 0.66, -r * 0.6); c.rotate(side * 0.35 + tw);
-        c.beginPath(); c.ellipse(0, 0, r * 0.22, r * 0.3, 0, 0, Math.PI * 2); c.restore();
+        c.save(); c.translate(E.x, E.y); c.rotate(E.rot + tw);
+        c.beginPath(); c.ellipse(0, 0, E.rx, E.ry, 0, 0, Math.PI * 2); c.restore();
       } });
     }
     // patas (dão um passinho quando ele mastiga/comemora)
@@ -422,6 +537,68 @@ export class Nubi {
     // corpo em formato de feijão (mais largo embaixo)
     parts.push({ kind: "body", path: (c) => this._bodyPath(c, r) });
     return parts;
+  }
+
+  // ---- espécie: orelhas, focinho, brilho ----
+  _earGeom(side, r) {
+    switch (this.petDef.ears) {
+      case "bunny": return { x: side * r * 0.38, y: -r * 1.18, rx: r * 0.17, ry: r * 0.5, rot: side * 0.18 };
+      case "bear":  return { x: side * r * 0.66, y: -r * 0.72, rx: r * 0.25, ry: r * 0.24, rot: 0 };
+      default:      return { x: side * r * 0.66, y: -r * 0.6, rx: r * 0.22, ry: r * 0.3, rot: side * 0.35 };
+    }
+  }
+
+  _snout(ctx, r, body, outline) {
+    if (this.petDef.ears === "bear") {
+      ctx.fillStyle = this.tint ? lighten(body, 0.35) : this.petDef.muzzle;
+      ctx.beginPath(); ctx.ellipse(0, r * 0.33, r * 0.3, r * 0.2, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#4a2f2a";
+      ctx.beginPath(); ctx.ellipse(0, r * 0.22, r * 0.08, r * 0.055, 0, 0, Math.PI * 2); ctx.fill();
+    } else if (this.petDef.ears === "bunny") {
+      ctx.fillStyle = "#ff8fb1";
+      ctx.beginPath(); ctx.moveTo(-r * 0.06, r * 0.22); ctx.lineTo(r * 0.06, r * 0.22); ctx.lineTo(0, r * 0.29); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = rgba(outline, 0.45); ctx.lineWidth = Math.max(1, r * 0.018);
+      for (const s of [-1, 1]) for (const dy of [-0.03, 0.04]) {
+        ctx.beginPath(); ctx.moveTo(s * r * 0.2, r * (0.27 + dy)); ctx.lineTo(s * r * 0.48, r * (0.24 + dy * 1.6)); ctx.stroke();
+      }
+    }
+  }
+
+  _shine(ctx, r) {
+    ctx.save();
+    this._bodyPath(ctx, r); ctx.clip();
+    const u = 1 - this.shine;
+    const x = -r * 1.4 + u * r * 2.8;
+    const g = ctx.createLinearGradient(x - r * 0.3, 0, x + r * 0.3, 0);
+    g.addColorStop(0, "rgba(255,255,255,0)"); g.addColorStop(0.5, `rgba(255,255,255,${0.55 * this.shine})`); g.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = g; ctx.fillRect(-r * 1.2, -r * 1.2, r * 2.4, r * 2.4);
+    ctx.restore();
+  }
+
+  /* Acessório com forma (rosto, pescoço): pop na âncora. */
+  _slot(ctx, r, slot, painter) {
+    const e = this.accShown[slot];
+    if (!e || !e.def.shape) return;
+    const k = this._accK(e);
+    const [ax, ay] = ANCHORS[slot];
+    ctx.save(); ctx.translate(ax * r, ay * r); ctx.scale(k, k);
+    painter(ctx, e.def, r, this.t);
+    ctx.restore();
+  }
+
+  /* Chapéus com forma (coroa, boné, capacete...): caem de cima como o de mago. */
+  _shapedHat(ctx, r, e, tuftSquash) {
+    const k = this._accK(e);
+    const drop = e.target ? (1 - Ease.outCubic(e.k)) * r * 0.8 : 0;
+    const hairUp = this.cosmetics.hair ? r * 0.1 : 0;
+    const lift = this.fluffyShown * r * 0.16 + this.moonShown * r * 0.1 + hairUp + (this.petDef.ears === "bunny" ? r * 0.04 : 0);
+    const [ax, ay] = ANCHORS.hat;
+    ctx.save();
+    ctx.translate(ax * r, ay * r - lift - drop + tuftSquash * r * 0.2);
+    if (e.def.shape !== "helmet") ctx.rotate(-0.08);
+    ctx.scale(k, k);
+    paintHat(ctx, e.def, r, this.t);
+    ctx.restore();
   }
 
   _bodyPath(c, r) {
@@ -673,7 +850,8 @@ export class Nubi {
     ctx.closePath();
     const g = ctx.createLinearGradient(0, -r * 0.2, 0, r * 1.1);
     g.addColorStop(0, darken(color, 0.12)); g.addColorStop(1, color);
-    ctx.fillStyle = g; ctx.strokeStyle = darken(color, 0.55); ctx.lineWidth = ow * 1.6;
+    ctx.fillStyle = e.def.shape === "rainbow" ? rainbowGradient(ctx, r) : g;
+    ctx.strokeStyle = darken(color, 0.55); ctx.lineWidth = ow * 1.6;
     ctx.stroke(); ctx.fill();
     ctx.restore();
   }

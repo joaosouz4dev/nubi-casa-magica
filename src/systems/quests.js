@@ -27,11 +27,17 @@ export class Quests {
   steps(ch) { return ch.steps[this.mode] || ch.steps.all || ch.steps.explore; }
   isDone(id) { return !!this.state.done[id]; }
   allChaptersDone() { return CHAPTERS.filter(c => !c.finale).every(c => this.isDone(c.id)); }
+  /* A festa (final da temporada 1) abre quando os capítulos ANTERIORES a ela
+     estão concluídos; os capítulos novos vêm depois e não a atrasam. */
+  _finaleOpen(ch) {
+    const idx = CHAPTERS.indexOf(ch);
+    return CHAPTERS.slice(0, idx).filter(c => !c.finale).every(c => this.isDone(c.id));
+  }
 
   /* Capítulo ativo: o primeiro não concluído, mas o do cômodo atual tem
-     preferência (segue a escolha da criança). A festa só depois dos outros. */
+     preferência (segue a escolha da criança). A festa só depois dos anteriores. */
   chapter() {
-    const open = CHAPTERS.filter(c => !this.isDone(c.id) && (!c.finale || this.allChaptersDone()));
+    const open = CHAPTERS.filter(c => !this.isDone(c.id) && (!c.finale || this._finaleOpen(c)));
     if (!open.length) return null;
     const first = open[0];
     if (first.room === null || first.finale) return first;
@@ -49,7 +55,7 @@ export class Quests {
       const list = this.steps(ch);
       const i = Math.min(this.state.progress[ch.id] || 0, list.length - 1);
       const s = list[i];
-      return { act: s.act, icon: s.icon, room: s.room !== undefined ? s.room : ch.room, chapter: ch, index: i, total: list.length };
+      return { act: s.act, icon: s.icon, room: s.room !== undefined ? s.room : ch.room, dom: s.dom || null, chapter: ch, index: i, total: list.length };
     }
     if (!this.free) this._pickFree();
     return { ...this.free, chapter: null, index: 0, total: 1 };

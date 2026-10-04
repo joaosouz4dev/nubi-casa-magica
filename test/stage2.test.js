@@ -44,7 +44,7 @@ async function dragToMouth(page, idx) {
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console.error: ' + m.text()); });
 
-  await page.goto('http://127.0.0.1:8742/index.html', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:8742/index.html?notitle', { waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.__nubi && window.__nubi.items.length >= 4, null, { timeout: 5000 });
   await page.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
   await page.reload({ waitUntil: 'networkidle' });

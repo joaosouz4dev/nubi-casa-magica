@@ -7,22 +7,25 @@
    squash ao quicar, sombra no chão e um cesto com borda na frente da bola. */
 import { Spring, Spring2, damp, clamp, Ease, Motion, CachedLayer, roundRect, softShadow, lighten, darken } from "../core/anim.js";
 import { touchNubi } from "./nubi_touch.js";
+import { ITEMS, PAGES, LOOKS, GIFTS } from "../data/wardrobe.js";
+import { wearIcon } from "../entities/wear.js";
+import { drawIcon } from "../ui/icons.js";
 
-const ACCESSORIES = {
-  hat:   { slot: "hat",   color: "#8a3bff", label: "chapéu" },
-  cape:  { slot: "cape",  color: "#e5484d", label: "capa" },
-  boots: { slot: "boots", color: "#5b6ee8", label: "botas" }
-};
+const SLOTS = ["hat", "face", "neck", "cape", "body", "boots"];
+const ROW_Y = [0.3, 0.5, 0.7];
+const PAGE_BTN = { x: 0.08, y: 0.9 };
 
 export class BedroomRoom {
   constructor({ vp, bus, nubi }) {
     this.vp = vp; this.bus = bus; this.nubi = nubi;
-    this.wardrobe = [
-      { def: ACCESSORIES.hat,   x: 0.08, y: 0.3 },
-      { def: ACCESSORIES.cape,  x: 0.08, y: 0.5 },
-      { def: ACCESSORIES.boots, x: 0.08, y: 0.7 }
-    ];
-    for (const w of this.wardrobe) { w.disp = null; w.lift = new Spring(0, { stiffness: 320, damping: 17 }); w.tilt = 0; }
+    this.giftUnlocked = () => false;     // ligado pelo main (presentes por capítulo)
+    this.newGift = false;
+    this.pageIdx = 0;
+    this.pageBtn = new Spring(0, { stiffness: 320, damping: 12 });
+    this.pageFlip = 1;                   // 0..1 animação de troca de página
+    this.lookQueue = [];
+    this.wardrobe = [];
+    this._buildPage();
     this.ball = { x: 0.5, y: 0.8, vx: 0, vy: 0, r: 0.06 };
     this.basket = { x: 0.85, y: 0.78, r: 0.11 };
     this.held = null;
@@ -51,6 +54,80 @@ export class BedroomRoom {
     ];
   }
   exit() { this.unsub.forEach(u => u()); this.unsub = []; this.held = null; }
+
+  // ---------------- páginas do guarda-roupa ----------------
+  availablePages() {
+    return PAGES.filter(p => !p.gifts || GIFTS.some(g => this.giftUnlocked(g)));
+  }
+  page() { const list = this.availablePages(); return list[this.pageIdx % list.length]; }
+  _buildPage() {
+    const pg = this.page();
+    let entries = [];
+    if (pg.items) entries = pg.items.map(id => ({ kind: "item", def: ITEMS[id] }));
+    else if (pg.looks) entries = pg.looks.map(id => ({ kind: "look", look: LOOKS[id], def: { slot: "look", id, color: "#ffd54a" } }));
+    else if (pg.gifts) entries = GIFTS.filter(g => this.giftUnlocked(g)).slice(-3).map(def => ({ kind: "item", def, gift: true }));
+    this.wardrobe = entries.map((e, i) => ({ ...e, x: 0.08, y: ROW_Y[i], disp: null, lift: new Spring(0, { stiffness: 320, damping: 17 }), tilt: 0, pop: 0 }));
+    if (this.vp.w) for (const w of this.wardrobe) { const p = this.wardrobePos(w); w.disp = new Spring2(p.x, p.y, { stiffness: 180, damping: 16 }); }
+    if (pg.gifts) this.newGift = false;
+  }
+  nextPage() {
+    this.pageIdx = (this.pageIdx + 1) % this.availablePages().length;
+    this._buildPage();
+    this.pageBtn.kick(10);
+    this.bus.emit("audio:bounce");
+    this.bus.emit("act", "page");
+  }
+  pageBtnPos() { return { x: this.vp.dx(PAGE_BTN.x), y: this.vp.dy(PAGE_BTN.y), r: this.vp.s(0.055) }; }
+  overPageBtn(px, py) { const b = this.pageBtnPos(); return Math.hypot(px - b.x, py - b.y) <= b.r * 1.35; }
+
+  isWorn(def) {
+    const cur = this.nubi.accessories[def.slot];
+    if (!cur) return false;
+    return cur.id ? cur.id === def.id : def.id === def.slot;
+  }
+
+  /* Veste uma peça (substitui só a do mesmo espaço). */
+  wear(def, quiet) {
+    this.nubi.equip(def.slot, def);
+    this.bus.emit("save:accessories", this.nubi.accessories);
+    if (!def.shape && ["hat", "cape", "boots"].includes(def.id || def.slot)) this._discover("nubi_" + def.slot);
+    else this._discover("veste_" + def.id);
+    if (!quiet) {
+      this.nubi.say(def.slot === "cape" ? "Super " + this.nubi.petDef.name + "!" : "Olha eu!");
+      this.nubi.startHop(0.18, 420);
+      this.bus.emit("fx:burst", { x: this.nubi.px(), y: this.nubi.py() - this.nubi.radius() * 0.6, color: def.color, small: true });
+    }
+    this.bus.emit("act", "equip:" + def.slot);
+    this.bus.emit("act", "wear:" + def.id);
+    if (def.gift) this.bus.emit("act", "wear:gift");
+    if (def.slot === "hat" && this.nubi.fluffy > 0) this.bus.emit("act", "equip:hat:fluffy");
+  }
+
+  /* Look pronto: tira tudo e veste a combinação, peça a peça (com pop). */
+  applyLook(look) {
+    for (const s of SLOTS) this.nubi.unequip(s);
+    this.lookQueue = look.items.map((id, i) => ({ def: ITEMS[id], t: 140 + i * 170 }));
+    this.lookDone = look;
+    this.nubi.say("Tcharam!");
+    this.bus.emit("audio:magic");
+    this.bus.emit("fx:burst", { x: this.nubi.px(), y: this.nubi.py(), color: "#ffd54a" });
+  }
+  _updateLook(dt) {
+    if (!this.lookQueue.length) return;
+    for (const q of this.lookQueue) q.t -= dt;
+    while (this.lookQueue.length && this.lookQueue[0].t <= 0) {
+      const q = this.lookQueue.shift();
+      this.wear(q.def, true);
+      this.bus.emit("fx:burst", { x: this.nubi.px(), y: this.nubi.py() - this.nubi.radius() * 0.4, color: q.def.color, small: true });
+    }
+    if (!this.lookQueue.length && this.lookDone) {
+      const L = this.lookDone; this.lookDone = null;
+      this.nubi.pose(); this.nubi.startHop(0.3, 520);
+      this._discover("look_" + L.id);
+      this.bus.emit("act", "look");
+      this.bus.emit("act", "look:" + L.id);
+    }
+  }
 
   _ballPx() {
     if (this.ball.px === undefined) { this.ball.px = this.vp.dx(this.ball.x); this.ball.py = this.vp.dy(this.ball.y); }
@@ -95,14 +172,8 @@ export class BedroomRoom {
     if (this.held.kind === "acc") {
       const w = this.held.w;
       if (p && this.overNubi(p.x, p.y)) {
-        this.nubi.equip(w.def.slot, w.def);
-        this.bus.emit("save:accessories", this.nubi.accessories);
-        this._discover("nubi_" + w.def.slot);
-        this.nubi.say(w.def.slot === "cape" ? "Super Nubi!" : "Olha eu!");
-        this.nubi.startHop(0.18, 420);
-        this.bus.emit("fx:burst", { x: this.nubi.px(), y: this.nubi.py() - this.nubi.radius() * 0.6, color: w.def.color, small: true });
-        this.bus.emit("act", "equip:" + w.def.slot);
-        if (w.def.slot === "hat" && this.nubi.fluffy > 0) this.bus.emit("act", "equip:hat:fluffy");
+        if (w.kind === "look") this.applyLook(w.look);
+        else this.wear(w.def);
         // a peça "entra" no Nubi: o ícone reaparece no cabide com pop
         if (w.disp) { const hp = this.wardrobePos(w); w.disp.set(hp.x, hp.y); w.pop = 0; }
       } else if (w.disp && this.dragPoint) {
@@ -126,11 +197,15 @@ export class BedroomRoom {
     }
     const w = this.topWardrobeAt(p.x, p.y);
     if (w) {
-      this.nubi.unequip(w.def.slot);
-      this.bus.emit("save:accessories", this.nubi.accessories);
+      if (w.kind === "look") this.applyLook(w.look);
+      else if (this.isWorn(w.def)) {
+        this.nubi.unequip(w.def.slot);
+        this.bus.emit("save:accessories", this.nubi.accessories);
+      } else this.wear(w.def);
       w.lift.kick(10);
       return;
     }
+    if (this.overPageBtn(p.x, p.y)) { this.nextPage(); return; }
     touchNubi(this, p);
   }
 
@@ -142,10 +217,16 @@ export class BedroomRoom {
     const head = { x: n.px(), y: n.py() - r * 0.55 };
     if (act === "wake" || act === "pet") return { from: head, to: null };
     if (act === "tummy") return { from: { x: n.px(), y: n.py() + r * 0.4 }, to: null };
-    if (act.startsWith("equip:")) {
-      const slot = act.split(":")[1];
-      const w = this.wardrobe.find(x => x.def.slot === slot);
-      return w ? { from: this.wardrobePos(w), to: { x: n.px(), y: n.py() } } : null;
+    const btn = this.pageBtnPos();
+    const onPage = (pred) => this.wardrobe.find(pred);
+    if (act.startsWith("equip:") || act.startsWith("wear:") || act === "look") {
+      let w = null;
+      if (act === "look") w = onPage(x => x.kind === "look");
+      else if (act === "wear:gift") w = onPage(x => x.gift);
+      else if (act.startsWith("wear:")) w = onPage(x => x.def.id === act.slice(5));
+      else w = onPage(x => x.kind === "item" && x.def.slot === act.split(":")[1]);
+      // a peça não está nesta página: a dica aponta o botão de trocar página
+      return w ? { from: this.wardrobePos(w), to: { x: n.px(), y: n.py() } } : { from: { x: btn.x, y: btn.y }, to: null };
     }
     this._ballPx();
     const ball = { x: this.ball.px, y: this.ball.py };
@@ -154,9 +235,10 @@ export class BedroomRoom {
     return null;
   }
   nudge(act) {
-    if (act.startsWith("equip:")) {
-      const w = this.wardrobe.find(x => x.def.slot === act.split(":")[1]);
-      if (w) w.lift.kick(10);
+    if (act.startsWith("equip:") || act.startsWith("wear:") || act === "look") {
+      const t = this.hintTarget(act);
+      const w = t && this.wardrobe.find(x => { const p = this.wardrobePos(x); return Math.hypot(p.x - t.from.x, p.y - t.from.y) < 2; });
+      if (w) w.lift.kick(10); else this.pageBtn.kick(12);
     } else if (act === "bounce" || act.startsWith("basket")) this.ballSq.kick(-7);
     else if (act === "wake" || act === "pet" || act === "tummy") this.nubi.earL.kick(8);
   }
@@ -172,6 +254,8 @@ export class BedroomRoom {
     this.t += dt;
     this._ballPx();
     this._updateWardrobe(dt);
+    this._updateLook(dt);
+    this.pageBtn.update(dt);
     this.ballSq.update(dt);
     this.basketWobble.update(dt);
     if (this.ballPop < 1) this.ballPop = Math.min(1, this.ballPop + dt / 380);
@@ -242,6 +326,7 @@ export class BedroomRoom {
     // ícones no guarda-roupa (o que está na mão vai por cima de tudo, no fim)
     const heldW = this.held && this.held.kind === "acc" ? this.held.w : null;
     for (const wd of this.wardrobe) if (wd !== heldW) this._drawWardrobeItem(ctx, wd);
+    this._drawPageBtn(ctx);
 
     // cesto: parte de trás
     const b = this.basketPos();
@@ -374,7 +459,61 @@ export class BedroomRoom {
     ctx.rotate(wd.tilt + sway);
     const k = pop * (1 + lift / r * 0.35);
     ctx.scale(k, k);
-    this._drawAccessoryIcon(ctx, 0, 0, r, wd.def);
+    if (wd.gift) {
+      const gp = Motion.reduce ? 0.5 : (Math.sin(this.t * 0.005) + 1) / 2;
+      const g = ctx.createRadialGradient(0, 0, r * 0.2, 0, 0, r * 1.25);
+      g.addColorStop(0, `rgba(255,230,120,${0.35 + gp * 0.25})`); g.addColorStop(1, "rgba(255,230,120,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r * 1.25, 0, Math.PI * 2); ctx.fill();
+    }
+    if (wd.kind === "look") this._drawLookIcon(ctx, r, wd.look);
+    else if (wd.def.shape) wearIcon(ctx, wd.def, 0, 0, r, this.t);
+    else this._drawAccessoryIcon(ctx, 0, 0, r, wd.def);
+    // peça vestida: selinho de "ok" (tocar de novo tira)
+    if (wd.kind === "item" && this.isWorn(wd.def)) {
+      ctx.fillStyle = "#62c370"; ctx.beginPath(); ctx.arc(r * 0.75, -r * 0.7, r * 0.22, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(2, r * 0.07); ctx.lineCap = "round";
+      ctx.beginPath(); ctx.moveTo(r * 0.65, -r * 0.7); ctx.lineTo(r * 0.73, -r * 0.61); ctx.lineTo(r * 0.87, -r * 0.8); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* Cartão de look: moldura dourada com as peças sobrepostas. */
+  _drawLookIcon(ctx, r, look) {
+    ctx.save();
+    ctx.fillStyle = "#fff7d6"; ctx.strokeStyle = "#e0a21c"; ctx.lineWidth = Math.max(2, r * 0.08);
+    roundRect(ctx, -r * 1.0, -r * 0.95, r * 2.0, r * 1.9, r * 0.35); ctx.fill(); ctx.stroke();
+    const defs = look.items.map(id => ITEMS[id]);
+    const pos = [[-0.38, -0.3], [0.38, -0.3], [0, 0.38]];
+    defs.slice(0, 3).forEach((d, i) => {
+      const [x, y] = pos[i];
+      if (d.shape) wearIcon(ctx, d, x * r, y * r, r * 0.48, this.t);
+      else this._drawAccessoryIcon(ctx, x * r, y * r, r * 0.5, d);
+    });
+    ctx.fillStyle = "#ffd54a";
+    ctx.beginPath();
+    for (let i = 0; i < 5; i++) { const a = (Math.PI * 2 * i) / 5 - Math.PI / 2; ctx.lineTo(r * 0.78 + Math.cos(a) * r * 0.2, -r * 0.75 + Math.sin(a) * r * 0.2); ctx.lineTo(r * 0.78 + Math.cos(a + 0.63) * r * 0.09, -r * 0.75 + Math.sin(a + 0.63) * r * 0.09); }
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  /* Botão de trocar página (seta + desenho da próxima página). */
+  _drawPageBtn(ctx) {
+    const b = this.pageBtnPos();
+    const list = this.availablePages();
+    const next = list[(this.pageIdx + 1) % list.length];
+    const s = 1 + this.pageBtn.x * 0.03;
+    ctx.save(); ctx.translate(b.x, b.y); ctx.scale(s, s);
+    if (this.newGift) {
+      const gp = Motion.reduce ? 0.5 : (Math.sin(this.t * 0.008) + 1) / 2;
+      ctx.fillStyle = `rgba(255,214,90,${0.35 + gp * 0.35})`; ctx.beginPath(); ctx.arc(0, 0, b.r * 1.45, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.shadowColor = "rgba(70,40,110,.25)"; ctx.shadowBlur = b.r * 0.3; ctx.shadowOffsetY = b.r * 0.12;
+    ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowColor = "transparent";
+    ctx.strokeStyle = "#cdb8f0"; ctx.lineWidth = Math.max(2, b.r * 0.1); ctx.stroke();
+    drawIcon(ctx, this.newGift ? "gift" : next.icon, -b.r * 0.12, -b.r * 0.08, b.r * 0.5);
+    ctx.strokeStyle = "#8a3bff"; ctx.lineWidth = Math.max(2.5, b.r * 0.13); ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.moveTo(b.r * 0.42, b.r * 0.25); ctx.lineTo(b.r * 0.62, b.r * 0.45); ctx.lineTo(b.r * 0.82, b.r * 0.25); ctx.stroke();
     ctx.restore();
   }
 

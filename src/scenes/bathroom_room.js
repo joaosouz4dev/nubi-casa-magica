@@ -7,16 +7,23 @@
    frente), ferramentas que sobem ao pegar e voltam ao lugar com mola. */
 import { Spring, Spring2, damp, clamp, Ease, Motion, CachedLayer, roundRect, softShadow, lighten, darken } from "../core/anim.js";
 import { touchNubi } from "./nubi_touch.js";
+import { drawIcon } from "../ui/icons.js";
 
 export class BathroomRoom {
-  constructor({ vp, bus, nubi }) {
-    this.vp = vp; this.bus = bus; this.nubi = nubi;
+  constructor({ vp, bus, nubi, save }) {
+    this.vp = vp; this.bus = bus; this.nubi = nubi; this.save = save;
     this.tools = [
       { id: "sponge",  x: 0.12, y: 0.45, color: "#ffd54a", label: "esponja" },
       { id: "shower",  x: 0.12, y: 0.65, color: "#9fd3ff", label: "chuveirinho" },
       { id: "towel",   x: 0.12, y: 0.85, color: "#ff9bc4", label: "toalha" },
-      { id: "duck",    x: 0.9,  y: 0.82, color: "#ffe14d", label: "patinho" }
+      { id: "duck",    x: 0.9,  y: 0.82, color: "#ffe14d", label: "patinho" },
+      { id: "comb",    x: 0.12, y: 0.24, color: "#ff9bc4", label: "escova de pelo" }
     ];
+    this.poop = null;         // cocô estilizado (rotina de higiene)
+    this.poopHeld = false; this.poopSel = false; this.poopPos = null;
+    this.flushT = 0;
+    this.combDist = 0;
+    this.toiletK = new Spring(0, { stiffness: 260, damping: 8 });
     for (const t of this.tools) {
       t.disp = null;                                         // Spring2 (criado no enter)
       t.lift = new Spring(0, { stiffness: 320, damping: 17 });
@@ -36,6 +43,7 @@ export class BathroomRoom {
   enter() {
     this.nubi.pos = { x: 0.55, y: 0.52 };
     this.nubi.arrive();
+    if (this.save && this.save.state.poop && !this.poop) { this._spawnPoop(); this.nubi.say("Ops! Fiz cocô!"); }
     for (const t of this.tools) { const p = this.toolPos(t); if (!t.disp) t.disp = new Spring2(p.x, p.y, { stiffness: 190, damping: 17 }); else t.disp.set(p.x, p.y); }
     this.unsub = [
       this.bus.on("pointer:down", (p) => this.onDown(p)),
@@ -47,6 +55,24 @@ export class BathroomRoom {
   exit() {
     this.unsub.forEach(u => u()); this.unsub = [];
     this.held = null; this.selected = null; this.rinseTimer = 0;
+    this.poopHeld = false; this.poopSel = false; this.poopPos = null;
+  }
+
+  // ---------------- rotina: cocô e vaso ----------------
+  _spawnPoop() { this.poop = { x: 0.79, y: 0.9, pop: 0 }; if (this.save) { this.save.state.poop = true; this.save.persist(); } }
+  ensure(act) { if (act === "poop:flush" && !this.poop && this.flushT <= 0) this._spawnPoop(); }
+  toilet() { return { x: this.vp.dx(0.85), y: this.vp.dy(0.5), r: this.vp.s(0.085) }; }
+  poopP() { return this.poopPos || { x: this.vp.dx(this.poop.x), y: this.vp.dy(this.poop.y) }; }
+  overPoop(px, py) { if (!this.poop) return false; const p = this.poopP(); return Math.hypot(px - p.x, py - p.y) <= this.vp.s(0.075); }
+  overToilet(px, py) { const t = this.toilet(); return Math.hypot(px - t.x, py - t.y) <= t.r * 1.5; }
+  _flush() {
+    this.poop = null; this.poopPos = null; this.poopHeld = false; this.poopSel = false;
+    if (this.save) { this.save.state.poop = false; this.save.persist(); }
+    this.flushT = 1400; this.toiletK.kick(10);
+    this.bus.emit("audio:flush");
+    this.nubi.say("Limpinho!"); this.nubi.celebrate();
+    this.bus.emit("effect:discoveryOnly", { id: "descarga" });
+    this.bus.emit("act", "poop:flush");
   }
 
   toolPos(t) { return { x: this.vp.dx(t.x), y: this.vp.dy(t.y) }; }
@@ -61,16 +87,40 @@ export class BathroomRoom {
   }
 
   onDown(p) {
+    if (this.overPoop(p.x, p.y)) { this.poopHeld = true; this.poopPos = { x: p.x, y: p.y }; return; }
     const t = this.topToolAt(p.x, p.y);
-    if (t && t.id !== "duck") { this.held = t; this.heldPos = { x: p.x, y: p.y }; }
+    if (t && t.id !== "duck") { this.held = t; this.heldPos = { x: p.x, y: p.y }; this._lastP = { x: p.x, y: p.y }; this._earActed = false; }
     // patinho é só toque (som), tratado em onTap
   }
   onMove(p) {
+    if (this.poopHeld) { this.poopPos = { x: p.x, y: p.y }; return; }
     if (!this.held) return;
+    const moved = this._lastP ? Math.hypot(p.x - this._lastP.x, p.y - this._lastP.y) : 0;
+    this._lastP = { x: p.x, y: p.y };
     this.heldPos = { x: p.x, y: p.y };
     this.nubi.look({ x: p.x / this.vp.w, y: p.y / this.vp.h });
-    if (!this.overNubi(p.x, p.y)) return;
+    if (!this.overNubi(p.x, p.y, this.held.id === "sponge" ? 1.35 : 1.1)) return;
+    if (this.held.id === "comb") {
+      this.combDist += moved;
+      if (Math.random() < 0.25) this.bus.emit("fx:burst", { x: p.x, y: p.y, color: "#ffffff", small: true });
+      if (this.combDist > 260) {
+        this.combDist = 0;
+        this.nubi.comb(); this.nubi.say("Penteadinho!");
+        this.bus.emit("audio:sparkle");
+        this.bus.emit("effect:discoveryOnly", { id: "pelo_penteado" });
+        this.bus.emit("act", "comb");
+      }
+      return;
+    }
     if (this.held.id === "sponge") {
+      // lavar atrás das orelhas
+      if (!this._earActed && p.y < this.nubi.py() - this.nubi.radius() * 0.45) {
+        this._earActed = true;
+        this.bus.emit("effect:discoveryOnly", { id: "orelhas_limpas" });
+        this.bus.emit("act", "ears");
+        this.nubi.earL.kick(10); this.nubi.earR.kick(-10);
+      }
+      if (!this.overNubi(p.x, p.y)) return;
       this.nubi.setFoam(Math.min(1, this.nubi.foam + 0.06));
       if (Math.random() < 0.35) this.bus.emit("fx:bubble", { x: p.x, y: p.y, color: this.nubi.tint ? "#cfe0ff" : "#ffffff" });
       if (this.nubi.foam >= 0.4 && !this._foamActed) this._actFoam();
@@ -89,7 +139,14 @@ export class BathroomRoom {
     this.bus.emit("act", "foam");
     if (this.nubi.tint) this.bus.emit("act", "foam:tinted");
   }
-  onUp() {
+  onUp(e) {
+    if (this.poopHeld) {
+      this.poopHeld = false;
+      const p = e && e.point;
+      if (p && this.overToilet(p.x, p.y)) this._flush();
+      else this.poopPos = null;
+      return;
+    }
     if (this.held) {
       this.nubi.stopLook();
       if (this.held.disp && this.heldPos) this.held.disp.set(this.heldPos.x, this.heldPos.y);
@@ -98,6 +155,9 @@ export class BathroomRoom {
     this._foamActed = false; this._dryActed = false;
   }
   onTap(p) {
+    if (this.overPoop(p.x, p.y)) { this.poopSel = !this.poopSel; return; }
+    if (this.poopSel && this.overToilet(p.x, p.y)) { this._flush(); return; }
+    if (this.overToilet(p.x, p.y)) { this.toiletK.kick(8); this.bus.emit("audio:flush"); this.flushT = 1000; return; }
     const t = this.topToolAt(p.x, p.y);
     if (t && t.id === "duck") {
       this.bus.emit("audio:duck");
@@ -122,26 +182,34 @@ export class BathroomRoom {
 
   // ---- direcionamento (usado pelo sistema de pedidos) ----
   _toolForAct(act) {
-    const id = { foam: "sponge", "foam:tinted": "sponge", rinse: "shower", dry: "towel", duck: "duck" }[act];
+    const id = { foam: "sponge", "foam:tinted": "sponge", rinse: "shower", dry: "towel", duck: "duck", comb: "comb", ears: "sponge" }[act];
     return id ? this.tools.find(t => t.id === id) : null;
   }
   hintTarget(act) {
+    if (act === "poop:flush") {
+      if (!this.poop) return null;
+      const t = this.toilet();
+      return { from: this.poopP(), to: { x: t.x, y: t.y } };
+    }
     const t = this._toolForAct(act);
     if (!t) return null;
     const from = this.toolPos(t);
+    if (act === "ears") return { from, to: { x: this.nubi.px() + this.nubi.radius() * 0.6, y: this.nubi.py() - this.nubi.radius() * 0.65 } };
     return { from, to: t.id === "duck" ? null : { x: this.nubi.px(), y: this.nubi.py() } };
   }
   nudge(act) {
+    if (act === "poop:flush") { this.toiletK.kick(10); return; }
     const t = this._toolForAct(act);
     if (!t) return;
     if (t.id === "duck") t.squeeze.kick(10); else t.lift.kick(10);
   }
   holdDest() {
+    if (this.poopHeld || this.poopSel) { const t = this.toilet(); return { x: t.x, y: t.y, r: t.r * 1.3 }; }
     const t = this.held || this.selected;
     if (!t || t.id === "duck") return null;
     return { x: this.nubi.px(), y: this.nubi.py(), r: this.nubi.radius() * 1.15 };
   }
-  hasSelection() { return !!this.selected; }
+  hasSelection() { return !!this.selected || this.poopSel; }
 
   _rinse() {
     const wasTinted = !!this.nubi.tint;
@@ -155,6 +223,9 @@ export class BathroomRoom {
 
   update(dt) {
     this.t += dt;
+    this.toiletK.update(dt);
+    if (this.flushT > 0) this.flushT -= dt;
+    if (this.poop && this.poop.pop < 1) this.poop.pop = Math.min(1, this.poop.pop + dt / 420);
     for (const t of this.tools) {
       if (!t.disp) continue;
       const home = this.toolPos(t);
@@ -186,6 +257,7 @@ export class BathroomRoom {
   draw() {
     const ctx = this.vp.ctx, w = this.vp.w, h = this.vp.h, m = Math.min(w, h);
     this.back.draw();
+    this._toilet(ctx);
 
     // fundo interno da banheira (atrás do Nubi)
     const tb = this._tub();
@@ -235,6 +307,59 @@ export class BathroomRoom {
     // ferramentas (a segurada é desenhada por último)
     const order = this.tools.filter(t => t !== this.held).concat(this.held ? [this.held] : []);
     for (const t of order) this._drawTool(ctx, t);
+    this._poop(ctx);
+  }
+
+  _toilet(ctx) {
+    const T = this.toilet(), r = T.r;
+    const sq = this.toiletK.x * 0.01;
+    softShadow(ctx, T.x, T.y + r * 1.25, r * 0.95, r * 0.18, 0.2);
+    ctx.save(); ctx.translate(T.x, T.y); ctx.scale(1 + sq, 1 - sq);
+    ctx.lineJoin = "round";
+    const edge = "#8fa3b8", lw = Math.max(2, r * 0.06);
+    // caixa d'água
+    roundRect(ctx, -r * 0.6, -r * 1.2, r * 1.2, r * 0.7, r * 0.15); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.strokeStyle = edge; ctx.lineWidth = lw; ctx.stroke();
+    roundRect(ctx, r * 0.2, -r * 1.05, r * 0.28, r * 0.12, r * 0.06); ctx.fillStyle = "#cfd8e3"; ctx.fill();
+    // base
+    ctx.beginPath(); ctx.moveTo(-r * 0.45, r * 0.2); ctx.lineTo(r * 0.45, r * 0.2); ctx.lineTo(r * 0.32, r * 1.15); ctx.lineTo(-r * 0.32, r * 1.15); ctx.closePath();
+    ctx.fillStyle = "#f4f8fc"; ctx.fill(); ctx.stroke();
+    // assento e água
+    ctx.beginPath(); ctx.ellipse(0, r * 0.12, r * 0.85, r * 0.32, 0, 0, Math.PI * 2); ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, r * 0.14, r * 0.6, r * 0.2, 0, 0, Math.PI * 2);
+    ctx.fillStyle = "#9fd3ff"; ctx.fill();
+    // redemoinho da descarga
+    if (this.flushT > 0) {
+      const k = this.flushT / 1400;
+      ctx.strokeStyle = `rgba(255,255,255,${0.9 * k})`; ctx.lineWidth = Math.max(2, r * 0.07);
+      for (let i = 0; i < 3; i++) {
+        const a = this.t * 0.02 + i * 2.1;
+        ctx.beginPath(); ctx.ellipse(0, r * 0.14, r * (0.15 + i * 0.13) * k + r * 0.05, r * (0.05 + i * 0.045) * k + r * 0.02, 0, a, a + 3.6); ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
+  /* Cocô estilizado (montinho de chocolate com brilho) - nada de nojo, só rotina. */
+  _poop(ctx) {
+    if (!this.poop) return;
+    const p = this.poopP();
+    const r = this.vp.s(0.05) * Ease.outBack(clamp(this.poop.pop), 2.4) * (this.poopHeld ? 1.12 : 1);
+    if (r < 0.5) return;
+    if (!this.poopHeld) softShadow(ctx, p.x, p.y + r * 0.7, r * 0.9, r * 0.2, 0.2);
+    ctx.save(); ctx.translate(p.x, p.y);
+    if (this.poopSel) {
+      ctx.strokeStyle = "rgba(80,80,140,.7)"; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -this.t * 0.03;
+      ctx.beginPath(); ctx.arc(0, 0, r * 1.6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    const wob = Motion.reduce ? 0 : Math.sin(this.t * 0.005) * 0.04;
+    ctx.scale(1 + wob, 1 - wob);
+    for (const [yy, rx] of [[0.42, 0.85], [0.02, 0.62], [-0.36, 0.4]]) {
+      ctx.beginPath(); ctx.ellipse(0, yy * r, rx * r, r * 0.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "#a86b3c"; ctx.fill(); ctx.strokeStyle = "#5e3818"; ctx.lineWidth = Math.max(1.5, r * 0.08); ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(-r * 0.05, -r * 0.6); ctx.quadraticCurveTo(r * 0.2, -r * 0.95, r * 0.25, -r * 0.72); ctx.stroke();
+    ctx.fillStyle = "rgba(255,255,255,.4)"; ctx.beginPath(); ctx.ellipse(-r * 0.3, r * 0.02, r * 0.15, r * 0.07, -0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
   }
 
   _tub() { const w = this.vp.w, h = this.vp.h; return { x: w * 0.3, y: h * 0.645, w: w * 0.46, h: h * 0.28 }; }
@@ -265,6 +390,14 @@ export class BathroomRoom {
     const ow = Math.max(2, r * 0.07);
     ctx.lineJoin = "round"; ctx.lineCap = "round";
     const fs = (fill, edge) => { ctx.strokeStyle = edge; ctx.lineWidth = ow * 2; ctx.stroke(); ctx.fillStyle = fill; ctx.fill(); };
+
+    if (t.id === "comb") {
+      ctx.strokeStyle = "#a2763f"; ctx.lineWidth = Math.max(2, r * 0.07);
+      ctx.beginPath(); ctx.moveTo(0, -r * 1.0); ctx.lineTo(0, -r * 0.55); ctx.stroke();
+      drawIcon(ctx, "comb", 0, 0, r * 0.95);
+      ctx.restore();
+      return;
+    }
 
     if (t.id === "sponge") {
       roundRect(ctx, -r, -r * 0.65, r * 2, r * 1.3, r * 0.35);
