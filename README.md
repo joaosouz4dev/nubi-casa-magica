@@ -16,6 +16,23 @@ pressionar.
   backend ou coleta de dados. Tudo salvo só no aparelho (localStorage).
 - Toda ação aceita dois jeitos: arrastar o objeto **ou** tocar nele e depois no
   destino.
+- Abre direto numa tela inicial animada com botão Play. No Android o app fica
+  sempre em paisagem; num navegador com o celular em pé o jogo se gira sozinho.
+
+## Telas
+
+| | |
+|---|---|
+| ![Tela inicial](previews/t1-tela-inicial.png) | ![Mapa da casa](previews/g10-mapa-volta.png) |
+| Tela inicial com Play | Mapa da casa, com presente do dia e enfeites |
+| ![Brincadeiras](previews/m10-marcas.png) | ![Pega-frutas](previews/m02-pega-frutas.png) |
+| Brincadeiras com as marcas pessoais | Pega-frutas |
+| ![Memória](previews/m05-memoria.png) | ![Música](previews/m06-musica.png) |
+| Memória | Música (repetir a melodia) |
+| ![Fim da partida](previews/m03-resultado.png) | ![Cozinha](previews/c01-galeria-comidas.png) |
+| Festa no fim da partida | As 20 comidas |
+| ![Dentista](previews/f05-dentista-sujo.png) | ![Salão](previews/f10c-salao-unhas.png) |
+| Consultório dos dentinhos | Salão: estação de unhas |
 
 ## Como rodar
 
@@ -49,7 +66,8 @@ para a loja.
 
 | Espaço | Brincadeiras |
 |---|---|
-| Mapa da casa | tela inicial (depois da primeira visita): a casa em corte, com os 5 cômodos como janelas; um toque entra; o cômodo do pedido brilha com uma estrela; enfeites ganhos na lojinha aparecem aqui |
+| Mapa da casa | tela principal (depois da primeira visita): a casa em corte, com os 6 cômodos como janelas; um toque entra; o cômodo do pedido brilha com uma estrela; enfeites ganhos na lojinha aparecem aqui; às vezes um balão-surpresa com presente sobe pelo jardim |
+| Brincadeiras | 4 minijogos curtos: **Pega-frutas** (arrastar o bichinho para pegar frutas que caem), **Estoura-bolhas**, **Memória** (3 a 6 pares, conforme o modo) e **Música** (repetir a melodia dos sininhos); toda partida termina em festa e dá estrelinhas, com "nova marca!" pessoal |
 | Cozinha | 20 comidas em 5 abas (frutas, mais frutas, salgados, doces e bebidas, especiais), cada uma com reação própria; cascas vão para a lixeira; saquinho cheio sai pela janela e o caminhão do lixo passa |
 | Banheiro | esponja (espuma, lavar as orelhas), chuveirinho, toalha, patinho, pente (pelo brilhando); cocô estilizado vai para o vaso com descarga |
 | Quarto | guarda-roupa com 10 páginas: 27 peças em 6 espaços, 6 looks prontos e presentes; bola e cesto; varal de conquistas |
@@ -80,8 +98,20 @@ novo por 2,5s), cada pedido 2, cada capítulo 5, cada missão do dia 5.
 - **Lojinha de prêmios:** 12 prêmios (comidas especiais, roupas, enfeites da casa)
   abrem quando o total alcança o preço; um toque ganha. Nada do jogo básico fica trancado.
 - **Carinho:** coração por bichinho que enche com cuidados; cada nível tem festa.
-- **Missões do dia:** 3 sugestões que trocam pela data, sem sequência nem cobrança;
-  tocar numa missão leva até o cômodo dela.
+- **Missões do dia:** 3 sugestões que trocam pela data (sempre uma delas é um
+  minijogo), sem sequência nem cobrança; tocar numa missão leva até o cômodo dela.
+
+**Brincadeiras e recompensas do dia (temporada 4):**
+- Cada partida dá de 3 a 12 estrelinhas (nunca zero: não existe perder). Fruta
+  que cai no chão e erro na memória ou na música não tiram nada; na música, errar
+  só faz o bichinho tocar a melodia de novo.
+- Recorde só pessoal ("nova marca!"), sem ranking. Cada minijogo vira um cartão
+  no álbum e o capítulo "Brincadeiras" pede os jogos.
+- **Baú do dia:** abre com as 3 missões feitas (+10). **Presente do dia:** um
+  presentinho pula no canto na primeira abertura de cada dia (+5), sem modal.
+  **Surpresa:** balão com presente no mapa em metade das visitas (+3).
+- Som: timbres em camadas com eco leve e uma musiquinha de fundo diferente por
+  cômodo; cada canal pode ser desligado na área dos responsáveis.
 
 **Capítulos sem pressão:** além das estrelinhas, nada de porcentagem, sequência diária ou
 recompensa aleatória. Cada capítulo concluído dá um adesivo (álbum + varal) e
@@ -93,18 +123,21 @@ O presente é sempre o mesmo pelo mesmo capítulo e nunca se perde.
 
 ```
 src/
-  main.js                  bootstrap: bichinho, 5 cômodos, sistemas, loop
+  main.js                  bootstrap: bichinho, cômodos, sistemas, loop
   core/                    eventos, viewport, input (1 dedo), cenas, animação
   entities/nubi.js         personagem (espécie, estado, aparência, animação)
   entities/wear.js         pintores de roupas e beleza (personagem e ícones)
-  entities/food_item.js    alimento arrastável
-  scenes/*_room.js         cozinha, banheiro, quarto, dentista, salão
-  systems/                 efeitos, áudio, save, pedidos/capítulos (quests)
-  data/                    alimentos, capítulos, bichinhos, guarda-roupa, salão
-  ui/                      guia (balão, dicas, presentes), álbum, vitrine,
-                           ícones, área dos responsáveis, mãozinha
-test/                      6 suítes Playwright + verify.ps1
-scripts/build-apk.sh       build do APK
+  entities/food_item.js    alimento arrastável (arte em food_art.js)
+  scenes/*_room.js         mapa, cozinha, banheiro, quarto, dentista, salão,
+                           brincadeiras (games_room.js)
+  systems/                 efeitos, áudio, save, pedidos/capítulos (quests),
+                           estrelinhas/prêmios/missões (progress)
+  data/                    alimentos, capítulos, bichinhos, guarda-roupa, salão,
+                           prêmios
+  ui/                      tela inicial, guia (balão, dicas, presentes), álbum,
+                           vitrine, lojinha/missões, ícones, responsáveis
+test/                      9 suítes Playwright + verify.ps1
+scripts/build-apk.sh       build do APK (paisagem, ícone e nome aplicados)
 ```
 
 Tudo é dirigido por dados: uma peça nova é uma entrada em `data/wardrobe.js`;
@@ -113,8 +146,11 @@ um penteado ou esmalte novo, em `data/salon.js`; um capítulo, em
 
 ## Testes
 
-`play`, `stage2`, `mvp`, `visual`, `quests` e `features` (Playwright headless,
-interações reais de ponteiro). `features` cobre a vitrine e a aparência por
+`play`, `stage2`, `mvp`, `visual`, `quests`, `features`, `growth`, `title` e
+`games` (Playwright headless, interações reais de ponteiro). `games` joga os 4
+minijogos de verdade (arrastar, estourar, virar cartas, tocar sininhos), o
+voltar no meio da partida, a surpresa do mapa, o baú e o presente do dia.
+`features` cobre a vitrine e a aparência por
 bichinho, páginas do guarda-roupa, looks, presente de capítulo, o dentista
 completo, lixo/caminhão/cocô/pente e o salão com persistência após recarregar.
 Capturas em `previews/`.
