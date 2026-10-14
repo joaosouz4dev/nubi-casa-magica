@@ -5,10 +5,10 @@
 Ícones (PWA e Android) são gerados de um único desenho em `scripts/make-icons.cjs`
 (precisa de Playwright: `NODE_PATH=<node_modules com playwright> node scripts/make-icons.cjs`).
 
-Jogo 2D offline para crianças de 3 a 5 anos. A criança brinca com um bichinho
-(Nubi, a coelhinha Lili ou o ursinho Tito) manipulando objetos pela casa. O
-centro do jogo é descobrir como o bichinho reage, com pedidos que orientam sem
-pressionar.
+Jogo 2D offline para crianças de 4 anos ou mais. A criança brinca com um
+bichinho (Nubi, a coelhinha Lili ou o ursinho Tito) manipulando objetos pela
+casa. O centro do jogo é descobrir como o bichinho reage, com pedidos que
+orientam sem pressionar.
 
 - HTML5 Canvas + JavaScript (ES modules), sem dependências de runtime; som
   gerado com Web Audio. APK Android via Capacitor 6.
@@ -23,14 +23,12 @@ pressionar.
 
 | | |
 |---|---|
-| ![Tela inicial](previews/t1-tela-inicial.png) | ![Mapa da casa](previews/g10-mapa-volta.png) |
-| Tela inicial com Play | Mapa da casa, com presente do dia e enfeites |
-| ![Brincadeiras](previews/m10-marcas.png) | ![Pega-frutas](previews/m02-pega-frutas.png) |
-| Brincadeiras com as marcas pessoais | Pega-frutas |
-| ![Memória](previews/m05-memoria.png) | ![Música](previews/m06-musica.png) |
-| Memória | Música (repetir a melodia) |
-| ![Fim da partida](previews/m03-resultado.png) | ![Cozinha](previews/c01-galeria-comidas.png) |
-| Festa no fim da partida | As 20 comidas |
+| ![Tela inicial](previews/v2-title.png) | ![Mapa da casa](previews/v2-mapa7.png) |
+| Tela inicial com Play | Mapa da casa com 7 cômodos |
+| ![Quarto de Brinquedos](previews/v2-brinquedos-menu.png) | ![Jardim](previews/v2-jardim.png) |
+| Quarto de Brinquedos: 6 minijogos | Jardim: regar e colher |
+| ![Formas](previews/v2-formas.png) | ![Cores](previews/v2-cores.png) |
+| Minijogo Formas (encaixar) | Minijogo Cores (misturar) |
 | ![Dentista](previews/f05-dentista-sujo.png) | ![Salão](previews/f10c-salao-unhas.png) |
 | Consultório dos dentinhos | Salão: estação de unhas |
 
@@ -66,8 +64,9 @@ para a loja.
 
 | Espaço | Brincadeiras |
 |---|---|
-| Mapa da casa | tela principal (depois da primeira visita): a casa em corte, com os 6 cômodos como janelas; um toque entra; o cômodo do pedido brilha com uma estrela; enfeites ganhos na lojinha aparecem aqui; às vezes um balão-surpresa com presente sobe pelo jardim |
-| Brincadeiras | 4 minijogos curtos: **Pega-frutas** (arrastar o bichinho para pegar frutas que caem), **Estoura-bolhas**, **Memória** (3 a 6 pares, conforme o modo) e **Música** (repetir a melodia dos sininhos); toda partida termina em festa e dá estrelinhas, com "nova marca!" pessoal |
+| Mapa da casa | tela principal (depois da primeira visita): a casa em corte, com os **7 cômodos** como janelas; um toque entra; o cômodo do pedido brilha com uma estrela; enfeites ganhos na lojinha aparecem aqui; às vezes um balão-surpresa com presente sobe pelo jardim |
+| Quarto de Brinquedos | **6 minijogos** curtos: **Pega-frutas**, **Estoura-bolhas**, **Memória** (3 a 6 pares), **Música** (repetir a melodia, com 5 instrumentos: sino, xilofone, piano, violão, tambor), **Formas** (arrastar cada forma para o furo certo) e **Cores** (misturar duas tintas até a cor-alvo); toda partida termina em festa e dá estrelinhas, com "nova marca!" pessoal |
+| Jardim | regar os canteiros (crescem em 3 passos até florir), colher a fruta madura (vai "para a cozinha" e dá estrelinhas) e borboletas que reagem ao toque |
 | Cozinha | 20 comidas em 5 abas (frutas, mais frutas, salgados, doces e bebidas, especiais), cada uma com reação própria; cascas vão para a lixeira; saquinho cheio sai pela janela e o caminhão do lixo passa |
 | Banheiro | esponja (espuma, lavar as orelhas), chuveirinho, toalha, patinho, pente (pelo brilhando); cocô estilizado vai para o vaso com descarga |
 | Quarto | guarda-roupa com 10 páginas: 27 peças em 6 espaços, 6 looks prontos e presentes; bola e cesto; varal de conquistas |
@@ -119,6 +118,17 @@ um **presente fixo** para o guarda-roupa (óculos de estrela, coroa de ouro,
 botas brilhantes, capa arco-íris, medalha, chifre de unicórnio, asas de fada).
 O presente é sempre o mesmo pelo mesmo capítulo e nunca se perde.
 
+**Novidades da v1.1:**
+- **Nível do jogador:** um "Nv" ao lado do contador sobe com o total de
+  estrelinhas; cada nível tem festa. É só progressão por brincar, nunca perde.
+- **Conquistas (troféus):** marcos divertidos (primeira estrelinha, nível 3,
+  melhor amigo, brincalhão, jardineiro...) aparecem no álbum. Sem punição.
+- **Área dos responsáveis ampliada:** relatório dos últimos dias (tempo de jogo,
+  cuidados e brincadeiras) e um **limite de tempo opcional** - ao atingir, o
+  Nubi vai dormir com carinho, sem bloqueio brusco nem aviso de culpa.
+- **Design mais moderno:** cenários com mais volume e luz, fonte arredondada
+  (Fredoka), microanimações.
+
 ## Arquitetura
 
 ```
@@ -128,15 +138,15 @@ src/
   entities/nubi.js         personagem (espécie, estado, aparência, animação)
   entities/wear.js         pintores de roupas e beleza (personagem e ícones)
   entities/food_item.js    alimento arrastável (arte em food_art.js)
-  scenes/*_room.js         mapa, cozinha, banheiro, quarto, dentista, salão,
-                           brincadeiras (games_room.js)
+  scenes/*_room.js         mapa, cozinha, banheiro, jardim, quarto, dentista,
+                           salão, quarto de brinquedos (games_room.js)
   systems/                 efeitos, áudio, save, pedidos/capítulos (quests),
                            estrelinhas/prêmios/missões (progress)
   data/                    alimentos, capítulos, bichinhos, guarda-roupa, salão,
                            prêmios
   ui/                      tela inicial, guia (balão, dicas, presentes), álbum,
                            vitrine, lojinha/missões, ícones, responsáveis
-test/                      9 suítes Playwright + verify.ps1
+test/                      11 suítes Playwright + verify.ps1
 scripts/build-apk.sh       build do APK (paisagem, ícone e nome aplicados)
 ```
 
@@ -146,14 +156,15 @@ um penteado ou esmalte novo, em `data/salon.js`; um capítulo, em
 
 ## Testes
 
-`play`, `stage2`, `mvp`, `visual`, `quests`, `features`, `growth`, `title` e
-`games` (Playwright headless, interações reais de ponteiro). `games` joga os 4
-minijogos de verdade (arrastar, estourar, virar cartas, tocar sininhos), o
-voltar no meio da partida, a surpresa do mapa, o baú e o presente do dia.
-`features` cobre a vitrine e a aparência por
-bichinho, páginas do guarda-roupa, looks, presente de capítulo, o dentista
-completo, lixo/caminhão/cocô/pente e o salão com persistência após recarregar.
-Capturas em `previews/`.
+`play`, `stage2`, `mvp`, `visual`, `quests`, `features`, `growth`, `title`,
+`games` e `garden` (Playwright headless, interações reais de ponteiro). `games`
+joga os 6 minijogos de verdade (arrastar, estourar, virar cartas, tocar
+sininhos, encaixar formas, misturar cores), o voltar no meio da partida, a
+surpresa do mapa, o baú e o presente do dia. `garden` rega e colhe no jardim.
+`growth` cobre o nível do jogador e as conquistas. `features` cobre a vitrine e
+a aparência por bichinho, páginas do guarda-roupa, looks, presente de capítulo,
+o dentista completo, lixo/caminhão/cocô/pente e o salão com persistência após
+recarregar. Capturas em `previews/`.
 
 **Não testado:** desempenho em celular real e teste com crianças. Os ~60 FPS
 foram medidos no Chromium headless de um PC.
