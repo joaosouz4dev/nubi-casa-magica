@@ -360,8 +360,8 @@ function drawIconBase(ctx, key, x, y, r, ow) {
       ctx.strokeStyle = "#3a2f4f"; ctx.lineWidth = ow * 1.1;
       ctx.beginPath(); ctx.arc(-r * 0.2, 0, r * 0.1, 0.2, Math.PI - 0.2); ctx.stroke();
       ctx.beginPath(); ctx.arc(r * 0.2, 0, r * 0.1, 0.2, Math.PI - 0.2); ctx.stroke();
-      ctx.fillStyle = "#8a3bff"; ctx.font = `bold ${Math.round(r * 0.45)}px system-ui, sans-serif`; ctx.textAlign = "center";
-      ctx.fillText("z", r * 0.75, -r * 0.55); ctx.font = `bold ${Math.round(r * 0.32)}px system-ui, sans-serif`; ctx.fillText("z", r * 1.0, -r * 0.85);
+      ctx.fillStyle = "#8a3bff"; ctx.font = `bold ${Math.round(r * 0.45)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "center";
+      ctx.fillText("z", r * 0.75, -r * 0.55); ctx.font = `bold ${Math.round(r * 0.32)}px Fredoka, system-ui, sans-serif`; ctx.fillText("z", r * 1.0, -r * 0.85);
       break;
     }
     case "moon": {

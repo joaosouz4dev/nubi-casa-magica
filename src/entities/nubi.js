@@ -691,7 +691,7 @@ export class Nubi {
     for (let i = 0; i < 3; i++) {
       const ph = ((this.t * 0.0005) + i / 3) % 1;
       ctx.globalAlpha = Math.sin(ph * Math.PI) * 0.85;
-      ctx.font = `bold ${Math.round(r * (0.22 + ph * 0.22))}px "Comic Sans MS", system-ui, sans-serif`;
+      ctx.font = `bold ${Math.round(r * (0.22 + ph * 0.22))}px Fredoka, "Comic Sans MS", system-ui, sans-serif`;
       ctx.fillText("z", cx + r * (0.75 + ph * 0.5), cy - r * (1.1 + ph * 0.8));
     }
     ctx.restore();
@@ -979,7 +979,7 @@ export class Nubi {
     const fade = clamp(this.sayT / 300);
     const pad = r * 0.24;
     ctx.save();
-    ctx.font = `bold ${Math.round(r * 0.32)}px "Comic Sans MS", "Baloo 2", system-ui, sans-serif`;
+    ctx.font = `bold ${Math.round(r * 0.32)}px Fredoka, "Comic Sans MS", system-ui, sans-serif`;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
     const w = ctx.measureText(this.sayText).width + pad * 2;
     const h = r * 0.66;

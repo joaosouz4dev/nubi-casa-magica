@@ -6,3 +6,8 @@ node_modules/
 .env
 .DS_Store
 Thumbs.db
+graphify-out/
+check-syntax.cjs
+test/run-fast.ps1
+test/_*.cjs
+test/_*.txt

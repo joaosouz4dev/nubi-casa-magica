@@ -3,6 +3,7 @@
    (nuvens passando na janela, raio de sol respirando). Mesa e prato ficam
    nas mesmas posições de antes, porque a lógica dos alimentos depende delas. */
 import { CachedLayer, roundRect, softShadow, Motion } from "../core/anim.js";
+import { atmosphere, plant, frame, artHills, artHeart, wallClock } from "../ui/scenery.js";
 
 export class KitchenScene {
   constructor(vp) {
@@ -155,5 +156,14 @@ export class KitchenScene {
     c.beginPath(); c.ellipse(px, py, w * 0.2, m * 0.045, 0, 0, Math.PI * 2); c.fill();
     c.strokeStyle = "#ffc6d6"; c.lineWidth = Math.max(2, m * 0.006);
     c.beginPath(); c.ellipse(px, py, w * 0.18, m * 0.035, 0, 0, Math.PI * 2); c.stroke();
+
+    // v1.1: decoração de parede + luz e volume (fora das áreas de toque)
+    c.fillStyle = "#f3d9b4"; roundRect(c, win.x - m * 0.02, win.y + win.h - m * 0.004, win.w + m * 0.04, m * 0.022, m * 0.008); c.fill();
+    plant(c, win.x + win.w * 0.2, win.y + win.h, m * 0.1, "#7cc0ff");
+    plant(c, win.x + win.w * 0.82, win.y + win.h, m * 0.08, "#ff9fb6");
+    frame(c, w * 0.37, h * 0.27, m * 0.12, m * 0.1, m, artHills);
+    frame(c, w * 0.37 + m * 0.15, h * 0.28, m * 0.08, m * 0.08, m, artHeart("#fff0f4", "#ff7aa2"), "#ffe2a6");
+    wallClock(c, w * 0.87, h * 0.3, m * 0.065, m);
+    atmosphere(c, w, h, m, { floorY: 0.8, light: { x: win.x / w + 0.11, y: 0.3, r: 1.0 }, tint: "110,60,30", vignette: 0.16 });
   }
 }

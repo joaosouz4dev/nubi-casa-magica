@@ -11,6 +11,7 @@
 import { Spring, Spring2, damp, clamp, Ease, Motion, CachedLayer, roundRect, softShadow, lighten, darken } from "../core/anim.js";
 import { touchNubi } from "./nubi_touch.js";
 import { drawIcon } from "../ui/icons.js";
+import { atmosphere } from "../ui/scenery.js";
 import { SALON_PAGES, WIPE, STATIONS, STATION_ORDER, ACT_STATION } from "../data/salon.js";
 
 const ROW_Y = [0.3, 0.5, 0.7];
@@ -42,7 +43,7 @@ export class SalonRoom {
     this.held = null; this.dragPoint = null; this.selected = null; this.last = null;
     this.wipeDist = 0;
     this.t = 0; this.unsub = [];
-    this.back_ = new CachedLayer(vp, (c, w, h, m) => this._paintBack(c, w, h, m));
+    this.back_ = new CachedLayer(vp, (c, w, h, m) => { this._paintBack(c, w, h, m); atmosphere(c, w, h, m, { vignette: 0.16 }); });
     this._buildPage();
   }
 

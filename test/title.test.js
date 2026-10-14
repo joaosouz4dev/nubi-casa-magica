@@ -61,9 +61,11 @@ const URL = 'http://127.0.0.1:8742/index.html';
   // um toque num ponto do palco precisa chegar ao jogo nesse mesmo ponto
   const target = { x: 300, y: 200 };               // ponto no palco
   const screen = { x: 412 - target.y, y: target.x }; // palco girado 90°
-  const waitTap = page.evaluate(() => new Promise((res) => window.__nubi.bus.on('pointer:down', (p) => res(p))));
+  // instala o ouvinte ANTES do clique (await) para não perder o evento numa corrida
+  await page.evaluate(() => { window.__tap = null; window.__nubi.bus.on('pointer:down', (p) => { window.__tap = p; }); });
   await page.mouse.click(screen.x, screen.y);
-  const p = await waitTap;
+  await page.waitForFunction(() => window.__tap !== null, { timeout: 5000 }).catch(() => {});
+  const p = (await page.evaluate(() => window.__tap)) || { x: -999, y: -999 };
   R.portraitInputMapped = Math.abs(p.x - target.x) < 2 && Math.abs(p.y - target.y) < 2;
   // arrastar uma fruta até a boca também funciona em retrato
   await page.waitForTimeout(400);

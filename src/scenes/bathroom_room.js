@@ -8,6 +8,7 @@
 import { Spring, Spring2, damp, clamp, Ease, Motion, CachedLayer, roundRect, softShadow, lighten, darken } from "../core/anim.js";
 import { touchNubi } from "./nubi_touch.js";
 import { drawIcon } from "../ui/icons.js";
+import { atmosphere, plant, roundWindow } from "../ui/scenery.js";
 
 export class BathroomRoom {
   constructor({ vp, bus, nubi, save }) {
@@ -492,5 +493,9 @@ export class BathroomRoom {
     // sombra da banheira no piso
     const tb = this._tub();
     softShadow(c, tb.x + tb.w / 2, tb.y + tb.h + m * 0.02, tb.w * 0.55, m * 0.035, 0.22);
+    // v1.1: janelinha redonda, plantinha e luz/volume
+    roundWindow(c, w * 0.79, h * 0.26, m * 0.075, m);
+    plant(c, w * 0.255, h * 0.68, m * 0.17, "#ffffff");
+    atmosphere(c, w, h, m, { floorY: 0.61, light: { x: 0.8, y: 0.22, r: 1.0, color: "235,250,255" }, tint: "30,70,120", vignette: 0.16 });
   }
 }

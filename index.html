@@ -12,10 +12,16 @@
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <title>Casa do Nubi</title>
   <style>
+    @font-face {
+      font-family: "Fredoka";
+      src: url("assets/fonts/Fredoka.ttf") format("truetype");
+      font-weight: 300 700;
+      font-display: swap;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
       width: 100%; height: 100%; overflow: hidden; background: #efe3ff;
-      font-family: "Comic Sans MS", system-ui, sans-serif;
+      font-family: "Fredoka", "Comic Sans MS", system-ui, sans-serif;
       touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none;
     }
     #game { display: block; width: calc(100 * var(--vw)); height: calc(100 * var(--vh)); }
@@ -283,6 +289,114 @@
 
     body.reduce-motion *, body.reduce-motion *::after { animation-duration: .01s !important; transition-duration: .05s !important; }
     @media (prefers-reduced-motion: reduce) { #nav button.active { animation: none; } }
+
+    /* ================= v1.1: sistema visual moderno =================
+       Tokens únicos (cores, raios, sombras) + componentes com brilho,
+       vidro fosco leve e microanimações. Vem por último para sobrepor o
+       estilo anterior sem mexer na estrutura (os testes usam os mesmos ids). */
+    @font-face { font-family: "Fredoka"; src: url("assets/fonts/Fredoka.ttf") format("truetype"); font-weight: 300 700; font-display: swap; }
+    :root {
+      --ink: #3a2f4f; --ink-soft: #6c5f86; --brand: #8a3bff; --brand-2: #ff6fae; --sun: #ffc93a;
+      --glass: rgba(255,255,255,.62); --glass-line: rgba(255,255,255,.85);
+      --shadow-1: 0 2px 0 rgba(255,255,255,.9) inset, 0 -3px 0 rgba(120,80,190,.12) inset, 0 6px 16px rgba(70,40,110,.18);
+      --shadow-2: 0 1px 0 rgba(255,255,255,.9) inset, 0 20px 60px rgba(40,20,70,.32), 0 0 0 1px rgba(138,59,255,.08);
+      --r-card: 22px; --ease-pop: cubic-bezier(.34,1.56,.64,1);
+    }
+    html, body { font-family: "Fredoka", "Comic Sans MS", system-ui, sans-serif; color: var(--ink); }
+    button { font-family: inherit; }
+
+    .toy {
+      background:
+        radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 62%),
+        linear-gradient(180deg, #ffffff 0%, #ece3ff 100%);
+      border: 2px solid var(--glass-line);
+      box-shadow: var(--shadow-1), 0 3px 0 #cdb8f0;
+    }
+    .toy:active { box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 1px 0 #cdb8f0, 0 2px 6px rgba(70,40,110,.18); }
+    .toy:focus-visible, .panel button:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+    @media (hover: hover) {
+      .toy:hover { transform: translateY(-2px) scale(1.05); }
+      .prize:hover, .mission:hover, .petCard:hover, button.albumCard:hover { transform: translateY(-3px); }
+    }
+    .toy svg { transition: transform .25s var(--ease-pop); }
+    .toy:active svg { transform: scale(.9) rotate(-4deg); }
+
+    /* barra de cômodos: vidro fosco, começa ABAIXO da fileira de cima
+       (antes o topo dela passava por trás do botão de som) */
+    #nav {
+      top: calc(env(safe-area-inset-top, 0px) + min(calc(12 * var(--vw)), 54px) + 20px);
+      transform: none; background: var(--glass);
+      border: 2px solid var(--glass-line); backdrop-filter: blur(10px) saturate(1.3); -webkit-backdrop-filter: blur(10px) saturate(1.3);
+      box-shadow: 0 10px 30px rgba(70,40,110,.18), 0 1px 0 rgba(255,255,255,.9) inset;
+      gap: 6px; padding: 8px 7px;
+    }
+    #nav button {
+      width: min(calc(13 * var(--vw)), 52px, calc((100 * var(--vh) - 120px) / 7.6));
+      height: min(calc(13 * var(--vw)), 52px, calc((100 * var(--vh) - 120px) / 7.6));
+    }
+    #nav button.active {
+      background: radial-gradient(120% 70% at 50% 0%, #fffbe0 0%, rgba(255,251,224,0) 60%), linear-gradient(180deg, #ffe680 0%, #ffbf2e 100%);
+      border-color: #fff3b8;
+    }
+
+    #starPill {
+      background: radial-gradient(120% 80% at 50% 0%, #fff 0%, rgba(255,255,255,0) 60%), linear-gradient(180deg, #fffdf3 0%, #ffefb5 100%);
+      border: 2px solid #fff6d1; box-shadow: 0 1px 0 #fff inset, 0 3px 0 #e6c86a, 0 8px 18px rgba(160,100,10,.18);
+      font-weight: 600;
+    }
+    #starCount { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    /* overlays: fundo com cor (não cinza) + painel em vidro */
+    .overlay {
+      background: radial-gradient(circle at 50% 40%, rgba(120,70,190,.30), rgba(40,25,70,.55));
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    }
+    .panel {
+      background: linear-gradient(180deg, #ffffff 0%, #fbf7ff 100%);
+      border: 3px solid rgba(255,255,255,.95); border-radius: 32px; box-shadow: var(--shadow-2);
+      color: var(--ink);
+    }
+    .panel h2 {
+      font-weight: 700; letter-spacing: .3px;
+      background: linear-gradient(90deg, var(--brand), var(--brand-2)); -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .panel .close {
+      background: radial-gradient(120% 70% at 50% 0%, #ffd0e6 0%, rgba(255,208,230,0) 60%), linear-gradient(180deg, #ff9cc8, #ff6fae);
+      border: 2px solid #ffe0ef; box-shadow: 0 1px 0 #fff inset, 0 3px 0 #e0679f, 0 6px 14px rgba(224,103,159,.3); font-weight: 700;
+    }
+    .panel .close:hover { transform: rotate(90deg); transition: transform .3s var(--ease-pop); }
+
+    /* cards (lojinha, missões, vitrine, álbum): mesma linguagem */
+    .prize, .mission, .petCard {
+      border-width: 2px; border-radius: var(--r-card);
+      box-shadow: 0 1px 0 #fff inset, 0 4px 0 rgba(160,120,210,.18), 0 8px 18px rgba(70,40,110,.10);
+      transition: transform .2s var(--ease-pop), box-shadow .2s;
+    }
+    .albumIcon { border-radius: 24px; box-shadow: inset 0 -6px 0 rgba(0,0,0,.06), inset 0 2px 0 rgba(255,255,255,.8), 0 6px 14px rgba(70,40,110,.12); }
+    .modeRow button { border-radius: 18px; font-weight: 600; box-shadow: 0 3px 0 #e3d6fb; }
+    .modeRow button.active { background: linear-gradient(180deg, #a466ff, #7a2cf0); box-shadow: 0 3px 0 #5a1fb8; }
+
+    /* tela inicial: fundo "aurora" que respira, brilho passando no logo,
+       Play com reflexo de vidro */
+    #title { background: linear-gradient(180deg, #ffe2b0 0%, #f6dcff 55%, #cbb6f5 100%); }
+    #title::before, #title::after {
+      content: ""; position: absolute; width: calc(90 * var(--vh)); height: calc(90 * var(--vh)); border-radius: 50%;
+      filter: blur(calc(6 * var(--vh))); opacity: .55; z-index: 0; pointer-events: none;
+    }
+    #title::before { background: radial-gradient(circle, #ffb3d6, transparent 65%); left: -10%; top: -30%; animation: aurora 14s ease-in-out infinite alternate; }
+    #title::after { background: radial-gradient(circle, #a8e0ff, transparent 65%); right: -12%; bottom: -35%; animation: aurora 17s ease-in-out -5s infinite alternate-reverse; }
+    @keyframes aurora { from { transform: translate(0, 0) scale(1); } to { transform: translate(12%, 10%) scale(1.15); } }
+    #title .lt { font-weight: 700; }
+    #title .logo { position: relative; }
+    /* brilho só nas letras (um retângulo por cima clareava o fundo também) */
+    #title .logo { animation: shine 4.5s ease-in-out 1.6s infinite; }
+    @keyframes shine { 0%, 40%, 100% { filter: brightness(1); } 20% { filter: brightness(1.18) drop-shadow(0 0 calc(1.2 * var(--vh)) rgba(255,255,255,.9)); } }
+    #btnPlay::after {
+      content: ""; position: absolute; left: 16%; right: 16%; top: 8%; height: 34%; border-radius: 50%;
+      background: linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,0)); pointer-events: none;
+    }
+    body.reduce-motion #title::before, body.reduce-motion #title::after, body.reduce-motion #title .logo { animation: none; }
+    @media (prefers-reduced-motion: reduce) { #title::before, #title::after, #title .logo { animation: none; } }
   </style>
 </head>
 <body>

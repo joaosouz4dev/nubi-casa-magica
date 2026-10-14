@@ -10,6 +10,7 @@ import { touchNubi } from "./nubi_touch.js";
 import { ITEMS, PAGES, LOOKS, GIFTS } from "../data/wardrobe.js";
 import { wearIcon } from "../entities/wear.js";
 import { drawIcon } from "../ui/icons.js";
+import { atmosphere, frame, artStar, rug } from "../ui/scenery.js";
 
 const SLOTS = ["hat", "face", "neck", "cape", "body", "boots"];
 const ROW_Y = [0.3, 0.5, 0.7];
@@ -587,24 +588,51 @@ export class BedroomRoom {
     c.fillStyle = sky; roundRect(c, wx + m * 0.012, wy + m * 0.012, ww - m * 0.024, wh - m * 0.024, ww * 0.45); c.fill();
     c.fillStyle = "#fff6c9"; c.beginPath(); c.arc(wx + ww * 0.62, wy + wh * 0.35, m * 0.03, 0, Math.PI * 2); c.fill();
     c.fillStyle = "#b7a6ff"; c.beginPath(); c.arc(wx + ww * 0.7, wy + wh * 0.31, m * 0.026, 0, Math.PI * 2); c.fill();
-    // cama ao fundo (direita)
-    const bx = w * 0.66, by = h * 0.58;
-    c.fillStyle = "#b98ee6"; roundRect(c, bx, by - h * 0.12, w * 0.05, h * 0.3, m * 0.02); c.fill();
-    c.fillStyle = "#ffffff"; roundRect(c, bx + w * 0.03, by, w * 0.3, h * 0.12, m * 0.03); c.fill();
-    c.fillStyle = "#8fd3ff"; roundRect(c, bx + w * 0.1, by - h * 0.01, w * 0.25, h * 0.15, m * 0.035); c.fill();
-    c.fillStyle = "rgba(255,255,255,.5)";
-    for (let i = 0; i < 4; i++) { c.beginPath(); c.arc(bx + w * (0.14 + i * 0.055), by + h * 0.06, m * 0.012, 0, Math.PI * 2); c.fill(); }
-    c.fillStyle = "#fff1a8"; roundRect(c, bx + w * 0.045, by - h * 0.03, w * 0.07, h * 0.06, m * 0.025); c.fill();
+    // cama ao fundo (direita) - v1.1: cabeceira de madeira, colchão com
+    // espessura, travesseiro fofo e colcha de retalhos
+    const bx = w * 0.66, by = h * 0.58, m1 = m * 0.01;
+    softShadow(c, bx + w * 0.17, by + h * 0.2, w * 0.18, m * 0.03, 0.2);
+    const hb = c.createLinearGradient(bx, 0, bx + w * 0.06, 0);
+    hb.addColorStop(0, "#a876db"); hb.addColorStop(0.5, "#c9a3f2"); hb.addColorStop(1, "#9a68cf");
+    c.fillStyle = hb;
+    c.beginPath(); c.moveTo(bx, by + h * 0.2); c.lineTo(bx, by - h * 0.1);
+    c.quadraticCurveTo(bx + w * 0.03, by - h * 0.2, bx + w * 0.06, by - h * 0.1); c.lineTo(bx + w * 0.06, by + h * 0.2); c.closePath(); c.fill();
+    c.fillStyle = "#ffd1e6";
+    { const hx = bx + w * 0.03, hy = by - h * 0.07, r = m * 0.022;
+      c.beginPath(); c.moveTo(hx, hy + r); c.bezierCurveTo(hx - r * 1.6, hy - r * 0.2, hx - r * 0.6, hy - r * 1.3, hx, hy - r * 0.4);
+      c.bezierCurveTo(hx + r * 0.6, hy - r * 1.3, hx + r * 1.6, hy - r * 0.2, hx, hy + r); c.fill(); }
+    c.fillStyle = "#8a5cc0";
+    roundRect(c, bx + w * 0.3, by + h * 0.09, w * 0.025, h * 0.11, m1); c.fill();
+    c.fillStyle = "#ece6f7"; roundRect(c, bx + w * 0.05, by + h * 0.04, w * 0.29, h * 0.09, m * 0.03); c.fill();
+    c.fillStyle = "#ffffff"; roundRect(c, bx + w * 0.05, by + h * 0.01, w * 0.29, h * 0.07, m * 0.03); c.fill();
+    // colcha de retalhos com dobra
+    const qx = bx + w * 0.11, qy = by - h * 0.015, qw = w * 0.24, qh = h * 0.15;
+    c.save(); roundRect(c, qx, qy, qw, qh, m * 0.035); c.clip();
+    const cols = ["#8fd3ff", "#b8e6ff", "#ffd1e6", "#c8f0c4"];
+    const cs = qw / 6;
+    for (let i = 0; i < 6; i++) for (let j = 0; j < 4; j++) { c.fillStyle = cols[(i + j * 3) % 4]; c.fillRect(qx + i * cs, qy + j * cs, cs + 1, cs + 1); }
+    c.strokeStyle = "rgba(255,255,255,.7)"; c.lineWidth = Math.max(1, m * 0.003); c.setLineDash([m * 0.006, m * 0.006]);
+    for (let i = 1; i < 6; i++) { c.beginPath(); c.moveTo(qx + i * cs, qy); c.lineTo(qx + i * cs, qy + qh); c.stroke(); }
+    for (let j = 1; j < 4; j++) { c.beginPath(); c.moveTo(qx, qy + j * cs); c.lineTo(qx + qw, qy + j * cs); c.stroke(); }
+    c.setLineDash([]);
+    const sh = c.createLinearGradient(0, qy, 0, qy + qh);
+    sh.addColorStop(0, "rgba(255,255,255,.25)"); sh.addColorStop(1, "rgba(60,40,110,.18)");
+    c.fillStyle = sh; c.fillRect(qx, qy, qw, qh);
+    c.restore();
+    c.fillStyle = "#ffffff"; roundRect(c, qx - m * 0.005, qy - m * 0.008, qw * 0.3, h * 0.05, m * 0.02); c.fill();
+    // travesseiro
+    const pg = c.createLinearGradient(0, by - h * 0.05, 0, by + h * 0.04);
+    pg.addColorStop(0, "#fff8c8"); pg.addColorStop(1, "#ffe48a");
+    c.fillStyle = pg; roundRect(c, bx + w * 0.045, by - h * 0.045, w * 0.075, h * 0.07, m * 0.03); c.fill();
+    c.fillStyle = "rgba(255,255,255,.6)"; roundRect(c, bx + w * 0.055, by - h * 0.038, w * 0.04, h * 0.015, m * 0.01); c.fill();
+    frame(c, w * 0.81, h * 0.17, m * 0.09, m * 0.09, m, artStar("#e9e0ff", "#ffd36e"), "#c9a3f2");
     // rodapé + piso de madeira
     c.fillStyle = "#c7a3ee"; c.fillRect(0, h * 0.84, w, h * 0.02);
     const fg = c.createLinearGradient(0, h * 0.86, 0, h);
     fg.addColorStop(0, "#d9b98f"); fg.addColorStop(1, "#c39a6c");
     c.fillStyle = fg; c.fillRect(0, h * 0.86, w, h * 0.14);
-    // tapete redondo listrado
-    for (let i = 0; i < 3; i++) {
-      c.fillStyle = ["#ff9fc4", "#ffd0e3", "#ff9fc4"][i];
-      c.beginPath(); c.ellipse(w * 0.5, h * 0.925, w * (0.38 - i * 0.09), h * (0.06 - i * 0.014), 0, 0, Math.PI * 2); c.fill();
-    }
+    // tapete redondo com borda pespontada e bolinhas
+    rug(c, w * 0.5, h * 0.925, w * 0.38, h * 0.06, "#ff9fc4", "rgba(255,255,255,.55)");
     // guarda-roupa (móvel de madeira com portas abertas)
     const gx = w * 0.015, gy = h * 0.16, gw = w * 0.13, gh = h * 0.7;
     softShadow(c, gx + gw / 2, gy + gh, gw * 0.6, m * 0.02, 0.22);
@@ -613,5 +641,6 @@ export class BedroomRoom {
     c.fillStyle = "#b5773f"; roundRect(c, gx - m * 0.01, gy - m * 0.02, gw + m * 0.02, m * 0.035, m * 0.015); c.fill();
     c.strokeStyle = "#a2763f"; c.lineWidth = Math.max(2, m * 0.008);
     c.beginPath(); c.moveTo(gx + m * 0.02, gy + gh * 0.08); c.lineTo(gx + gw - m * 0.02, gy + gh * 0.08); c.stroke();
+    atmosphere(c, w, h, m, { floorY: 0.85, light: { x: 0.7, y: 0.22, r: 1.0, color: "250,240,255" }, tint: "70,40,120", vignette: 0.18 });
   }
 }

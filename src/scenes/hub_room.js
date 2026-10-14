@@ -9,6 +9,7 @@
    - o bichinho espera no jardim e reage ao toque (carinho/cócegas). */
 import { Spring, clamp, Ease, Motion, CachedLayer, roundRect, softShadow, lighten, darken } from "../core/anim.js";
 import { drawIcon } from "../ui/icons.js";
+import { atmosphere } from "../ui/scenery.js";
 import { touchNubi } from "./nubi_touch.js";
 
 export const HUB_TILES = [
@@ -301,5 +302,24 @@ export class HubRoom {
     c.fillStyle = "rgba(255,248,230,.85)";
     for (let i = 0; i < 6; i++) { c.beginPath(); c.ellipse(w * (0.17 + i * 0.026), h * (0.9 - i * 0.008), m * 0.022, m * 0.01, 0, 0, Math.PI * 2); c.fill(); }
     softShadow(c, w * 0.15, h * 0.84, m * 0.12, m * 0.025, 0.18);
+    // v1.1: árvores ao fundo, florzinhas e luz do sol
+    const tree = (x, y, s, col) => {
+      c.fillStyle = "#b07a4a"; roundRect(c, x - s * 0.06, y - s * 0.45, s * 0.12, s * 0.45, s * 0.04); c.fill();
+      const tg = c.createRadialGradient(x - s * 0.15, y - s * 0.85, s * 0.05, x, y - s * 0.7, s * 0.45);
+      tg.addColorStop(0, lighten(col, 0.25)); tg.addColorStop(1, col);
+      c.fillStyle = tg;
+      c.beginPath(); c.arc(x, y - s * 0.75, s * 0.32, 0, Math.PI * 2); c.arc(x - s * 0.22, y - s * 0.55, s * 0.24, 0, Math.PI * 2); c.arc(x + s * 0.22, y - s * 0.56, s * 0.25, 0, Math.PI * 2); c.fill();
+    };
+    tree(w * 0.03, h * 0.7, m * 0.3, "#7cc96b");
+    tree(w * 0.27, h * 0.66, m * 0.24, "#8fd36f");
+    const fl = ["#ff8fb3", "#ffd36e", "#ffffff", "#c6a6ff"];
+    for (let i = 0; i < 26; i++) {
+      const x = ((i * 0.618) % 1) * w, y = h * (0.86 + ((i * 0.37) % 1) * 0.12);
+      const r = m * (0.008 + (i % 3) * 0.003);
+      c.fillStyle = fl[i % 4];
+      for (let k = 0; k < 5; k++) { const a = k * Math.PI * 2 / 5; c.beginPath(); c.arc(x + Math.cos(a) * r, y + Math.sin(a) * r, r * 0.8, 0, Math.PI * 2); c.fill(); }
+      c.fillStyle = "#ffb43a"; c.beginPath(); c.arc(x, y, r * 0.6, 0, Math.PI * 2); c.fill();
+    }
+    atmosphere(c, w, h, m, { light: { x: 0.12, y: 0.16, r: 1.1, color: "255,244,200" }, tint: "40,80,60", vignette: 0.14 });
   }
 }

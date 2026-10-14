@@ -13,6 +13,7 @@
    sai para os cartões (e as estrelinhas já ganhas são entregues). */
 import { Spring, clamp, Ease, Motion, CachedLayer, roundRect, softShadow, lighten, darken, damp } from "../core/anim.js";
 import { drawIcon } from "../ui/icons.js";
+import { atmosphere } from "../ui/scenery.js";
 import { FOODS } from "../data/foods.js";
 import { paintFood } from "../entities/food_art.js";
 import { touchNubi } from "./nubi_touch.js";
@@ -43,7 +44,7 @@ export class GamesRoom {
     this.press = GAMES.map(() => new Spring(0, { stiffness: 340, damping: 14 }));
     this.cardIn = 0;
     this.floaters = [];          // "+1" subindo
-    this.bg = new CachedLayer(vp, (c, w, h, m) => this._paintBack(c, w, h, m));
+    this.bg = new CachedLayer(vp, (c, w, h, m) => { this._paintBack(c, w, h, m); atmosphere(c, w, h, m, { vignette: 0.16 }); });
   }
 
   // ---------------- interface do cômodo ----------------
@@ -428,7 +429,7 @@ export class GamesRoom {
       const bx = cx, by = r.y + r.h * 0.86;
       ctx.fillStyle = "rgba(255,255,255,.85)"; roundRect(ctx, bx - m * 0.055, by - m * 0.024, m * 0.11, m * 0.048, m * 0.024); ctx.fill();
       drawIcon(ctx, "trophy", bx - m * 0.03, by, m * 0.018);
-      ctx.fillStyle = "#6b4a14"; ctx.font = `bold ${Math.round(m * 0.032)}px system-ui, sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "#6b4a14"; ctx.font = `bold ${Math.round(m * 0.032)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
       ctx.fillText(String(best), bx - m * 0.008, by + m * 0.002);
     }
     ctx.restore();
@@ -542,7 +543,7 @@ export class GamesRoom {
     ctx.fillStyle = "rgba(255,255,255,.88)"; roundRect(ctx, x, y - m * 0.04, m * 0.2, m * 0.08, m * 0.04); ctx.fill();
     ctx.strokeStyle = "#e6c86a"; ctx.lineWidth = Math.max(2, m * 0.005); roundRect(ctx, x, y - m * 0.04, m * 0.2, m * 0.08, m * 0.04); ctx.stroke();
     drawIcon(ctx, "star", x + m * 0.045, y, m * 0.028);
-    ctx.fillStyle = "#6b4a14"; ctx.font = `bold ${Math.round(m * 0.05)}px system-ui, sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#6b4a14"; ctx.font = `bold ${Math.round(m * 0.05)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
     ctx.fillText(String(g.score), x + m * 0.085, y + m * 0.004);
     ctx.restore();
     // tempo: um solzinho que anda numa trilha (sem número, sem "acabou o tempo")
@@ -564,7 +565,7 @@ export class GamesRoom {
     for (const f of this.floaters) {
       const k = f.t / 900;
       ctx.globalAlpha = 1 - Ease.inQuad(k);
-      ctx.font = `bold ${Math.round(m * (0.045 + Ease.outBack(Math.min(1, k * 3)) * 0.01))}px system-ui, sans-serif`;
+      ctx.font = `bold ${Math.round(m * (0.045 + Ease.outBack(Math.min(1, k * 3)) * 0.01))}px Fredoka, system-ui, sans-serif`;
       ctx.lineWidth = Math.max(3, m * 0.008); ctx.strokeStyle = "#ffffff"; ctx.fillStyle = darken(f.color, 0.25);
       const y = f.y - Ease.outCubic(k) * m * 0.1;
       ctx.strokeText("+" + f.n, f.x, y); ctx.fillText("+" + f.n, f.x, y);
@@ -612,7 +613,7 @@ export class GamesRoom {
       drawIcon(ctx, "star", x, y, m * 0.03 * (Motion.reduce ? 1 : Ease.outBack(clamp(pop), 2.5)));
     }
     ctx.fillStyle = "#6b4a14"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.font = `bold ${Math.round(m * 0.05)}px system-ui, sans-serif`;
+    ctx.font = `bold ${Math.round(m * 0.05)}px Fredoka, system-ui, sans-serif`;
     ctx.fillText("+" + R.stars, 0, ph * 0.33);
     ctx.restore();
     if (R.newBest && t > 500) {
@@ -621,7 +622,7 @@ export class GamesRoom {
       ctx.fillStyle = "#ff6b9d"; roundRect(ctx, -m * 0.12, -m * 0.04, m * 0.24, m * 0.08, m * 0.04); ctx.fill();
       ctx.strokeStyle = "#ffffff"; ctx.lineWidth = m * 0.006; roundRect(ctx, -m * 0.12, -m * 0.04, m * 0.24, m * 0.08, m * 0.04); ctx.stroke();
       drawIcon(ctx, "trophy", -m * 0.085, 0, m * 0.022);
-      ctx.fillStyle = "#ffffff"; ctx.font = `bold ${Math.round(m * 0.032)}px system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "#ffffff"; ctx.font = `bold ${Math.round(m * 0.032)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Nova marca!", m * 0.02, m * 0.002);
       ctx.restore();
     }
