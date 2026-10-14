@@ -17,6 +17,7 @@ import { DentistRoom } from "./scenes/dentist_room.js";
 import { SalonRoom } from "./scenes/salon_room.js";
 import { HubRoom } from "./scenes/hub_room.js";
 import { GamesRoom } from "./scenes/games_room.js";
+import { GardenRoom } from "./scenes/garden_room.js";
 import { STAR_RULES } from "./data/prizes.js";
 import { Progress } from "./systems/progress.js";
 import { ProgressUI } from "./ui/progress_ui.js";
@@ -54,6 +55,7 @@ export function boot() {
   scenes.register("salon", new SalonRoom({ vp, bus, nubi, save }));
   scenes.register("hub", new HubRoom({ vp, bus, nubi, save }));
   scenes.register("games", new GamesRoom({ vp, bus, nubi, save }));
+  scenes.register("garden", new GardenRoom({ vp, bus, nubi, save }));
   // cada cômodo escolhe o próprio enquadramento; por padrão, tamanho normal
   scenes.onBeforeEnter = () => { nubi.sizeK = 1; };
 
@@ -218,6 +220,7 @@ export function boot() {
     get salon() { return scenes.rooms.get("salon"); },
     get hub() { return scenes.rooms.get("hub"); },
     get games() { return scenes.rooms.get("games"); },
+    get garden() { return scenes.rooms.get("garden"); },
     get items() { return scenes.rooms.get("kitchen").items; },  // compat Etapa 1/2
     get interactions() { return scenes.rooms.get("kitchen"); },
     nubi, bus, vp, save, effects, album, quests, guide, progress, progressUI, scenes, go: (id) => scenes.go(id), back: () => scenes.back()

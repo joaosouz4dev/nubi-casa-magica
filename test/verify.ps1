@@ -1,6 +1,6 @@
 param(
   [Parameter(Position = 0, ValueFromRemainingArguments = $true)]
-  [string[]]$Tests = @('play', 'stage2', 'mvp', 'visual', 'quests', 'features', 'growth', 'title', 'games'),
+  [string[]]$Tests = @('play', 'stage2', 'mvp', 'visual', 'quests', 'features', 'growth', 'title', 'games', 'garden'),
   [ValidateRange(1, 3600)][int]$TestTimeoutSeconds = 120,
   [ValidateRange(1024, 65535)][int]$Port = 8742
 )

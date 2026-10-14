@@ -1,7 +1,7 @@
 /* MAPA DA CASA (hub) - a tela "raiz" do jogo.
-   A casa aparece em corte, com os 5 cômodos como janelas grandes:
+   A casa aparece em corte, com os 7 cômodos como janelas:
      andar de cima:  quarto | salão | dentista
-     térreo:         cozinha | banheiro
+     térreo:         cozinha | banheiro | jardim | brinquedos
    - um toque num cômodo entra nele (o cômodo "afunda" e o jogo desliza);
    - o cômodo do pedido atual ganha uma estrela que pula e um brilho;
    - os prêmios de enfeite da lojinha aparecem aqui (balões, bandeirinhas,
@@ -13,12 +13,15 @@ import { atmosphere } from "../ui/scenery.js";
 import { touchNubi } from "./nubi_touch.js";
 
 export const HUB_TILES = [
-  { id: "bedroom",  x: 0.33, y: 0.30, w: 0.18, h: 0.25, wall: "#cfe8ff", icons: ["hat", "ball"] },
-  { id: "salon",    x: 0.51, y: 0.30, w: 0.18, h: 0.25, wall: "#ffd6ea", icons: ["hair:curls", "polish:#ff6bb5"] },
-  { id: "dentist",  x: 0.69, y: 0.30, w: 0.18, h: 0.25, wall: "#d4f3ec", icons: ["tooth", "brush"] },
-  { id: "kitchen",  x: 0.33, y: 0.57, w: 0.18, h: 0.27, wall: "#fff0c9", icons: ["food:apple", "food:pizza"] },
-  { id: "bathroom", x: 0.51, y: 0.57, w: 0.18, h: 0.27, wall: "#d8efff", icons: ["duck", "sponge"] },
-  { id: "games",    x: 0.69, y: 0.57, w: 0.18, h: 0.27, wall: "#f1e4ff", icons: ["game:catch", "game:music"] }
+  // andar de cima (3)
+  { id: "bedroom",  x: 0.33, y: 0.30, w: 0.17, h: 0.24, wall: "#cfe8ff", icons: ["hat", "ball"] },
+  { id: "salon",    x: 0.515, y: 0.30, w: 0.17, h: 0.24, wall: "#ffd6ea", icons: ["hair:curls", "polish:#ff6bb5"] },
+  { id: "dentist",  x: 0.70, y: 0.30, w: 0.17, h: 0.24, wall: "#d4f3ec", icons: ["tooth", "brush"] },
+  // térreo (4)
+  { id: "kitchen",  x: 0.31, y: 0.57, w: 0.135, h: 0.26, wall: "#fff0c9", icons: ["food:apple", "food:pizza"] },
+  { id: "bathroom", x: 0.455, y: 0.57, w: 0.135, h: 0.26, wall: "#d8efff", icons: ["duck", "sponge"] },
+  { id: "garden",   x: 0.60, y: 0.57, w: 0.135, h: 0.26, wall: "#dcf3c4", icons: ["flower", "butterfly"] },
+  { id: "games",    x: 0.745, y: 0.57, w: 0.135, h: 0.26, wall: "#f1e4ff", icons: ["teddy", "blocks"] }
 ];
 
 const SURPRISE_MS = 9000;   // tempo que o balão-surpresa leva para sair pelo céu
