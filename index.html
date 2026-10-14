@@ -91,6 +91,11 @@
     #starPill.bump { animation: pillBump .45s cubic-bezier(.34,1.56,.64,1); }
     @keyframes pillBump { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.18); } 100% { transform: translateX(-50%) scale(1); } }
     #starCount { font-size: 22px; font-weight: bold; min-width: 1.6em; text-align: left; }
+    #lvlBadge {
+      font-size: 13px; font-weight: bold; color: #fff; background: linear-gradient(180deg, #b48cff, #8a5cf0);
+      padding: 2px 8px; border-radius: 999px; box-shadow: 0 2px 0 #6e42c0; white-space: nowrap;
+    }
+    #lvlBadge.bump { animation: bump .5s cubic-bezier(.34,1.56,.64,1); }
     #loveMeter { position: relative; width: 30px; height: 28px; margin-left: 4px; }
     #loveMeter svg { position: absolute; inset: 0; width: 100%; height: 100%; }
     #loveFillBox { position: absolute; inset: 0; clip-path: path("M15 26 C3 18 0 11 4 6 C8 1 13 3 15 7 C17 3 22 1 26 6 C30 11 27 18 15 26 Z"); }
@@ -199,6 +204,9 @@
     button.albumCard { border: none; background: none; font: inherit; color: inherit; cursor: pointer; transition: transform .15s; }
     button.albumCard:active { transform: scale(.9); }
     #albumStickers { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 10px; margin-top: calc(1 * var(--vh)); background: #faf6ff; border-radius: 20px; }
+    #albumTrophies { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 10px; margin-top: calc(1 * var(--vh)); background: linear-gradient(180deg,#fff6df,#ffeab0); border-radius: 20px; }
+    #albumTrophies .trophy { display: flex; flex-direction: column; align-items: center; width: 72px; }
+    #albumTrophies .trophyName { font-size: 11px; color: #6b4a14; text-align: center; margin-top: 2px; line-height: 1.1; }
     .sticker { border: none; background: none; padding: 0; cursor: pointer; transition: transform .15s; }
     .sticker:active { transform: scale(.88) rotate(-6deg); }
     .overlay.show .sticker { animation: cardIn .5s cubic-bezier(.34,1.56,.64,1) backwards; }
@@ -505,6 +513,7 @@
 
   <button id="starPill" aria-label="Estrelinhas">
     <span id="starIco"></span><span id="starCount">0</span>
+    <span id="lvlBadge" aria-label="Nível">Nv 0</span>
     <span id="loveMeter" aria-label="Carinho do bichinho">
       <span id="loveFillBox"><span id="loveFill"></span></span>
       <svg viewBox="0 0 30 28" aria-hidden="true"><path d="M15 26 C3 18 0 11 4 6 C8 1 13 3 15 7 C17 3 22 1 26 6 C30 11 27 18 15 26 Z" fill="none" stroke="#a8325c" stroke-width="2.5" stroke-linejoin="round"/></svg>
@@ -569,6 +578,7 @@
     <div class="panel">
       <button class="close" id="albumClose" aria-label="Fechar">✕</button>
       <h2>Descobertas do Nubi</h2>
+      <div id="albumTrophies"></div>
       <div id="albumStickers"></div>
       <div id="albumGrid"></div>
     </div>

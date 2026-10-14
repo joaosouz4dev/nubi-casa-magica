@@ -148,7 +148,7 @@ export function boot() {
   bus.on("album:replay", ({ kind, id }) => replay(kind, id, { nubi, bus, audio }));
 
   // UI: álbum, responsáveis, navegação, som rápido
-  const album = new Album(bus, save);
+  const album = new Album(bus, save, progress);
   new ParentGate(bus, audio, save);
   const progressUI = new ProgressUI({ bus, progress, nubi, audio, vp });
   wireNav(bus, scenes);

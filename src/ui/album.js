@@ -59,11 +59,12 @@ function iconCanvas(size, paint) {
 }
 
 export class Album {
-  constructor(bus, save) {
-    this.bus = bus; this.save = save;
+  constructor(bus, save, progress) {
+    this.bus = bus; this.save = save; this.progress = progress || null;
     this.el = document.getElementById("album");
     this.grid = document.getElementById("albumGrid");
     this.stickers = document.getElementById("albumStickers");
+    this.trophies = document.getElementById("albumTrophies");
     const close = document.getElementById("albumClose");
     if (close) close.addEventListener("click", () => this.hide());
     const open = document.getElementById("btnAlbum");
@@ -80,6 +81,20 @@ export class Album {
 
   render() {
     const q = this.save.state.quests || { done: {} };
+    // conquistas (troféus) ganhas
+    if (this.trophies && this.progress) {
+      this.trophies.innerHTML = "";
+      const got = this.progress.achievements().filter(a => a.got);
+      for (const a of got) {
+        const d = document.createElement("div");
+        d.className = "trophy"; d.setAttribute("aria-label", a.name); d.title = a.name;
+        d.appendChild(iconCanvas(56, (ctx, s) => drawIcon(ctx, a.icon, s / 2, s / 2, s * 0.42)));
+        const t = document.createElement("div"); t.className = "trophyName"; t.textContent = a.name;
+        d.appendChild(t);
+        this.trophies.appendChild(d);
+      }
+      this.trophies.style.display = got.length ? "" : "none";
+    }
     if (this.stickers) {
       this.stickers.innerHTML = "";
       for (const ch of CHAPTERS) {

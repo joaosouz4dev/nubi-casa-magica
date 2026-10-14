@@ -25,6 +25,7 @@ export class ProgressUI {
     this.bus = bus; this.progress = progress; this.nubi = nubi; this.audio = audio; this.vp = vp;
     this.pill = document.getElementById("starPill");
     this.count = document.getElementById("starCount");
+    this.lvlBadge = document.getElementById("lvlBadge");
     this.love = document.getElementById("loveMeter");
     this.loveFill = document.getElementById("loveFill");
     this.loveLvl = document.getElementById("loveLvl");
@@ -43,7 +44,9 @@ export class ProgressUI {
     on("btnMissions", () => this.openMissions());
     on("missionsClose", () => this.missEl.classList.remove("show"));
 
-    bus.on("stars:changed", (e) => this._gain(e));
+    bus.on("stars:changed", (e) => { this._gain(e); this._renderLevel(); });
+    bus.on("level:up", (e) => this._levelUp(e));
+    bus.on("achievement:got", (e) => this._achievement(e));
     bus.on("prize:ready", () => { this._badge(); this.audio.chime(3); });
     bus.on("prize:claimed", (p) => this._claimed(p));
     bus.on("love:changed", () => this._renderLove());
@@ -52,7 +55,26 @@ export class ProgressUI {
     bus.on("mission:done", (e) => this._missionDone(e));
     bus.on("chest:ready", () => { this._missionBadge(); this.audio.chime(5); bump(document.getElementById("btnMissions")); });
     bus.on("chest:opened", () => this._chestOpened());
-    this._renderCount(); this._renderLove(); this._badge(); this._missionBadge();
+    this._renderCount(); this._renderLove(); this._badge(); this._missionBadge(); this._renderLevel();
+  }
+
+  _renderLevel() { if (this.lvlBadge) this.lvlBadge.textContent = "Nv " + this.progress.level(); }
+  _levelUp({ at }) {
+    this._renderLevel();
+    bump(this.lvlBadge);
+    this.nubi.dance();
+    this.nubi.say("Subi de nível!");
+    this.bus.emit("fx:confetti", { amount: 1 });
+    this.bus.emit("fx:burst", at || { x: this.nubi.px(), y: this.nubi.py() - this.nubi.radius() }, "#b48cff");
+    this.audio.fanfare();
+  }
+  _achievement(a) {
+    // troféu ganho: festa curta + fala; aparece no álbum depois
+    this.nubi.celebrate();
+    this.nubi.say("Troféu novo!");
+    this.bus.emit("fx:burst", a.at || { x: this.nubi.px(), y: this.nubi.py() - this.nubi.radius() }, "#ffd54a");
+    this.audio.chime(5);
+    bump(document.getElementById("btnAlbum"));
   }
 
   // ---------------- contador ----------------
