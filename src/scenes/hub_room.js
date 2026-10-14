@@ -1,7 +1,7 @@
 /* MAPA DA CASA (hub) - a tela "raiz" do jogo.
-   A casa aparece em corte, com os 5 cômodos como janelas grandes:
+   A casa aparece em corte, com os 7 cômodos como janelas:
      andar de cima:  quarto | salão | dentista
-     térreo:         cozinha | banheiro
+     térreo:         cozinha | banheiro | jardim | brinquedos
    - um toque num cômodo entra nele (o cômodo "afunda" e o jogo desliza);
    - o cômodo do pedido atual ganha uma estrela que pula e um brilho;
    - os prêmios de enfeite da lojinha aparecem aqui (balões, bandeirinhas,
@@ -9,15 +9,19 @@
    - o bichinho espera no jardim e reage ao toque (carinho/cócegas). */
 import { Spring, clamp, Ease, Motion, CachedLayer, roundRect, softShadow, lighten, darken } from "../core/anim.js";
 import { drawIcon } from "../ui/icons.js";
+import { atmosphere } from "../ui/scenery.js";
 import { touchNubi } from "./nubi_touch.js";
 
 export const HUB_TILES = [
-  { id: "bedroom",  x: 0.33, y: 0.30, w: 0.18, h: 0.25, wall: "#cfe8ff", icons: ["hat", "ball"] },
-  { id: "salon",    x: 0.51, y: 0.30, w: 0.18, h: 0.25, wall: "#ffd6ea", icons: ["hair:curls", "polish:#ff6bb5"] },
-  { id: "dentist",  x: 0.69, y: 0.30, w: 0.18, h: 0.25, wall: "#d4f3ec", icons: ["tooth", "brush"] },
-  { id: "kitchen",  x: 0.33, y: 0.57, w: 0.18, h: 0.27, wall: "#fff0c9", icons: ["food:apple", "food:pizza"] },
-  { id: "bathroom", x: 0.51, y: 0.57, w: 0.18, h: 0.27, wall: "#d8efff", icons: ["duck", "sponge"] },
-  { id: "games",    x: 0.69, y: 0.57, w: 0.18, h: 0.27, wall: "#f1e4ff", icons: ["game:catch", "game:music"] }
+  // andar de cima (3)
+  { id: "bedroom",  x: 0.33, y: 0.30, w: 0.17, h: 0.24, wall: "#cfe8ff", icons: ["hat", "ball"] },
+  { id: "salon",    x: 0.515, y: 0.30, w: 0.17, h: 0.24, wall: "#ffd6ea", icons: ["hair:curls", "polish:#ff6bb5"] },
+  { id: "dentist",  x: 0.70, y: 0.30, w: 0.17, h: 0.24, wall: "#d4f3ec", icons: ["tooth", "brush"] },
+  // térreo (4)
+  { id: "kitchen",  x: 0.31, y: 0.57, w: 0.135, h: 0.26, wall: "#fff0c9", icons: ["food:apple", "food:pizza"] },
+  { id: "bathroom", x: 0.455, y: 0.57, w: 0.135, h: 0.26, wall: "#d8efff", icons: ["duck", "sponge"] },
+  { id: "garden",   x: 0.60, y: 0.57, w: 0.135, h: 0.26, wall: "#dcf3c4", icons: ["flower", "butterfly"] },
+  { id: "games",    x: 0.745, y: 0.57, w: 0.135, h: 0.26, wall: "#f1e4ff", icons: ["teddy", "blocks"] }
 ];
 
 const SURPRISE_MS = 9000;   // tempo que o balão-surpresa leva para sair pelo céu
@@ -301,5 +305,24 @@ export class HubRoom {
     c.fillStyle = "rgba(255,248,230,.85)";
     for (let i = 0; i < 6; i++) { c.beginPath(); c.ellipse(w * (0.17 + i * 0.026), h * (0.9 - i * 0.008), m * 0.022, m * 0.01, 0, 0, Math.PI * 2); c.fill(); }
     softShadow(c, w * 0.15, h * 0.84, m * 0.12, m * 0.025, 0.18);
+    // v1.1: árvores ao fundo, florzinhas e luz do sol
+    const tree = (x, y, s, col) => {
+      c.fillStyle = "#b07a4a"; roundRect(c, x - s * 0.06, y - s * 0.45, s * 0.12, s * 0.45, s * 0.04); c.fill();
+      const tg = c.createRadialGradient(x - s * 0.15, y - s * 0.85, s * 0.05, x, y - s * 0.7, s * 0.45);
+      tg.addColorStop(0, lighten(col, 0.25)); tg.addColorStop(1, col);
+      c.fillStyle = tg;
+      c.beginPath(); c.arc(x, y - s * 0.75, s * 0.32, 0, Math.PI * 2); c.arc(x - s * 0.22, y - s * 0.55, s * 0.24, 0, Math.PI * 2); c.arc(x + s * 0.22, y - s * 0.56, s * 0.25, 0, Math.PI * 2); c.fill();
+    };
+    tree(w * 0.03, h * 0.7, m * 0.3, "#7cc96b");
+    tree(w * 0.27, h * 0.66, m * 0.24, "#8fd36f");
+    const fl = ["#ff8fb3", "#ffd36e", "#ffffff", "#c6a6ff"];
+    for (let i = 0; i < 26; i++) {
+      const x = ((i * 0.618) % 1) * w, y = h * (0.86 + ((i * 0.37) % 1) * 0.12);
+      const r = m * (0.008 + (i % 3) * 0.003);
+      c.fillStyle = fl[i % 4];
+      for (let k = 0; k < 5; k++) { const a = k * Math.PI * 2 / 5; c.beginPath(); c.arc(x + Math.cos(a) * r, y + Math.sin(a) * r, r * 0.8, 0, Math.PI * 2); c.fill(); }
+      c.fillStyle = "#ffb43a"; c.beginPath(); c.arc(x, y, r * 0.6, 0, Math.PI * 2); c.fill();
+    }
+    atmosphere(c, w, h, m, { light: { x: 0.12, y: 0.16, r: 1.1, color: "255,244,200" }, tint: "40,80,60", vignette: 0.14 });
   }
 }

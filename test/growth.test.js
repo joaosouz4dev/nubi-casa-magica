@@ -152,6 +152,15 @@ fs.mkdirSync(OUT, { recursive: true });
   R.prizesPersisted = await ev(() => window.__nubi.progress.owned('food:starcookie') && window.__nubi.progress.owned('decor:flags'));
   await shot('g10-mapa-volta');
 
+  // ===== Stage 5: nível do jogador e conquistas =====
+  const lvl0 = await ev(() => window.__nubi.progress.level());
+  // dá bastante estrelinha para garantir subir de nível
+  await ev(() => window.__nubi.progress.add(60, 'test'));
+  await wait(200);
+  R.levelRises = (await ev(() => window.__nubi.progress.level())) > lvl0;
+  R.hasAchievements = await ev(() => window.__nubi.progress.achievedCount() >= 2);   // ach:first + ach:ten etc.
+  R.levelBadgeShown = await ev(() => { const b = document.getElementById('lvlBadge'); return !!b && /Nv \d/.test(b.textContent); });
+
   await browser.close();
   for (const [key, v] of Object.entries(R)) console.log((v ? 'ok  ' : 'FAIL') + ' ' + key);
   console.log('erros:', errors.length ? errors : 'nenhum');

@@ -1,6 +1,6 @@
 /* Service worker — joga 100% offline. Precache de todos os módulos e assets.
    Estratégia cache-first: ótimo para um jogo estático que não muda em runtime. */
-const CACHE = "nubi-v8";
+const CACHE = "nubi-v14";
 const ASSETS = [
   "./",
   "./index.html",
@@ -24,6 +24,7 @@ const ASSETS = [
   "./src/scenes/salon_room.js",
   "./src/scenes/hub_room.js",
   "./src/scenes/games_room.js",
+  "./src/scenes/garden_room.js",
   "./src/entities/food_art.js",
   "./src/systems/progress.js",
   "./src/ui/progress_ui.js",
@@ -41,12 +42,14 @@ const ASSETS = [
   "./src/ui/hand_demo.js",
   "./src/ui/icons.js",
   "./src/ui/guide.js",
+  "./src/ui/scenery.js",
   "./src/data/foods.js",
   "./src/data/chapters.js",
   "./assets/icon-192.png",
   "./assets/icon-512.png",
   "./assets/icon-maskable-512.png",
-  "./assets/nubi.svg"
+  "./assets/nubi.svg",
+  "./assets/fonts/Fredoka.ttf"
 ];
 
 self.addEventListener("install", (e) => {

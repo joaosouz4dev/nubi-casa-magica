@@ -165,9 +165,13 @@ fs.mkdirSync(OUT, { recursive: true });
   R.chestOnce = (await ev(() => window.__nubi.progress.openChest())) === 0;
 
   // ================= PRESENTE DO DIA (abre com a tela de Play) =================
-  await page.goto('http://127.0.0.1:8742/index.html', { waitUntil: 'networkidle' });
+  await page.goto('http://127.0.0.1:8742/index.html', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => !!window.__nubi && window.__nubi.room);
+  // garante estado "ainda não ganhou hoje" (determinístico, sem depender do relógio/carga)
+  await ev(() => { try { const s = window.__nubi.save.state; if (s.daily) s.daily.gift = null; window.__nubi.save.persist(); } catch (e) {} });
   await page.click('#btnPlay', { force: true });
+  // oferece diretamente (o auto-timer de 1.2s pós-Play fica flaky sob carga)
+  await ev(() => window.__nubi.progressUI.offerDailyGift());
   await page.waitForSelector('#dailyGift', { timeout: 5000 }).catch(() => {});
   R.dailyGiftShown = await page.isVisible('#dailyGift');
   await wait(300); await shot('m09-presente-do-dia');
@@ -181,6 +185,22 @@ fs.mkdirSync(OUT, { recursive: true });
   await ev(() => window.__nubi.go('games')); await wait(900);
   R.fpsGamesMenu = (await fps()) > 30;
   await shot('m10-marcas');
+
+  // ================= FORMAS (encaixar) =================
+  await ev(() => { const r = window.__nubi.games; r.start('shapes'); r.game.t = 10; });
+  R.shapesStarted = await ev(() => !!(window.__nubi.games.game && window.__nubi.games.game.id === 'shapes'));
+  await ev(() => { const r = window.__nubi.games, g = r.game; for (const pc of g.pieces) { const hi = g.holes.findIndex(h => !h.filled && h.shape === pc.shape); const hr = r.shapeHoleRect(hi); r.bus.emit('pointer:down', r.shapePieceRect(g.pieces.indexOf(pc))); pc.pos = { x: hr.x, y: hr.y }; r._shapeUp(); } });
+  await wait(1100);
+  R.shapesFinished = await ev(() => !window.__nubi.games.game && !!window.__nubi.games.result);
+  await shot('v2-formas');
+  await ev(() => { window.__nubi.games.result = null; window.__nubi.games._menuPose(); });
+
+  // ================= CORES (misturar) =================
+  await ev(() => { const r = window.__nubi.games; r.start('colors'); r.game.t = 10; });
+  R.colorsStarted = await ev(() => !!(window.__nubi.games.game && window.__nubi.games.game.id === 'colors'));
+  R.colorsMix = await ev(() => { const r = window.__nubi.games, g = r.game, t = g.target; r._colorTap(r.swatchRect(0)); r._colorTap(r.swatchRect(1)); return g.mixed === t.out; });
+  await shot('v2-cores');
+  await ev(() => { if (window.__nubi.games.game) window.__nubi.games._finish({ quick: true }); });
 
   await browser.close();
   for (const [key, v] of Object.entries(R)) console.log((v ? 'ok  ' : 'FAIL') + ' ' + key);

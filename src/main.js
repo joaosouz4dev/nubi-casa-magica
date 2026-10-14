@@ -17,6 +17,7 @@ import { DentistRoom } from "./scenes/dentist_room.js";
 import { SalonRoom } from "./scenes/salon_room.js";
 import { HubRoom } from "./scenes/hub_room.js";
 import { GamesRoom } from "./scenes/games_room.js";
+import { GardenRoom } from "./scenes/garden_room.js";
 import { STAR_RULES } from "./data/prizes.js";
 import { Progress } from "./systems/progress.js";
 import { ProgressUI } from "./ui/progress_ui.js";
@@ -54,6 +55,7 @@ export function boot() {
   scenes.register("salon", new SalonRoom({ vp, bus, nubi, save }));
   scenes.register("hub", new HubRoom({ vp, bus, nubi, save }));
   scenes.register("games", new GamesRoom({ vp, bus, nubi, save }));
+  scenes.register("garden", new GardenRoom({ vp, bus, nubi, save }));
   // cada cômodo escolhe o próprio enquadramento; por padrão, tamanho normal
   scenes.onBeforeEnter = () => { nubi.sizeK = 1; };
 
@@ -122,6 +124,13 @@ export function boot() {
 
   // áudio
   const startAudio = () => { audio.init(); audio.resume(); };
+  // limite de tempo (opcional, definido pelos responsáveis): bedtime gentil
+  bus.on("playlimit:reached", () => {
+    audio.yawn();
+    nubi.say("Que soninho...");
+    nubi.sleep();
+    bus.emit("fx:burst", { x: nubi.px(), y: nubi.py() - nubi.radius(), color: "#cdb8f0", small: true });
+  });
   // música de fundo diferente por cômodo + "fuuu" curtinho na troca
   bus.on("room:changed", (id) => { audio.setTheme(id); if (booted) audio.whoosh(); });
   // ganhar estrelinhas faz o bichinho dar um "boing" de alegria (só visual)
@@ -137,8 +146,8 @@ export function boot() {
   bus.on("audio:bounce", () => audio.bounce());
   bus.on("audio:giggle", () => audio.giggle());
   bus.on("audio:purr", () => audio.purr());
-  for (const s of ["scrub", "sparkle", "pop", "click", "flush", "plop", "honk", "tada", "whoosh"]) bus.on("audio:" + s, () => audio[s]());
-  bus.on("audio:note", (i) => audio.note(i || 0));
+  for (const s of ["scrub", "sparkle", "pop", "click", "flush", "plop", "honk", "tada", "whoosh", "water"]) bus.on("audio:" + s, () => audio[s]());
+  bus.on("audio:note", (e) => { if (e && typeof e === "object") audio.note(e.i || 0, e.instrument); else audio.note(e || 0); });
   bus.on("audio:coin", (n) => audio.coin((n || 0) % 8));
   bus.on("discovery", ({ isNew }) => { if (isNew) audio.voiceHappy(); });
 
@@ -146,7 +155,7 @@ export function boot() {
   bus.on("album:replay", ({ kind, id }) => replay(kind, id, { nubi, bus, audio }));
 
   // UI: álbum, responsáveis, navegação, som rápido
-  const album = new Album(bus, save);
+  const album = new Album(bus, save, progress);
   new ParentGate(bus, audio, save);
   const progressUI = new ProgressUI({ bus, progress, nubi, audio, vp });
   wireNav(bus, scenes);
@@ -218,6 +227,7 @@ export function boot() {
     get salon() { return scenes.rooms.get("salon"); },
     get hub() { return scenes.rooms.get("hub"); },
     get games() { return scenes.rooms.get("games"); },
+    get garden() { return scenes.rooms.get("garden"); },
     get items() { return scenes.rooms.get("kitchen").items; },  // compat Etapa 1/2
     get interactions() { return scenes.rooms.get("kitchen"); },
     nubi, bus, vp, save, effects, album, quests, guide, progress, progressUI, scenes, go: (id) => scenes.go(id), back: () => scenes.back()

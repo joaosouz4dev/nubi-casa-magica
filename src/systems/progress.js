@@ -4,7 +4,7 @@
    (não se gasta nada), o carinho é por bichinho e as missões do dia trocam
    pela data, sem sequência e sem cobrança.
    Só emite eventos; a apresentação fica na UI (ui/progress_ui.js). */
-import { STAR_RULES, ACT_COOLDOWN, NO_STAR, LOVE_ACTS, loveNeeded, PRIZES, MISSION_POOL } from "../data/prizes.js";
+import { STAR_RULES, ACT_COOLDOWN, NO_STAR, LOVE_ACTS, loveNeeded, PRIZES, MISSION_POOL, ACHIEVEMENTS } from "../data/prizes.js";
 
 function today() {
   const d = new Date();
@@ -25,7 +25,9 @@ export class Progress {
       total: p.total || 0,
       claimed: { ...(p.claimed || {}) },
       love: { ...(p.love || {}) },
-      daily: p.daily || null
+      daily: p.daily || null,
+      achieved: { ...(p.achieved || {}) },
+      lvlSeen: p.lvlSeen || 0
     };
     this._last = {};
     this._ensureDaily();
@@ -35,6 +37,27 @@ export class Progress {
   }
 
   get total() { return this.state.total; }
+  // ---------- nível do jogador (derivado do total de estrelinhas) ----------
+  // custo cumulativo do nível L = 10*L*(L+1)/2 -> níveis ficam gradualmente mais longos
+  level() { let l = 0; while (this.total >= this._levelCost(l + 1)) l++; return l; }
+  _levelCost(l) { return 5 * l * (l + 1); }   // 10,30,60,100,...
+  levelProgress() {
+    const l = this.level(), a = this._levelCost(l), b = this._levelCost(l + 1);
+    return { level: l, into: this.total - a, span: b - a, frac: Math.min(1, (this.total - a) / (b - a)) };
+  }
+  // ---------- conquistas (troféus) ----------
+  achievements() { return ACHIEVEMENTS.map(a => ({ ...a, got: !!this.state.achieved[a.id] })); }
+  achievedCount() { return ACHIEVEMENTS.filter(a => this.state.achieved[a.id]).length; }
+  _checkAchievements(at) {
+    for (const a of ACHIEVEMENTS) {
+      if (this.state.achieved[a.id]) continue;
+      if (a.test(this)) {
+        this.state.achieved[a.id] = true;
+        this._persist();
+        this.bus.emit("achievement:got", { ...a, at });
+      }
+    }
+  }
   pet() { return this.save.currentPet(); }
   love(pet = this.pet()) { return this.state.love[pet] || { pts: 0, lvl: 0 }; }
   owned(id) { return !!this.state.claimed[id]; }
@@ -47,10 +70,14 @@ export class Progress {
   add(n, why, at) {
     if (!n) return;
     const before = this.readyCount();
+    const beforeLvl = this.level();
     this.state.total += n;
     this._persist();
     this.bus.emit("stars:changed", { total: this.state.total, gained: n, why, at });
     if (this.readyCount() > before) this.bus.emit("prize:ready", this.readyCount());
+    const lvl = this.level();
+    if (lvl > beforeLvl) { this.state.lvlSeen = lvl; this._persist(); this.bus.emit("level:up", { level: lvl, at }); }
+    this._checkAchievements(at);
   }
 
   onAct(a) {

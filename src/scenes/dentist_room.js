@@ -11,6 +11,7 @@
 import { Spring, Spring2, damp, clamp, Ease, Motion, CachedLayer, roundRect, softShadow, lighten, darken } from "../core/anim.js";
 import { touchNubi } from "./nubi_touch.js";
 import { drawIcon } from "../ui/icons.js";
+import { atmosphere } from "../ui/scenery.js";
 
 const PLAQUE = [0, 2, 4, 7, 9, 11];       // dentes com placa (determinístico)
 const BUGS = [1, 10];                     // dentes com bichinho de açúcar
@@ -29,7 +30,7 @@ export class DentistRoom {
     this.t = 0; this.unsub = [];
     this.scrubT = 0;
     this.bounce = new Spring(0, { stiffness: 260, damping: 9 });
-    this.back = new CachedLayer(vp, (c, w, h, m) => this._paintBack(c, w, h, m));
+    this.back = new CachedLayer(vp, (c, w, h, m) => { this._paintBack(c, w, h, m); atmosphere(c, w, h, m, { vignette: 0.16 }); });
     this._fresh();
   }
 

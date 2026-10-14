@@ -57,3 +57,20 @@ export const MISSION_POOL = [
   { act: "game:memory",  icon: "game:memory",  room: "games" },
   { act: "game:music",   icon: "game:music",   room: "games" }
 ];
+
+/* ============================================================
+   CONQUISTAS (troféus) - marcos divertidos, sem punição e sem perder.
+   Cada uma tem um teste contra o estado do Progress. Aparecem no álbum.
+   test(prog) -> bool.  (prog expõe total, level(), love(), save.state.games)
+   ============================================================ */
+export const ACHIEVEMENTS = [
+  { id: "ach:first",   icon: "star",         name: "Primeira estrelinha", test: (p) => p.total >= 1 },
+  { id: "ach:ten",     icon: "star",         name: "Dez estrelinhas",     test: (p) => p.total >= 10 },
+  { id: "ach:fifty",   icon: "trophy",       name: "Cinquenta!",          test: (p) => p.total >= 50 },
+  { id: "ach:hundred", icon: "trophy",       name: "Cem estrelinhas",     test: (p) => p.total >= 100 },
+  { id: "ach:lvl3",    icon: "trophy",       name: "Nível 3",             test: (p) => p.level() >= 3 },
+  { id: "ach:lvl5",    icon: "trophy",       name: "Nível 5",             test: (p) => p.level() >= 5 },
+  { id: "ach:love",    icon: "heartLevel",   name: "Melhor amigo",        test: (p) => Object.values(p.state.love || {}).some(l => (l.lvl || 0) >= 2) },
+  { id: "ach:gamer",   icon: "games",        name: "Brincalhão",          test: (p) => { const g = p.save.state.games; const b = g && g.best; return !!b && Object.keys(b).length >= 3; } },
+  { id: "ach:gardener", icon: "flower",      name: "Jardineiro",          test: (p) => { const g = p.save.state.garden; return !!g || (p.save.state.pantry | 0) >= 1; } }
+];

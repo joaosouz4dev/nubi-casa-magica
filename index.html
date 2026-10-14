@@ -12,10 +12,16 @@
   <link rel="apple-touch-icon" href="assets/icon-192.png" />
   <title>Casa do Nubi</title>
   <style>
+    @font-face {
+      font-family: "Fredoka";
+      src: url("assets/fonts/Fredoka.ttf") format("truetype");
+      font-weight: 300 700;
+      font-display: swap;
+    }
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html, body {
       width: 100%; height: 100%; overflow: hidden; background: #efe3ff;
-      font-family: "Comic Sans MS", system-ui, sans-serif;
+      font-family: "Fredoka", "Comic Sans MS", system-ui, sans-serif;
       touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none;
     }
     #game { display: block; width: calc(100 * var(--vw)); height: calc(100 * var(--vh)); }
@@ -85,6 +91,11 @@
     #starPill.bump { animation: pillBump .45s cubic-bezier(.34,1.56,.64,1); }
     @keyframes pillBump { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.18); } 100% { transform: translateX(-50%) scale(1); } }
     #starCount { font-size: 22px; font-weight: bold; min-width: 1.6em; text-align: left; }
+    #lvlBadge {
+      font-size: 13px; font-weight: bold; color: #fff; background: linear-gradient(180deg, #b48cff, #8a5cf0);
+      padding: 2px 8px; border-radius: 999px; box-shadow: 0 2px 0 #6e42c0; white-space: nowrap;
+    }
+    #lvlBadge.bump { animation: bump .5s cubic-bezier(.34,1.56,.64,1); }
     #loveMeter { position: relative; width: 30px; height: 28px; margin-left: 4px; }
     #loveMeter svg { position: absolute; inset: 0; width: 100%; height: 100%; }
     #loveFillBox { position: absolute; inset: 0; clip-path: path("M15 26 C3 18 0 11 4 6 C8 1 13 3 15 7 C17 3 22 1 26 6 C30 11 27 18 15 26 Z"); }
@@ -193,6 +204,9 @@
     button.albumCard { border: none; background: none; font: inherit; color: inherit; cursor: pointer; transition: transform .15s; }
     button.albumCard:active { transform: scale(.9); }
     #albumStickers { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 10px; margin-top: calc(1 * var(--vh)); background: #faf6ff; border-radius: 20px; }
+    #albumTrophies { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 10px; margin-top: calc(1 * var(--vh)); background: linear-gradient(180deg,#fff6df,#ffeab0); border-radius: 20px; }
+    #albumTrophies .trophy { display: flex; flex-direction: column; align-items: center; width: 72px; }
+    #albumTrophies .trophyName { font-size: 11px; color: #6b4a14; text-align: center; margin-top: 2px; line-height: 1.1; }
     .sticker { border: none; background: none; padding: 0; cursor: pointer; transition: transform .15s; }
     .sticker:active { transform: scale(.88) rotate(-6deg); }
     .overlay.show .sticker { animation: cardIn .5s cubic-bezier(.34,1.56,.64,1) backwards; }
@@ -205,6 +219,12 @@
     .modeRow button:active { transform: scale(.95); }
     .modeRow button.active { background: #8a3bff; color: #fff; border-color: #8a3bff; }
     .cfg { display: flex; align-items: center; gap: 10px; margin: 12px 0; font-size: 17px; }
+    .cfgSelect { font: inherit; font-size: 16px; padding: 8px 12px; border-radius: 12px; border: 2px solid #cdb8f0; background: #fff; color: #4a2f6a; margin: 6px 0; }
+    #parentReport { margin: 6px 0 2px; }
+    #parentReport .report { width: 100%; border-collapse: collapse; font-size: 15px; }
+    #parentReport .report th, #parentReport .report td { padding: 6px 8px; text-align: center; border-bottom: 1px solid #eadff7; }
+    #parentReport .report th { color: #7a5aa8; font-weight: bold; }
+    #parentReport .report td:first-child, #parentReport .report th:first-child { text-align: left; }
     .cfg input { width: 26px; height: 26px; accent-color: #8a3bff; }
     .hint { font-size: 13px; color: #8a7fa0; margin-top: calc(1 * var(--vh)); }
 
@@ -283,6 +303,114 @@
 
     body.reduce-motion *, body.reduce-motion *::after { animation-duration: .01s !important; transition-duration: .05s !important; }
     @media (prefers-reduced-motion: reduce) { #nav button.active { animation: none; } }
+
+    /* ================= v1.1: sistema visual moderno =================
+       Tokens únicos (cores, raios, sombras) + componentes com brilho,
+       vidro fosco leve e microanimações. Vem por último para sobrepor o
+       estilo anterior sem mexer na estrutura (os testes usam os mesmos ids). */
+    @font-face { font-family: "Fredoka"; src: url("assets/fonts/Fredoka.ttf") format("truetype"); font-weight: 300 700; font-display: swap; }
+    :root {
+      --ink: #3a2f4f; --ink-soft: #6c5f86; --brand: #8a3bff; --brand-2: #ff6fae; --sun: #ffc93a;
+      --glass: rgba(255,255,255,.62); --glass-line: rgba(255,255,255,.85);
+      --shadow-1: 0 2px 0 rgba(255,255,255,.9) inset, 0 -3px 0 rgba(120,80,190,.12) inset, 0 6px 16px rgba(70,40,110,.18);
+      --shadow-2: 0 1px 0 rgba(255,255,255,.9) inset, 0 20px 60px rgba(40,20,70,.32), 0 0 0 1px rgba(138,59,255,.08);
+      --r-card: 22px; --ease-pop: cubic-bezier(.34,1.56,.64,1);
+    }
+    html, body { font-family: "Fredoka", "Comic Sans MS", system-ui, sans-serif; color: var(--ink); }
+    button { font-family: inherit; }
+
+    .toy {
+      background:
+        radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 62%),
+        linear-gradient(180deg, #ffffff 0%, #ece3ff 100%);
+      border: 2px solid var(--glass-line);
+      box-shadow: var(--shadow-1), 0 3px 0 #cdb8f0;
+    }
+    .toy:active { box-shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 1px 0 #cdb8f0, 0 2px 6px rgba(70,40,110,.18); }
+    .toy:focus-visible, .panel button:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+    @media (hover: hover) {
+      .toy:hover { transform: translateY(-2px) scale(1.05); }
+      .prize:hover, .mission:hover, .petCard:hover, button.albumCard:hover { transform: translateY(-3px); }
+    }
+    .toy svg { transition: transform .25s var(--ease-pop); }
+    .toy:active svg { transform: scale(.9) rotate(-4deg); }
+
+    /* barra de cômodos: vidro fosco, começa ABAIXO da fileira de cima
+       (antes o topo dela passava por trás do botão de som) */
+    #nav {
+      top: calc(env(safe-area-inset-top, 0px) + min(calc(12 * var(--vw)), 54px) + 20px);
+      transform: none; background: var(--glass);
+      border: 2px solid var(--glass-line); backdrop-filter: blur(10px) saturate(1.3); -webkit-backdrop-filter: blur(10px) saturate(1.3);
+      box-shadow: 0 10px 30px rgba(70,40,110,.18), 0 1px 0 rgba(255,255,255,.9) inset;
+      gap: 6px; padding: 8px 7px;
+    }
+    #nav button {
+      width: min(calc(13 * var(--vw)), 52px, calc((100 * var(--vh) - 120px) / 7.6));
+      height: min(calc(13 * var(--vw)), 52px, calc((100 * var(--vh) - 120px) / 7.6));
+    }
+    #nav button.active {
+      background: radial-gradient(120% 70% at 50% 0%, #fffbe0 0%, rgba(255,251,224,0) 60%), linear-gradient(180deg, #ffe680 0%, #ffbf2e 100%);
+      border-color: #fff3b8;
+    }
+
+    #starPill {
+      background: radial-gradient(120% 80% at 50% 0%, #fff 0%, rgba(255,255,255,0) 60%), linear-gradient(180deg, #fffdf3 0%, #ffefb5 100%);
+      border: 2px solid #fff6d1; box-shadow: 0 1px 0 #fff inset, 0 3px 0 #e6c86a, 0 8px 18px rgba(160,100,10,.18);
+      font-weight: 600;
+    }
+    #starCount { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+    /* overlays: fundo com cor (não cinza) + painel em vidro */
+    .overlay {
+      background: radial-gradient(circle at 50% 40%, rgba(120,70,190,.30), rgba(40,25,70,.55));
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    }
+    .panel {
+      background: linear-gradient(180deg, #ffffff 0%, #fbf7ff 100%);
+      border: 3px solid rgba(255,255,255,.95); border-radius: 32px; box-shadow: var(--shadow-2);
+      color: var(--ink);
+    }
+    .panel h2 {
+      font-weight: 700; letter-spacing: .3px;
+      background: linear-gradient(90deg, var(--brand), var(--brand-2)); -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .panel .close {
+      background: radial-gradient(120% 70% at 50% 0%, #ffd0e6 0%, rgba(255,208,230,0) 60%), linear-gradient(180deg, #ff9cc8, #ff6fae);
+      border: 2px solid #ffe0ef; box-shadow: 0 1px 0 #fff inset, 0 3px 0 #e0679f, 0 6px 14px rgba(224,103,159,.3); font-weight: 700;
+    }
+    .panel .close:hover { transform: rotate(90deg); transition: transform .3s var(--ease-pop); }
+
+    /* cards (lojinha, missões, vitrine, álbum): mesma linguagem */
+    .prize, .mission, .petCard {
+      border-width: 2px; border-radius: var(--r-card);
+      box-shadow: 0 1px 0 #fff inset, 0 4px 0 rgba(160,120,210,.18), 0 8px 18px rgba(70,40,110,.10);
+      transition: transform .2s var(--ease-pop), box-shadow .2s;
+    }
+    .albumIcon { border-radius: 24px; box-shadow: inset 0 -6px 0 rgba(0,0,0,.06), inset 0 2px 0 rgba(255,255,255,.8), 0 6px 14px rgba(70,40,110,.12); }
+    .modeRow button { border-radius: 18px; font-weight: 600; box-shadow: 0 3px 0 #e3d6fb; }
+    .modeRow button.active { background: linear-gradient(180deg, #a466ff, #7a2cf0); box-shadow: 0 3px 0 #5a1fb8; }
+
+    /* tela inicial: fundo "aurora" que respira, brilho passando no logo,
+       Play com reflexo de vidro */
+    #title { background: linear-gradient(180deg, #ffe2b0 0%, #f6dcff 55%, #cbb6f5 100%); }
+    #title::before, #title::after {
+      content: ""; position: absolute; width: calc(90 * var(--vh)); height: calc(90 * var(--vh)); border-radius: 50%;
+      filter: blur(calc(6 * var(--vh))); opacity: .55; z-index: 0; pointer-events: none;
+    }
+    #title::before { background: radial-gradient(circle, #ffb3d6, transparent 65%); left: -10%; top: -30%; animation: aurora 14s ease-in-out infinite alternate; }
+    #title::after { background: radial-gradient(circle, #a8e0ff, transparent 65%); right: -12%; bottom: -35%; animation: aurora 17s ease-in-out -5s infinite alternate-reverse; }
+    @keyframes aurora { from { transform: translate(0, 0) scale(1); } to { transform: translate(12%, 10%) scale(1.15); } }
+    #title .lt { font-weight: 700; }
+    #title .logo { position: relative; }
+    /* brilho só nas letras (um retângulo por cima clareava o fundo também) */
+    #title .logo { animation: shine 4.5s ease-in-out 1.6s infinite; }
+    @keyframes shine { 0%, 40%, 100% { filter: brightness(1); } 20% { filter: brightness(1.18) drop-shadow(0 0 calc(1.2 * var(--vh)) rgba(255,255,255,.9)); } }
+    #btnPlay::after {
+      content: ""; position: absolute; left: 16%; right: 16%; top: 8%; height: 34%; border-radius: 50%;
+      background: linear-gradient(180deg, rgba(255,255,255,.65), rgba(255,255,255,0)); pointer-events: none;
+    }
+    body.reduce-motion #title::before, body.reduce-motion #title::after, body.reduce-motion #title .logo { animation: none; }
+    @media (prefers-reduced-motion: reduce) { #title::before, #title::after, #title .logo { animation: none; } }
   </style>
 </head>
 <body>
@@ -315,6 +443,16 @@
         <circle cx="35" cy="19" r="4" fill="#ffe14d" stroke="#b8860b" stroke-width="2"/>
       </svg>
     </button>
+    <button class="toy" data-room="garden" aria-label="Jardim">
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <path d="M4 40h40" stroke="#5fa847" stroke-width="4" stroke-linecap="round"/>
+        <path d="M18 40V22" stroke="#3f9a56" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="18" cy="16" r="4" fill="#ffd54a" stroke="#a8791a" stroke-width="2"/>
+        <g fill="#ff8fb3" stroke="#c7709a" stroke-width="1.5"><circle cx="13" cy="14" r="3.2"/><circle cx="23" cy="14" r="3.2"/><circle cx="15" cy="20" r="3.2"/><circle cx="21" cy="20" r="3.2"/></g>
+        <circle cx="18" cy="16" r="2.4" fill="#ffd54a"/>
+        <g stroke="#6e4aa3" stroke-width="1.6" fill="#b49cff"><ellipse cx="33" cy="18" rx="5" ry="4" transform="rotate(-20 33 18)"/><ellipse cx="37" cy="22" rx="4" ry="3.4" transform="rotate(20 37 22)"/></g>
+      </svg>
+    </button>
     <button class="toy" data-room="bedroom" aria-label="Quarto">
       <svg viewBox="0 0 48 48" aria-hidden="true">
         <rect x="5" y="14" width="6" height="26" rx="3" fill="#b98ee6" stroke="#6e4aa3" stroke-width="2.5"/>
@@ -339,7 +477,7 @@
         <path d="M30 34c2-4 8-4 10 0-2 3-8 3-10 0z" fill="#e8426b" stroke="#8a1f3a" stroke-width="2"/>
       </svg>
     </button>
-    <button class="toy" data-room="games" aria-label="Brincadeiras">
+    <button class="toy" data-room="games" aria-label="Quarto de Brinquedos">
       <svg viewBox="0 0 48 48" aria-hidden="true">
         <path d="M24 5L42 25H6z" fill="#ff8fb8" stroke="#a8325c" stroke-width="3" stroke-linejoin="round"/>
         <path d="M24 6l-5 19h10z" fill="#fff"/>
@@ -381,6 +519,7 @@
 
   <button id="starPill" aria-label="Estrelinhas">
     <span id="starIco"></span><span id="starCount">0</span>
+    <span id="lvlBadge" aria-label="Nível">Nv 0</span>
     <span id="loveMeter" aria-label="Carinho do bichinho">
       <span id="loveFillBox"><span id="loveFill"></span></span>
       <svg viewBox="0 0 30 28" aria-hidden="true"><path d="M15 26 C3 18 0 11 4 6 C8 1 13 3 15 7 C17 3 22 1 26 6 C30 11 27 18 15 26 Z" fill="none" stroke="#a8325c" stroke-width="2.5" stroke-linejoin="round"/></svg>
@@ -445,6 +584,7 @@
     <div class="panel">
       <button class="close" id="albumClose" aria-label="Fechar">✕</button>
       <h2>Descobertas do Nubi</h2>
+      <div id="albumTrophies"></div>
       <div id="albumStickers"></div>
       <div id="albumGrid"></div>
     </div>
@@ -474,7 +614,18 @@
       <label class="cfg"><input type="checkbox" id="cfgSfx" /> Efeitos sonoros</label>
       <label class="cfg"><input type="checkbox" id="cfgVoice" /> Falas do Nubi</label>
       <label class="cfg"><input type="checkbox" id="cfgReduce" /> Reduzir movimento e partículas</label>
-      <p class="hint">Esta área reduz toques acidentais; não é comprovação de idade. Sem anúncios, compras, contas ou coleta de dados.</p>
+      <p>Limite de tempo (opcional):</p>
+      <select id="cfgLimit" class="cfgSelect" aria-label="Limite de tempo de brincadeira">
+        <option value="0">Sem limite</option>
+        <option value="10">10 minutos</option>
+        <option value="15">15 minutos</option>
+        <option value="20">20 minutos</option>
+        <option value="30">30 minutos</option>
+      </select>
+      <p class="hint">Ao atingir o limite, o Nubi vai dormir com carinho - sem bloqueio brusco nem aviso de culpa.</p>
+      <p>Relatório (últimos dias):</p>
+      <div id="parentReport"></div>
+      <p class="hint">Indicado para 4 anos ou mais. Esta área reduz toques acidentais; não é comprovação de idade. Sem anúncios, compras, contas ou coleta de dados.</p>
     </div>
   </div>
 
