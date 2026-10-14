@@ -124,6 +124,13 @@ export function boot() {
 
   // áudio
   const startAudio = () => { audio.init(); audio.resume(); };
+  // limite de tempo (opcional, definido pelos responsáveis): bedtime gentil
+  bus.on("playlimit:reached", () => {
+    audio.yawn();
+    nubi.say("Que soninho...");
+    nubi.sleep();
+    bus.emit("fx:burst", { x: nubi.px(), y: nubi.py() - nubi.radius(), color: "#cdb8f0", small: true });
+  });
   // música de fundo diferente por cômodo + "fuuu" curtinho na troca
   bus.on("room:changed", (id) => { audio.setTheme(id); if (booted) audio.whoosh(); });
   // ganhar estrelinhas faz o bichinho dar um "boing" de alegria (só visual)

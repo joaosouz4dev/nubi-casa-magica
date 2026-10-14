@@ -219,6 +219,12 @@
     .modeRow button:active { transform: scale(.95); }
     .modeRow button.active { background: #8a3bff; color: #fff; border-color: #8a3bff; }
     .cfg { display: flex; align-items: center; gap: 10px; margin: 12px 0; font-size: 17px; }
+    .cfgSelect { font: inherit; font-size: 16px; padding: 8px 12px; border-radius: 12px; border: 2px solid #cdb8f0; background: #fff; color: #4a2f6a; margin: 6px 0; }
+    #parentReport { margin: 6px 0 2px; }
+    #parentReport .report { width: 100%; border-collapse: collapse; font-size: 15px; }
+    #parentReport .report th, #parentReport .report td { padding: 6px 8px; text-align: center; border-bottom: 1px solid #eadff7; }
+    #parentReport .report th { color: #7a5aa8; font-weight: bold; }
+    #parentReport .report td:first-child, #parentReport .report th:first-child { text-align: left; }
     .cfg input { width: 26px; height: 26px; accent-color: #8a3bff; }
     .hint { font-size: 13px; color: #8a7fa0; margin-top: calc(1 * var(--vh)); }
 
@@ -608,7 +614,18 @@
       <label class="cfg"><input type="checkbox" id="cfgSfx" /> Efeitos sonoros</label>
       <label class="cfg"><input type="checkbox" id="cfgVoice" /> Falas do Nubi</label>
       <label class="cfg"><input type="checkbox" id="cfgReduce" /> Reduzir movimento e partículas</label>
-      <p class="hint">Esta área reduz toques acidentais; não é comprovação de idade. Sem anúncios, compras, contas ou coleta de dados.</p>
+      <p>Limite de tempo (opcional):</p>
+      <select id="cfgLimit" class="cfgSelect" aria-label="Limite de tempo de brincadeira">
+        <option value="0">Sem limite</option>
+        <option value="10">10 minutos</option>
+        <option value="15">15 minutos</option>
+        <option value="20">20 minutos</option>
+        <option value="30">30 minutos</option>
+      </select>
+      <p class="hint">Ao atingir o limite, o Nubi vai dormir com carinho - sem bloqueio brusco nem aviso de culpa.</p>
+      <p>Relatório (últimos dias):</p>
+      <div id="parentReport"></div>
+      <p class="hint">Indicado para 4 anos ou mais. Esta área reduz toques acidentais; não é comprovação de idade. Sem anúncios, compras, contas ou coleta de dados.</p>
     </div>
   </div>
 
