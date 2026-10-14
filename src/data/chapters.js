@@ -138,9 +138,9 @@ export const CHAPTERS = [
   {
     id: "brincadeiras", room: "games", sticker: "jogos", color: "#ff8fb8",
     steps: {
-      explore:    [{ act: "game:bubbles", icon: "game:bubbles" }, { act: "game:catch", icon: "game:catch" }, { act: "game:memory", icon: "game:memory" }],
-      experiment: [{ act: "game:catch", icon: "game:catch" }, { act: "game:memory", icon: "game:memory" }, { act: "game:music", icon: "game:music" }],
-      solve:      [{ act: "game:memory", icon: "game:memory" }, { act: "game:music", icon: "game:music" }, { act: "game:catch", icon: "game:catch" }]
+      explore:    [{ act: "game:bubbles", icon: "game:bubbles" }, { act: "game:catch", icon: "game:catch" }, { act: "game:shapes", icon: "game:shapes" }],
+      experiment: [{ act: "game:shapes", icon: "game:shapes" }, { act: "game:colors", icon: "game:colors" }, { act: "game:music", icon: "game:music" }],
+      solve:      [{ act: "game:memory", icon: "game:memory" }, { act: "game:colors", icon: "game:colors" }, { act: "game:catch", icon: "game:catch" }]
     }
   },
   /* ---------- Temporada 4: jardim (regar e colher) ---------- */
@@ -180,6 +180,8 @@ export const FREE_WISHES = [
   { act: "game:bubbles", icon: "game:bubbles", room: "games" },
   { act: "game:memory", icon: "game:memory", room: "games" },
   { act: "game:music", icon: "game:music", room: "games" },
+  { act: "game:shapes", icon: "game:shapes", room: "games" },
+  { act: "game:colors", icon: "game:colors", room: "games" },
   { act: "garden:water", icon: "watering", room: "garden" },
   { act: "garden:harvest", icon: "flower", room: "garden" }
 ];

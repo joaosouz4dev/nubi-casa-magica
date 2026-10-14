@@ -562,10 +562,23 @@ const EXTRA = {
     ctx.fillStyle = "rgba(255,255,255,.45)"; ctx.beginPath(); ctx.ellipse(-r * 0.2, -r * 0.2, r * 0.08, r * 0.2, 0.15, 0, 7); ctx.fill();
     drawIcon(ctx, "note", r * 0.75, -r * 0.6, r * 0.32);
   },
+  "game:shapes"(ctx, r, ow) {
+    ctx.fillStyle = "#5bc0eb"; ctx.beginPath(); ctx.arc(-r * 0.4, -r * 0.3, r * 0.3, 0, 7); ctx.fill();
+    ctx.fillStyle = "#ff9a5b"; ctx.fillRect(r * 0.12, -r * 0.6, r * 0.5, r * 0.5);
+    ctx.fillStyle = "#ffd54a"; star(ctx, -r * 0.15, r * 0.45, r * 0.38, "#ffd54a");
+    ctx.strokeStyle = "#7fd88a"; ctx.lineWidth = ow * 1.4; ctx.beginPath(); ctx.moveTo(r * 0.5, r * 0.1); ctx.lineTo(r * 0.75, r * 0.6); ctx.lineTo(r * 0.25, r * 0.6); ctx.closePath(); ctx.stroke();
+    void ow;
+  },
+  "game:colors"(ctx, r, ow) {
+    // paleta com gotas de cor
+    ctx.beginPath(); ctx.ellipse(0, r * 0.1, r * 0.85, r * 0.7, 0, 0, 7); fs(ctx, "#fff4e2", "#c9a37a", ow);
+    ctx.beginPath(); ctx.arc(r * 0.45, r * 0.35, r * 0.22, 0, 7); ctx.fillStyle = "#fff"; ctx.fill();
+    const cols = ["#ff5b7f", "#ffe14d", "#5bc0eb", "#7fd88a"];
+    cols.forEach((c, i) => { const a = -2.1 + i * 0.9; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(Math.cos(a) * r * 0.45, r * 0.1 + Math.sin(a) * r * 0.38, r * 0.17, 0, 7); ctx.fill(); });
+  },
   // ---------- jardim e quarto de brinquedos (v1.1 Stage 2) ----------
   flower(ctx, r, ow) {
-    ctx.strokeStyle = "#4caf6a"; ctx.lineWidth = ow * 1.3; ctx.beginPath(); ctx.moveTo(0, r * 0.9); ctx.lineTo(0, -r * 0.1); ctx.stroke();
-    ctx.fillStyle = "#8fd36f"; ctx.beginPath(); ctx.ellipse(-r * 0.2, r * 0.4, r * 0.22, r * 0.12, -0.5, 0, 7); ctx.fill();
+    ctx.strokeStyle = "#4caf6a"; ctx.lineWidth = ow * 1.3; ctx.beginPath(); ctx.moveTo(0, r * 0.9); ctx.lineTo(0, -r * 0.1); ctx.stroke();    ctx.fillStyle = "#8fd36f"; ctx.beginPath(); ctx.ellipse(-r * 0.2, r * 0.4, r * 0.22, r * 0.12, -0.5, 0, 7); ctx.fill();
     for (let k = 0; k < 6; k++) { const a = (k / 6) * Math.PI * 2; ctx.fillStyle = "#ff8fb3"; ctx.beginPath(); ctx.ellipse(Math.cos(a) * r * 0.3, -r * 0.35 + Math.sin(a) * r * 0.3, r * 0.2, r * 0.12, a, 0, 7); ctx.fill(); }
     ctx.fillStyle = "#ffd54a"; ctx.beginPath(); ctx.arc(0, -r * 0.35, r * 0.17, 0, 7); ctx.fill();
     void ow;

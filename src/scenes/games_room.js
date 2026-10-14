@@ -22,7 +22,18 @@ export const GAMES = [
   { id: "catch",   icon: "game:catch",   color: "#ff9a5b" },
   { id: "bubbles", icon: "game:bubbles", color: "#5bc0eb" },
   { id: "memory",  icon: "game:memory",  color: "#b49cff" },
-  { id: "music",   icon: "game:music",   color: "#7fd88a" }
+  { id: "music",   icon: "game:music",   color: "#7fd88a" },
+  { id: "shapes",  icon: "game:shapes",  color: "#ffb04a" },
+  { id: "colors",  icon: "game:colors",  color: "#ff6bb5" }
+];
+// formas para encaixar
+const SHAPE_DEFS = ["circle", "square", "triangle", "star", "heart"];
+// cores para o jogo de misturar (par -> resultado)
+const COLOR_MIX = [
+  { a: "#ffe14d", b: "#ff5b7f", out: "#ff9a3c", name: "laranja" },
+  { a: "#5bc0eb", b: "#ffe14d", out: "#7fd88a", name: "verde" },
+  { a: "#5b8def", b: "#ff5b7f", out: "#b48cff", name: "roxo" },
+  { a: "#ffffff", b: "#ff5b7f", out: "#ffafd0", name: "rosa" }
 ];
 const CATCH_FOODS = ["apple", "banana", "strawberry", "pear", "orange", "grapes", "watermelon", "blueberry"].filter(id => FOODS[id]);
 const MEMORY_ICONS = ["food:apple", "food:banana", "food:strawberry", "food:watermelon", "food:grapes", "food:orange"];
@@ -71,7 +82,7 @@ export class GamesRoom {
       this.bus.on("tap", (p) => this.onTap(p)),
       this.bus.on("pointer:down", (p) => this.onDown(p)),
       this.bus.on("pointer:move", (p) => this.onMove(p)),
-      this.bus.on("pointer:up", () => this.press.forEach(s => { s.target = 0; }))
+      this.bus.on("pointer:up", () => { this.press.forEach(s => { s.target = 0; }); if (this.game && this.game.id === "shapes") this._shapeUp(); })
     ];
   }
   exit() {
@@ -96,8 +107,8 @@ export class GamesRoom {
 
   // ---------------- cartões ----------------
   cardRect(i) {
-    const vp = this.vp, col = i % 2, row = Math.floor(i / 2);
-    const x0 = 0.31, y0 = 0.2, cw = 0.26, ch = 0.33, gx = 0.025, gy = 0.04;
+    const vp = this.vp, cols = 3, col = i % cols, row = Math.floor(i / cols);
+    const x0 = 0.3, y0 = 0.22, cw = 0.185, ch = 0.3, gx = 0.022, gy = 0.045;
     return { x: vp.dx(x0 + col * (cw + gx)), y: vp.dy(y0 + row * (ch + gy)), w: vp.w * cw, h: vp.h * ch };
   }
   cardAt(px, py) {
@@ -110,7 +121,7 @@ export class GamesRoom {
     const i = this.cardAt(p.x, p.y);
     if (i >= 0) this.press[i].target = 1;
   }
-  onMove(p) { if (this.game && this.game.id === "catch") this.game.targetX = clamp(p.x / this.vp.w, 0.1, 0.84); }
+  onMove(p) { if (this.game && this.game.id === "catch") this.game.targetX = clamp(p.x / this.vp.w, 0.1, 0.84); if (this.game && this.game.id === "shapes") this._shapeMove(p); }
 
   onTap(p) {
     if (this.result) {
@@ -146,7 +157,22 @@ export class GamesRoom {
       g.seq = [this._rnd5(), this._rnd5()];
       g.phase = "listen"; g.idx = 0; g.wait = 600; g.lit = -1; g.litT = 0; g.round = 0;
       g.keys = KEY_COLORS.map(() => new Spring(0, { stiffness: 380, damping: 16 }));
+      g.instrument = (this.save.state.games && this.save.state.games.instrument) || "bell";
       this.nubi.sizeK = 0.62; this.nubi.pos = { x: 0.14, y: 0.62 };
+    } else if (id === "shapes") {
+      // quantas formas encaixar (dificuldade por modo)
+      const n = mode === "solve" ? 5 : mode === "experiment" ? 4 : 3;
+      const ids = SHAPE_DEFS.slice(0, n);
+      // embaralha a ordem das peças soltas, mantendo os furos em ordem
+      const order = ids.slice(); for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; }
+      g.holes = ids.map((shape, i) => ({ shape, i, filled: false }));
+      g.pieces = order.map((shape, i) => ({ shape, i, placed: false, pos: null, pop: new Spring(0, { stiffness: 320, damping: 14 }) }));
+      g.n = n; g.drag = null; g.done = 0;
+      this.nubi.sizeK = 0.52; this.nubi.pos = { x: 0.12, y: 0.3 };
+    } else if (id === "colors") {
+      g.rounds = mode === "solve" ? 5 : mode === "experiment" ? 4 : 3;
+      g.round = 0; g.pick = []; g.mixed = null; g.target = this._colorTarget();
+      this.nubi.sizeK = 0.6; this.nubi.pos = { x: 0.12, y: 0.68 };
     }
     this.game = g;
     this.nubi.arrive();
@@ -155,6 +181,7 @@ export class GamesRoom {
     this.bus.emit("room:sub", "games");
   }
   _rnd5() { return Math.floor(Math.random() * KEY_COLORS.length); }
+  _colorTarget() { return COLOR_MIX[Math.floor(Math.random() * COLOR_MIX.length)]; }
 
   _score(n, at, color) {
     const g = this.game; if (!g) return;
@@ -193,6 +220,7 @@ export class GamesRoom {
   _gameDown(p) {
     const g = this.game;
     if (g.id === "catch") g.targetX = clamp(p.x / this.vp.w, 0.1, 0.84);
+    else if (g.id === "shapes") this._shapeDown(p);
   }
 
   _gameTap(p) {
@@ -215,6 +243,8 @@ export class GamesRoom {
     }
     if (g.id === "memory") { const i = this.memoryCardAt(p.x, p.y); if (i >= 0) this.flipCard(i); return; }
     if (g.id === "music") { const i = this.keyAt(p.x, p.y); if (i >= 0) this.pressKey(i); }
+    if (g.id === "colors") { this._colorTap(p); return; }
+    if (g.id === "shapes") { return; }   // formas usam arraste (down/move/up)
   }
 
   // ---------- memória ----------
@@ -278,7 +308,7 @@ export class GamesRoom {
     const g = this.game;
     g.lit = i; g.litT = 380;
     g.keys[i].kick(-14);
-    this.bus.emit("audio:note", i);
+    this.bus.emit("audio:note", { i, instrument: g.instrument || "bell" });
     const r = this.keyRect(i);
     this.bus.emit("fx:burst", { x: r.x + r.w / 2, y: r.y + r.h * 0.3, color: KEY_COLORS[i], small: true });
   }
@@ -305,7 +335,98 @@ export class GamesRoom {
     return true;
   }
 
-  // ---------------- loop ----------------
+  // ---------- formas (encaixar) ----------
+  shapeHoleRect(i) {
+    const vp = this.vp, g = this.game, n = g.n;
+    const x0 = 0.3, x1 = 0.86, span = x1 - x0, step = span / n;
+    return { x: vp.dx(x0 + step * (i + 0.5)), y: vp.dy(0.4), r: vp.s(0.065) };
+  }
+  shapePieceRect(i) {
+    const vp = this.vp, g = this.game, n = g.n;
+    const x0 = 0.3, x1 = 0.86, span = x1 - x0, step = span / n;
+    const p = g.pieces[i];
+    if (p.pos) return { x: p.pos.x, y: p.pos.y, r: vp.s(0.06) };
+    return { x: vp.dx(x0 + step * (i + 0.5)), y: vp.dy(0.78), r: vp.s(0.06) };
+  }
+  shapePieceAt(px, py) {
+    const g = this.game;
+    for (let i = g.pieces.length - 1; i >= 0; i--) {
+      if (g.pieces[i].placed) continue;
+      const r = this.shapePieceRect(i);
+      if (Math.hypot(px - r.x, py - r.y) <= r.r * 1.3) return i;
+    }
+    return -1;
+  }
+  _shapeDown(p) {
+    const i = this.shapePieceAt(p.x, p.y);
+    if (i >= 0) { this.game.drag = { i, dx: 0, dy: 0 }; this.game.pieces[i].pos = { x: p.x, y: p.y }; this.bus.emit("audio:pop"); }
+  }
+  _shapeMove(p) { const g = this.game; if (g.drag) g.pieces[g.drag.i].pos = { x: p.x, y: p.y }; }
+  _shapeUp() {
+    const g = this.game; if (!g || !g.drag) return;
+    const pc = g.pieces[g.drag.i]; g.drag = null;
+    // encaixa se solto perto do furo da MESMA forma
+    const hi = g.holes.findIndex(h => !h.filled && h.shape === pc.shape);
+    if (hi >= 0) {
+      const hr = this.shapeHoleRect(hi);
+      if (Math.hypot(pc.pos.x - hr.x, pc.pos.y - hr.y) < hr.r * 1.6) {
+        g.holes[hi].filled = true; pc.placed = true; pc.pos = { x: hr.x, y: hr.y }; pc.pop.kick(-18);
+        this._score(2, { x: hr.x, y: hr.y }, "#ffb04a");
+        this.bus.emit("audio:sparkle"); this.nubi.celebrate();
+        g.done++;
+        if (g.done >= g.n) { g.score += g.n; g.endIn = 900; }
+        return;
+      }
+    }
+    pc.pos = null;   // volta ao lugar (sem castigo)
+    this.bus.emit("audio:plop");
+  }
+
+  // ---------- cores (misturar) ----------
+  swatchRect(i) {
+    const vp = this.vp;
+    // 3 potes de tinta embaixo: A, B, branco
+    const base = this.game.target;
+    const cols = [base.a, base.b, "#ffffff"];
+    const x0 = 0.42, step = 0.16;
+    return { x: vp.dx(x0 + i * step), y: vp.dy(0.76), r: vp.s(0.06), color: cols[i] };
+  }
+  _colorTap(p) {
+    const g = this.game;
+    for (let i = 0; i < 3; i++) {
+      const r = this.swatchRect(i);
+      if (Math.hypot(p.x - r.x, p.y - r.y) <= r.r * 1.25) {
+        g.pick.push(r.color); this.bus.emit("audio:pop");
+        this.bus.emit("fx:burst", { x: r.x, y: r.y, color: r.color, small: true });
+        if (g.pick.length >= 2) this._colorResolve();
+        return;
+      }
+    }
+  }
+  _colorResolve() {
+    const g = this.game, t = g.target;
+    const hit = (g.pick.includes(t.a) && g.pick.includes(t.b));
+    g.mixed = hit ? t.out : this._blend(g.pick[0], g.pick[1]);
+    if (hit) {
+      this._score(3, { x: this.vp.dx(0.58), y: this.vp.dy(0.42) }, t.out);
+      this.bus.emit("audio:sparkle"); this.nubi.celebrate();
+      g.round++;
+      if (g.round >= g.rounds) { g.score += g.rounds; g.endIn = 1100; }
+      else setTimeout(() => { if (this.game === g) { g.pick = []; g.mixed = null; g.target = this._colorTarget(); } }, 700);
+    } else {
+      // combinou diferente: nada de errado, só tenta de novo
+      this.nubi.say(["Hmm, que cor!", "Quase!", "Mistura outra!"][g.round % 3]);
+      setTimeout(() => { if (this.game === g) { g.pick = []; g.mixed = null; } }, 700);
+    }
+  }
+  _blend(a, b) {
+    const p = (h) => { h = h.replace("#", ""); const n = parseInt(h.length === 3 ? h.split("").map(x => x + x).join("") : h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+    const [r1, g1, b1] = p(a), [r2, g2, b2] = p(b);
+    const h = (v) => Math.round(v).toString(16).padStart(2, "0");
+    return "#" + h((r1 + r2) / 2) + h((g1 + g2) / 2) + h((b1 + b2) / 2);
+  }
+
+  // ---------- loop ----------
   update(dt) {
     this.t += dt;
     this.cardIn = Math.min(1, this.cardIn + dt / 450);
@@ -374,6 +495,11 @@ export class GamesRoom {
         }
       }
       if (g.endIn !== undefined) { g.endIn -= dt; if (g.endIn <= 0) this._finish(); }
+    } else if (g.id === "shapes") {
+      for (const pc of g.pieces) pc.pop.update(dt);
+      if (g.endIn !== undefined) { g.endIn -= dt; if (g.endIn <= 0) this._finish(); }
+    } else if (g.id === "colors") {
+      if (g.endIn !== undefined) { g.endIn -= dt; if (g.endIn <= 0) this._finish(); }
     }
   }
 
@@ -399,6 +525,13 @@ export class GamesRoom {
       this.nubi.draw();
       g.keys.forEach((k, i) => this._key(ctx, i, m));
       this._seqDots(ctx, w, h, m);
+    } else if (g.id === "shapes") {
+      this.nubi.draw();
+      g.holes.forEach((hl, i) => this._hole(ctx, i, m));
+      g.pieces.forEach((pc, i) => this._piece(ctx, i, m));
+    } else if (g.id === "colors") {
+      this.nubi.draw();
+      this._colorBoard(ctx, w, h, m);
     }
     this._hud(ctx, g, w, h, m);
     this._floaters(ctx, m);
@@ -534,6 +667,75 @@ export class GamesRoom {
     }
     // vez de quem: orelhinha (ouvir) ou mãozinha (tocar)
     drawIcon(ctx, g.phase === "listen" ? "note" : "paw", w * 0.58 + (n + 1) * gap / 2 + m * 0.02, y, m * 0.026);
+  }
+
+  // ---------- desenho de formas e cores ----------
+  _shapePath(ctx, shape, x, y, r) {
+    ctx.beginPath();
+    if (shape === "circle") { ctx.arc(x, y, r, 0, Math.PI * 2); }
+    else if (shape === "square") { ctx.rect(x - r * 0.85, y - r * 0.85, r * 1.7, r * 1.7); }
+    else if (shape === "triangle") { ctx.moveTo(x, y - r); ctx.lineTo(x + r * 0.9, y + r * 0.7); ctx.lineTo(x - r * 0.9, y + r * 0.7); ctx.closePath(); }
+    else if (shape === "heart") { ctx.moveTo(x, y + r * 0.75); ctx.bezierCurveTo(x - r * 1.4, y - r * 0.4, x - r * 0.5, y - r * 1.1, x, y - r * 0.35); ctx.bezierCurveTo(x + r * 0.5, y - r * 1.1, x + r * 1.4, y - r * 0.4, x, y + r * 0.75); ctx.closePath(); }
+    else { // star
+      for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r * 0.45 : r; const px = x + Math.cos(a) * rr, py = y + Math.sin(a) * rr; i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+      ctx.closePath();
+    }
+  }
+  _shapeColor(shape) { return { circle: "#5bc0eb", square: "#ff9a5b", triangle: "#7fd88a", star: "#ffd54a", heart: "#ff6bb5" }[shape] || "#b49cff"; }
+  _hole(ctx, i, m) {
+    const g = this.game, h = g.holes[i], r = this.shapeHoleRect(i);
+    ctx.save();
+    // furo "vazado": contorno tracejado onde a peça encaixa
+    ctx.setLineDash(h.filled ? [] : [m * 0.02, m * 0.015]);
+    ctx.strokeStyle = h.filled ? darken(this._shapeColor(h.shape), 0.2) : "rgba(120,90,150,.6)";
+    ctx.lineWidth = Math.max(2, m * 0.007);
+    ctx.fillStyle = h.filled ? "transparent" : "rgba(255,255,255,.35)";
+    this._shapePath(ctx, h.shape, r.x, r.y, r.r); if (!h.filled) ctx.fill(); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+  _piece(ctx, i, m) {
+    const g = this.game, pc = g.pieces[i];
+    const r = this.shapePieceRect(i), col = this._shapeColor(pc.shape);
+    const k = 1 - clamp(pc.pop.x, -1, 1) * 0.06;
+    ctx.save(); ctx.translate(r.x, r.y); ctx.scale(k, k); ctx.translate(-r.x, -r.y);
+    ctx.shadowColor = "rgba(70,40,110,.25)"; ctx.shadowBlur = m * 0.02; ctx.shadowOffsetY = m * 0.008;
+    const gr = ctx.createLinearGradient(r.x, r.y - r.r, r.x, r.y + r.r);
+    gr.addColorStop(0, lighten(col, 0.4)); gr.addColorStop(1, col);
+    ctx.fillStyle = gr; this._shapePath(ctx, pc.shape, r.x, r.y, r.r); ctx.fill();
+    ctx.shadowColor = "transparent"; ctx.strokeStyle = darken(col, 0.3); ctx.lineWidth = Math.max(2, m * 0.007);
+    this._shapePath(ctx, pc.shape, r.x, r.y, r.r); ctx.stroke();
+    ctx.restore();
+  }
+  _colorBoard(ctx, w, h, m) {
+    const g = this.game, t = g.target;
+    // alvo (contorno da cor a fazer) no alto
+    const tx = w * 0.58, ty = h * 0.3;
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,.9)"; roundRect(ctx, tx - m * 0.11, ty - m * 0.13, m * 0.22, m * 0.2, m * 0.03); ctx.fill();
+    ctx.strokeStyle = darken(t.out, 0.2); ctx.lineWidth = Math.max(2, m * 0.006); roundRect(ctx, tx - m * 0.11, ty - m * 0.13, m * 0.22, m * 0.2, m * 0.03); ctx.stroke();
+    // pote/jarro mostrando a cor-alvo esmaecida (o que queremos fazer)
+    ctx.globalAlpha = 0.4; ctx.fillStyle = t.out; ctx.beginPath(); ctx.arc(tx, ty - m * 0.02, m * 0.06, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    drawIcon(ctx, "star", tx, ty + m * 0.045, m * 0.025);
+    ctx.restore();
+    // resultado da mistura atual, se houver
+    if (g.mixed) { ctx.save(); ctx.fillStyle = g.mixed; ctx.beginPath(); ctx.arc(tx, ty - m * 0.02, m * 0.055, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = m * 0.006; ctx.stroke(); ctx.restore(); }
+    // potes de tinta
+    for (let i = 0; i < 3; i++) {
+      const r = this.swatchRect(i);
+      ctx.save();
+      softShadow(ctx, r.x, r.y + r.r, r.r * 0.9, m * 0.012, 0.2);
+      const gr = ctx.createLinearGradient(r.x, r.y - r.r, r.x, r.y + r.r);
+      gr.addColorStop(0, lighten(r.color, 0.3)); gr.addColorStop(1, r.color);
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = darken(r.color === "#ffffff" ? "#cccccc" : r.color, 0.3); ctx.lineWidth = Math.max(2, m * 0.006); ctx.stroke();
+      // pincel/gota
+      ctx.fillStyle = "rgba(255,255,255,.5)"; ctx.beginPath(); ctx.ellipse(r.x - r.r * 0.3, r.y - r.r * 0.35, r.r * 0.22, r.r * 0.12, -0.6, 0, Math.PI * 2); ctx.fill();
+      // quantos já escolhidos desta cor
+      ctx.restore();
+    }
+    // pontinhos de progresso (rodadas)
+    for (let i = 0; i < g.rounds; i++) { ctx.fillStyle = i < g.round ? t.out : "rgba(255,255,255,.7)"; ctx.strokeStyle = "#8a7fa0"; ctx.lineWidth = Math.max(1.5, m * 0.004); ctx.beginPath(); ctx.arc(w * 0.58 + (i - (g.rounds - 1) / 2) * m * 0.05, h * 0.46, m * 0.014, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
   }
 
   _hud(ctx, g, w, h, m) {

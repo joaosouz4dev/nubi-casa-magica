@@ -247,10 +247,24 @@ export class Audio {
     this._tone({ freq: f, type: "square", dur: 0.07, gain: 0.07, cutoff: 3500, harm: 0 });
     this._tone({ freq: f * 1.335, type: "square", dur: 0.16, gain: 0.07, at: 0.06, cutoff: 3500, harm: 0 });
   }
-  note(i = 0) {
+  note(i = 0, instrument = "bell") {
     if (!this.enabled.sfx) return;
     const scale = [0, 2, 4, 7, 9, 12];
-    this._tone({ freq: 523.25 * Math.pow(2, scale[i % scale.length] / 12), type: "triangle", dur: 0.45, gain: 0.18, harm: 0.4, attack: 0.008 });
+    const freq = 523.25 * Math.pow(2, scale[i % scale.length] / 12);
+    const P = {
+      bell:     { type: "triangle", dur: 0.45, gain: 0.18, harm: 0.4,  cutoff: 4200, attack: 0.008 },
+      xylophone:{ type: "sine",     dur: 0.28, gain: 0.2,  harm: 0.6,  cutoff: 6000, attack: 0.002 },
+      piano:    { type: "triangle", dur: 0.5,  gain: 0.17, harm: 0.25, cutoff: 3200, attack: 0.004 },
+      guitar:   { type: "sawtooth", dur: 0.5,  gain: 0.12, harm: 0.2,  cutoff: 2200, attack: 0.01 },
+      drum:     { type: "sine",     dur: 0.18, gain: 0.22, harm: 0.0,  cutoff: 900,  attack: 0.001 }
+    }[instrument] || { type: "triangle", dur: 0.45, gain: 0.18, harm: 0.4, cutoff: 4200, attack: 0.008 };
+    if (instrument === "drum") {
+      // tambor: tom curto que desce + batida de ruído
+      this._tone({ freq: 180 + i * 10, slideTo: 90, type: "sine", dur: 0.18, gain: 0.22, harm: 0, cutoff: 700 });
+      this._noiseBurst({ dur: 0.08, gain: 0.08, freq: 1200, q: 1 });
+      return;
+    }
+    this._tone({ freq, type: P.type, dur: P.dur, gain: P.gain, harm: P.harm, cutoff: P.cutoff, attack: P.attack });
   }
   whoosh() {
     if (!this.enabled.sfx) return;

@@ -186,6 +186,22 @@ fs.mkdirSync(OUT, { recursive: true });
   R.fpsGamesMenu = (await fps()) > 30;
   await shot('m10-marcas');
 
+  // ================= FORMAS (encaixar) =================
+  await ev(() => { const r = window.__nubi.games; r.start('shapes'); r.game.t = 10; });
+  R.shapesStarted = await ev(() => !!(window.__nubi.games.game && window.__nubi.games.game.id === 'shapes'));
+  await ev(() => { const r = window.__nubi.games, g = r.game; for (const pc of g.pieces) { const hi = g.holes.findIndex(h => !h.filled && h.shape === pc.shape); const hr = r.shapeHoleRect(hi); r.bus.emit('pointer:down', r.shapePieceRect(g.pieces.indexOf(pc))); pc.pos = { x: hr.x, y: hr.y }; r._shapeUp(); } });
+  await wait(1100);
+  R.shapesFinished = await ev(() => !window.__nubi.games.game && !!window.__nubi.games.result);
+  await shot('v2-formas');
+  await ev(() => { window.__nubi.games.result = null; window.__nubi.games._menuPose(); });
+
+  // ================= CORES (misturar) =================
+  await ev(() => { const r = window.__nubi.games; r.start('colors'); r.game.t = 10; });
+  R.colorsStarted = await ev(() => !!(window.__nubi.games.game && window.__nubi.games.game.id === 'colors'));
+  R.colorsMix = await ev(() => { const r = window.__nubi.games, g = r.game, t = g.target; r._colorTap(r.swatchRect(0)); r._colorTap(r.swatchRect(1)); return g.mixed === t.out; });
+  await shot('v2-cores');
+  await ev(() => { if (window.__nubi.games.game) window.__nubi.games._finish({ quick: true }); });
+
   await browser.close();
   for (const [key, v] of Object.entries(R)) console.log((v ? 'ok  ' : 'FAIL') + ' ' + key);
   console.log('erros:', errors.length ? errors : 'nenhum');

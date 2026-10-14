@@ -140,7 +140,7 @@ export function boot() {
   bus.on("audio:giggle", () => audio.giggle());
   bus.on("audio:purr", () => audio.purr());
   for (const s of ["scrub", "sparkle", "pop", "click", "flush", "plop", "honk", "tada", "whoosh", "water"]) bus.on("audio:" + s, () => audio[s]());
-  bus.on("audio:note", (i) => audio.note(i || 0));
+  bus.on("audio:note", (e) => { if (e && typeof e === "object") audio.note(e.i || 0, e.instrument); else audio.note(e || 0); });
   bus.on("audio:coin", (n) => audio.coin((n || 0) % 8));
   bus.on("discovery", ({ isNew }) => { if (isNew) audio.voiceHappy(); });
 
