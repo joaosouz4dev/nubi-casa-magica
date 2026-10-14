@@ -95,7 +95,7 @@ export class GardenRoom {
           this._persist();
         } else if (b.stage < GROW_STEPS) {  // REGAR / CRESCER
           b.stage++;
-          this.bus.emit("audio:scrub");
+          this.bus.emit("audio:water");
           this.bus.emit("fx:burst", { x: r.x, y: r.y - r.h * 0.4, color: "#8fd3ff", small: true });
           if (b.stage >= GROW_STEPS) { b.ripe = true; this.bus.emit("audio:note", 4); this.bus.emit("fx:burst", { x: r.x, y: r.y - r.h, color: "#ffd54a" }); }
           this.bus.emit("act", "garden:water");

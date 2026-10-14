@@ -17,7 +17,8 @@ const THEMES = {
   bedroom: { root: 329.6, scale: [0, 3, 5, 7, 10], bpm: 66, wave: "sine", pad: [0, 3] },
   dentist: { root: 466.2, scale: [0, 2, 4, 7, 9], bpm: 100, wave: "triangle", pad: [0, 4] },
   salon:   { root: 415.3, scale: [0, 2, 4, 7, 11], bpm: 90, wave: "triangle", pad: [0, 4] },
-  games:   { root: 493.9, scale: [0, 2, 4, 7, 9], bpm: 112, wave: "square", pad: [0, 7] }
+  games:   { root: 493.9, scale: [0, 2, 4, 7, 9], bpm: 112, wave: "square", pad: [0, 7] },
+  garden:  { root: 349.2, scale: [0, 2, 4, 5, 7, 9], bpm: 72, wave: "sine", pad: [0, 5] }
 };
 
 export class Audio {
@@ -205,6 +206,12 @@ export class Audio {
   scrub() {
     if (!this.enabled.sfx) return;
     this._noiseBurst({ dur: 0.08, gain: 0.06, freq: 3200 + Math.random() * 1200, q: 1.5 });
+  }
+  water() {
+    if (!this.enabled.sfx) return;
+    // filete d'agua: ruido suave que sobe + gotinhas descendentes
+    this._noiseBurst({ dur: 0.34, gain: 0.05, freq: 900, q: 1.1, slideTo: 2200 });
+    for (let i = 0; i < 3; i++) this._tone({ freq: 760 - i * 90, slideTo: 300 - i * 40, type: "sine", dur: 0.09, gain: 0.07, at: 0.05 + i * 0.07, harm: 0, cutoff: 1600 });
   }
   sparkle() {
     if (!this.enabled.sfx) return;
