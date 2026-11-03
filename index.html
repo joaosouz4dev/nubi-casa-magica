@@ -651,7 +651,17 @@
 
   <script type="module">
     import { boot } from "./src/main.js";
-    boot();
+    try { boot(); }
+    catch (e) {
+      // tela vazia não ajuda ninguém: mostra o erro (para quem for consertar) e um jeito de tentar de novo
+      console.error(e);
+      const box = document.createElement("div");
+      box.id = "bootError";
+      box.style.cssText = "position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:#efe3ff;font:18px Fredoka,system-ui,sans-serif;color:#4a3f5c;text-align:center;padding:24px";
+      box.innerHTML = '<div><p style="font-size:22px;margin-bottom:12px">Ops! O Nubi tropeçou.</p><button style="font:inherit;padding:10px 22px;border-radius:999px;border:none;background:#ffc93a" onclick="location.reload()">Tentar de novo</button><p style="font-size:12px;opacity:.6;margin-top:16px"></p></div>';
+      box.querySelector("p:last-child").textContent = String(e && (e.stack || e.message) || e).slice(0, 300);
+      document.body.appendChild(box);
+    }
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("./sw.js").catch(() => {});
