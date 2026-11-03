@@ -4,6 +4,7 @@
    nas mesmas posições de antes, porque a lógica dos alimentos depende delas. */
 import { CachedLayer, roundRect, softShadow, Motion } from "../core/anim.js";
 import { atmosphere, plant, frame, artHills, artHeart, wallClock } from "../ui/scenery.js";
+import { art, drawArt, drawBackdrop } from "../core/art.js";
 
 export class KitchenScene {
   constructor(vp) {
@@ -16,12 +17,31 @@ export class KitchenScene {
 
   window() { const w = this.vp.w, h = this.vp.h; return { x: w * 0.06, y: h * 0.1, w: w * 0.22, h: h * 0.34 }; }
 
+  /* Artes em feltro: a janela (com cortinas e peitoril) em volta da área da
+     janela, e o vidro dela (onde passa o caminhão). */
+  windowArt() {
+    const win = this.window(), h = win.h * 1.35, w = h * (559 / 640);
+    return { x: win.x + win.w / 2 - w / 2, y: win.y + win.h * 0.52 - h / 2, w, h };
+  }
+  glass() {
+    const a = this.windowArt();
+    return { x: a.x + a.w * 0.2, y: a.y + a.h * 0.13, w: a.w * 0.6, h: a.h * 0.7 };
+  }
+  /* Mesa com o prato: os alimentos (SLOT_X 0.12..0.48, SLOT_Y 0.8) ficam no
+     tampo, e o prato no meio, onde era o prato antigo. */
+  tableArt() {
+    const w = this.vp.w, h = this.vp.h, tw = w * 0.48, th = tw / (640 / 227);
+    return { x: w * 0.3 - tw / 2, y: h * 0.8 - th * 0.4, w: tw, h: th };
+  }
+  hasArt() { return !!art("cozinha/fundo_cozinha"); }
+
   draw() {
     const ctx = this.vp.ctx, w = this.vp.w, h = this.vp.h, m = Math.min(w, h);
     this.layer.draw();
 
-    // nuvens passando pela janela (recortadas no vidro)
+    // nuvens passando pela janela (recortadas no vidro); a arte em feltro já tem as dela
     const win = this.window();
+    if (!this.hasArt()) {
     ctx.save();
     roundRect(ctx, win.x + m * 0.012, win.y + m * 0.012, win.w - m * 0.024, win.h - m * 0.024, m * 0.03);
     ctx.clip();
@@ -38,6 +58,7 @@ export class KitchenScene {
       ctx.fill();
     }
     ctx.restore();
+    }
 
     // raio de sol suave entrando pela janela
     const a = 0.1 + (Motion.reduce ? 0 : Math.sin(this.t * 0.0009) * 0.03);
@@ -54,6 +75,14 @@ export class KitchenScene {
   }
 
   _paint(c, w, h, m) {
+    if (drawBackdrop(c, "cozinha/fundo_cozinha", w, h)) {
+      const a = this.windowArt();
+      drawArt(c, "cozinha/cozinha_janela", a.x, a.y, a.w, a.h);
+      const t = this.tableArt();
+      softShadow(c, t.x + t.w / 2, t.y + t.h * 0.97, t.w * 0.5, h * 0.025, 0.22);
+      drawArt(c, "cozinha/cozinha_mesa", t.x, t.y, t.w, t.h);
+      return;
+    }
     // parede quente com textura sutil de bolinhas
     const g = c.createLinearGradient(0, 0, 0, h * 0.82);
     g.addColorStop(0, "#fff1d6"); g.addColorStop(1, "#ffd9a6");

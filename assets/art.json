@@ -1,0 +1,1042 @@
+{
+ "acessorios/acessorio_bone": {
+  "w": 433,
+  "h": 289,
+  "box": [
+   538,
+   64,
+   971,
+   353
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "acessorios/acessorio_laco": {
+  "w": 191,
+  "h": 161,
+  "box": [
+   993,
+   157,
+   1184,
+   318
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "acessorios/acessorio_oculos": {
+  "w": 640,
+  "h": 257,
+  "box": [
+   404,
+   343,
+   1065,
+   608
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/banheiro_banheira_frente": {
+  "w": 640,
+  "h": 310,
+  "box": [
+   63,
+   624,
+   1189,
+   1169
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/banheiro_banheira_fundo": {
+  "w": 640,
+  "h": 310,
+  "box": [
+   63,
+   624,
+   1189,
+   1169
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/banheiro_chuveirinho": {
+  "w": 523,
+  "h": 640,
+  "box": [
+   147,
+   68,
+   1072,
+   1199
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/banheiro_coco": {
+  "w": 637,
+  "h": 640,
+  "box": [
+   179,
+   176,
+   1067,
+   1068
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/banheiro_esponja": {
+  "w": 640,
+  "h": 521,
+  "box": [
+   130,
+   217,
+   1115,
+   1019
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/banheiro_patinho": {
+  "w": 535,
+  "h": 640,
+  "box": [
+   154,
+   81,
+   1042,
+   1144
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/banheiro_pente": {
+  "w": 640,
+  "h": 495,
+  "box": [
+   78,
+   202,
+   1168,
+   1045
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/banheiro_prateleira": {
+  "w": 356,
+  "h": 640,
+  "box": [
+   309,
+   69,
+   942,
+   1206
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/banheiro_tapete": {
+  "w": 640,
+  "h": 442,
+  "box": [
+   111,
+   296,
+   1133,
+   1002
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/banheiro_toalha": {
+  "w": 640,
+  "h": 434,
+  "box": [
+   97,
+   305,
+   1149,
+   1018
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/banheiro_vaso": {
+  "w": 456,
+  "h": 640,
+  "box": [
+   204,
+   88,
+   978,
+   1175
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "banheiro/fundo_banheiro": {
+  "w": 1870,
+  "h": 841
+ },
+ "brinquedos/fundo_brinquedos": {
+  "w": 1870,
+  "h": 841
+ },
+ "brinquedos/jogo_bolhas": {
+  "w": 640,
+  "h": 615,
+  "box": [
+   89,
+   117,
+   1141,
+   1128
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "brinquedos/jogo_cores": {
+  "w": 640,
+  "h": 610,
+  "box": [
+   109,
+   138,
+   1132,
+   1113
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "brinquedos/jogo_formas": {
+  "w": 640,
+  "h": 594,
+  "box": [
+   94,
+   134,
+   1159,
+   1122
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "brinquedos/jogo_memoria": {
+  "w": 640,
+  "h": 519,
+  "box": [
+   58,
+   173,
+   1193,
+   1094
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "brinquedos/jogo_musica": {
+  "w": 517,
+  "h": 640,
+  "box": [
+   193,
+   85,
+   1039,
+   1133
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "brinquedos/jogo_pegafrutas": {
+  "w": 581,
+  "h": 640,
+  "box": [
+   113,
+   84,
+   1113,
+   1185
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "cozinha/cozinha_caminhao": {
+  "w": 640,
+  "h": 406,
+  "box": [
+   63,
+   287,
+   1172,
+   990
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "cozinha/cozinha_janela": {
+  "w": 559,
+  "h": 640,
+  "box": [
+   211,
+   133,
+   1042,
+   1084
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "cozinha/cozinha_lixeira": {
+  "w": 424,
+  "h": 640,
+  "box": [
+   253,
+   43,
+   999,
+   1168
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "cozinha/cozinha_lixeira_aberta": {
+  "w": 424,
+  "h": 640,
+  "box": [
+   253,
+   43,
+   999,
+   1168
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "cozinha/cozinha_mesa": {
+  "w": 640,
+  "h": 227,
+  "box": [
+   37,
+   507,
+   1216,
+   925
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "cozinha/cozinha_saquinho": {
+  "w": 498,
+  "h": 640,
+  "box": [
+   254,
+   160,
+   984,
+   1099
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "cozinha/fundo_cozinha": {
+  "w": 1870,
+  "h": 841
+ },
+ "dentista/dentista_babador": {
+  "w": 593,
+  "h": 640,
+  "box": [
+   125,
+   89,
+   1127,
+   1170
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "dentista/dentista_bandeja": {
+  "w": 488,
+  "h": 640,
+  "box": [
+   165,
+   18,
+   1087,
+   1226
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "dentista/dentista_bichinho": {
+  "w": 519,
+  "h": 640,
+  "box": [
+   212,
+   132,
+   1015,
+   1123
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "dentista/dentista_cadeira": {
+  "w": 640,
+  "h": 607,
+  "box": [
+   55,
+   100,
+   1192,
+   1178
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "dentista/dentista_copo": {
+  "w": 573,
+  "h": 640,
+  "box": [
+   176,
+   142,
+   1062,
+   1132
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "dentista/dentista_escova": {
+  "w": 183,
+  "h": 640,
+  "box": [
+   441,
+   46,
+   774,
+   1208
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "dentista/dentista_varinha": {
+  "w": 368,
+  "h": 640,
+  "box": [
+   306,
+   79,
+   943,
+   1187
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "dentista/fundo_dentista": {
+  "w": 1870,
+  "h": 841
+ },
+ "enfeites/enfeite_arcoiris": {
+  "w": 640,
+  "h": 462,
+  "box": [
+   53,
+   212,
+   1201,
+   1041
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "enfeites/enfeite_baloes": {
+  "w": 544,
+  "h": 640,
+  "box": [
+   117,
+   42,
+   1126,
+   1228
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "enfeites/enfeite_bandeirinhas": {
+  "w": 640,
+  "h": 235,
+  "box": [
+   26,
+   406,
+   1228,
+   848
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "enfeites/enfeite_flores": {
+  "w": 552,
+  "h": 640,
+  "box": [
+   134,
+   72,
+   1092,
+   1182
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "hud/hud_banho": {
+  "w": 200,
+  "h": 256,
+  "box": [
+   233,
+   135,
+   1013,
+   1133
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "hud/hud_casa": {
+  "w": 256,
+  "h": 255,
+  "box": [
+   101,
+   103,
+   1144,
+   1142
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "hud/hud_comida": {
+  "w": 250,
+  "h": 256,
+  "box": [
+   130,
+   133,
+   1110,
+   1138
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "hud/hud_configuracoes": {
+  "w": 239,
+  "h": 256,
+  "box": [
+   116,
+   78,
+   1132,
+   1166
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "hud/hud_coracao": {
+  "w": 256,
+  "h": 218,
+  "box": [
+   86,
+   182,
+   1167,
+   1104
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "hud/hud_diversao": {
+  "w": 256,
+  "h": 178,
+  "box": [
+   79,
+   273,
+   1166,
+   1027
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "hud/hud_estrela": {
+  "w": 256,
+  "h": 242,
+  "box": [
+   90,
+   114,
+   1158,
+   1125
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "hud/hud_moeda": {
+  "w": 253,
+  "h": 256,
+  "box": [
+   99,
+   104,
+   1132,
+   1150
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "hud/hud_sono": {
+  "w": 231,
+  "h": 256,
+  "box": [
+   174,
+   129,
+   1069,
+   1122
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "hud/hud_voltar": {
+  "w": 256,
+  "h": 224,
+  "box": [
+   85,
+   153,
+   1169,
+   1100
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "jardim/fundo_jardim": {
+  "w": 1870,
+  "h": 841
+ },
+ "jardim/jardim_borboleta": {
+  "w": 640,
+  "h": 507,
+  "box": [
+   38,
+   162,
+   1210,
+   1091
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "jardim/jardim_broto": {
+  "w": 508,
+  "h": 640,
+  "box": [
+   221,
+   67,
+   1033,
+   1091
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "jardim/jardim_canteiro": {
+  "w": 640,
+  "h": 262,
+  "box": [
+   35,
+   414,
+   1214,
+   896
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "jardim/jardim_flor": {
+  "w": 508,
+  "h": 640,
+  "box": [
+   221,
+   67,
+   1033,
+   1091
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "jardim/jardim_folhas": {
+  "w": 508,
+  "h": 640,
+  "box": [
+   221,
+   67,
+   1033,
+   1091
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "jardim/jardim_regador": {
+  "w": 640,
+  "h": 401,
+  "box": [
+   58,
+   289,
+   1197,
+   1002
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "mapa/fundo_mapa": {
+  "w": 1870,
+  "h": 841
+ },
+ "mapa/mapa_casa": {
+  "w": 640,
+  "h": 477,
+  "box": [
+   35,
+   184,
+   1215,
+   1064
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "quarto/fundo_quarto": {
+  "w": 1870,
+  "h": 841
+ },
+ "quarto/quarto_bola": {
+  "w": 632,
+  "h": 640,
+  "box": [
+   152,
+   147,
+   1092,
+   1099
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "quarto/quarto_cesto_frente": {
+  "w": 640,
+  "h": 464,
+  "box": [
+   202,
+   595,
+   1044,
+   1206
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "quarto/quarto_cesto_fundo": {
+  "w": 640,
+  "h": 464,
+  "box": [
+   202,
+   595,
+   1044,
+   1206
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "quarto/quarto_guardaroupa": {
+  "w": 466,
+  "h": 640,
+  "box": [
+   201,
+   41,
+   1053,
+   1211
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "roupas/roupa_colete": {
+  "w": 640,
+  "h": 468,
+  "box": [
+   388,
+   651,
+   1039,
+   1127
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "roupas/roupa_pijama": {
+  "w": 640,
+  "h": 478,
+  "box": [
+   390,
+   659,
+   1033,
+   1139
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "roupas/roupa_vestido": {
+  "w": 640,
+  "h": 478,
+  "box": [
+   374,
+   646,
+   1031,
+   1137
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "salao/fundo_salao": {
+  "w": 1870,
+  "h": 841
+ },
+ "salao/salao_balcao": {
+  "w": 353,
+  "h": 640,
+  "box": [
+   293,
+   19,
+   958,
+   1226
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "salao/salao_batom": {
+  "w": 334,
+  "h": 640,
+  "box": [
+   356,
+   122,
+   890,
+   1145
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "salao/salao_esmalte_lilas": {
+  "w": 404,
+  "h": 640,
+  "box": [
+   286,
+   106,
+   954,
+   1164
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "salao/salao_esmalte_rosa": {
+  "w": 404,
+  "h": 640,
+  "box": [
+   286,
+   107,
+   953,
+   1164
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "salao/salao_espelho": {
+  "w": 468,
+  "h": 640,
+  "box": [
+   195,
+   23,
+   1052,
+   1194
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "salao/salao_paleta_maquiagem": {
+  "w": 413,
+  "h": 640,
+  "box": [
+   251,
+   60,
+   978,
+   1187
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "salao/salao_penteado_cacheado": {
+  "w": 430,
+  "h": 266,
+  "box": [
+   546,
+   81,
+   976,
+   347
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "salao/salao_penteado_curto": {
+  "w": 450,
+  "h": 296,
+  "box": [
+   521,
+   66,
+   971,
+   362
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "salao/salao_porta_cabelo": {
+  "w": 631,
+  "h": 640,
+  "box": [
+   79,
+   77,
+   1157,
+   1170
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "salao/salao_porta_maquiagem": {
+  "w": 636,
+  "h": 640,
+  "box": [
+   93,
+   95,
+   1151,
+   1159
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "salao/salao_porta_unhas": {
+  "w": 635,
+  "h": 640,
+  "box": [
+   90,
+   95,
+   1151,
+   1164
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ }
+}

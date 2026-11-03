@@ -86,6 +86,12 @@ lá), e o jogo troca de pose conforme o momento: parada, piscando, falando,
 acenando, comemorando, comendo, dormindo e sentada (quando fica quieta). Roupas,
 salão e efeitos se encaixam nela. Nenhuma opção é travada por gênero.
 
+**Arte em feltro:** cômodos, móveis, ferramentas, comidas, enfeites, ícones e
+parte das roupas são imagens em feltro (lista e pedidos em `assets/ARTE.md`).
+`scripts/art-sprites.py` recorta o fundo verde e grava `assets/<grupo>/` e
+`assets/art.json`; `src/core/art.js` carrega e desenha. Enquanto uma imagem não
+chegou, o jogo usa o desenho em código, que continua como reserva.
+
 **Capítulos e pedidos:** o bichinho mostra num balão de pensamento o que quer
 (desenho, sem texto). Temporada 1: recepção, cozinha, banho, desfile, bola e
 festa. Temporada 2: looks, dentista, rotina de limpeza e salão.

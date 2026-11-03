@@ -22,6 +22,16 @@ import {
 import { PETS } from "../data/pets.js";
 import { petSprites } from "./pet_sprites.js";
 
+/* Peças em feltro (Fase 5) desenhadas sobre a Nubi parada: id do item ->
+   [arte, segue a cabeça]. As outras peças continuam desenhadas em código. */
+const FELT = {
+  cap: ["acessorios/acessorio_bone", true], sunglasses: ["acessorios/acessorio_oculos", true],
+  pajama: ["roupas/roupa_pijama", false], shirt: ["roupas/roupa_colete", false], tutu: ["roupas/roupa_vestido", false],
+  "hair:curls": ["salao/salao_penteado_cacheado", true], "hair:quiff": ["salao/salao_penteado_curto", true],
+  "acc:bow": ["acessorios/acessorio_laco", true]
+};
+const HAIR_DEFAULT = "#8a5a36";
+
 // Nubi parada por tanto tempo (sem falar, comer ou brincar) senta para descansar
 const REST_MS = 15000;
 import { MAKEUP_COLORS } from "../data/salon.js";
@@ -598,13 +608,21 @@ export class Nubi {
       const k = this._accK(bodyWear);
       ctx.save();
       ctx.globalAlpha = clamp(k);
-      if (bodyWear.def.shape === "tutu") { S.bodyT(ctx, r); ctx.translate(0, r * 0.65); ctx.scale(k, k); ctx.translate(0, -r * 0.65); paintTutu(ctx, bodyWear.def, r, this.t); }
+      const felt = FELT[bodyWear.def.id];
+      if (felt && S.piece(ctx, r, pose, felt[0], false, 0.85 + 0.15 * clamp(k))) { /* roupa em feltro */ }
+      else if (bodyWear.def.shape === "tutu") { S.bodyT(ctx, r); ctx.translate(0, r * 0.65); ctx.scale(k, k); ctx.translate(0, -r * 0.65); paintTutu(ctx, bodyWear.def, r, this.t); }
       else { S.torsoClip(ctx, r); S.bodyWearT(ctx, r); ctx.translate(0, (1 - clamp(k)) * r * 0.4); paintBody(ctx, bodyWear.def, r, this.t); }
       ctx.restore();
     }
     // cabeça: cabelo, maquiagem, pintura e acessório de rosto
+    const hairStyle = this.cosmetics.hair || this.cosShown.hairStyle;
+    const hairFelt = this.cosShown.hair > 0.02 && hairStyle && FELT["hair:" + hairStyle];
+    if (hairFelt) {
+      const hc = this.cosmetics.hairColor;
+      S.piece(ctx, r, pose, hairFelt[0], true, Ease.outBack(clamp(this.cosShown.hair), 2), hc && hc !== HAIR_DEFAULT ? hc : null);
+    }
     ctx.save(); S.headT(ctx, r, pose);
-    if (this.cosShown.hair > 0.02 && this.cosShown.hairStyle) {
+    if (!hairFelt && this.cosShown.hair > 0.02 && this.cosShown.hairStyle) {
       const k = Ease.outBack(clamp(this.cosShown.hair), 2);
       ctx.save(); ctx.translate(0, -r * 0.7); ctx.scale(k, k); ctx.translate(0, r * 0.7);
       paintHair(ctx, this.cosmetics.hair || this.cosShown.hairStyle, rgbToHex(this.hairColorShown), r, this.t);
@@ -614,8 +632,10 @@ export class Nubi {
     paintMakeupUnder(ctx, mk, pt, r, this.t, MAKEUP_COLORS);
     paintMakeupOver(ctx, mk, {}, r, this.t, MAKEUP_COLORS);
     paintMakeupOver(ctx, {}, pt, r, this.t, MAKEUP_COLORS);
-    this._slot(ctx, r, "face", paintFace);
+    const faceFelt = this.accShown.face && FELT[this.accShown.face.def.id];
+    if (!faceFelt) this._slot(ctx, r, "face", paintFace);
     ctx.restore();
+    if (faceFelt) S.piece(ctx, r, pose, faceFelt[0], true, this._accK(this.accShown.face));
     // pescoço
     ctx.save(); S.neckT(ctx, r, pose); this._slot(ctx, r, "neck", paintNeck); ctx.restore();
     // molhado e espuma
@@ -640,10 +660,13 @@ export class Nubi {
     }
     ctx.restore();
     // enfeite de cabelo e chapéu
+    const accFelt = this.cosmetics.hairAcc && FELT["acc:" + this.cosmetics.hairAcc];
+    if (accFelt) S.piece(ctx, r, pose, accFelt[0], true);
+    const head = this.accShown.hat, hatFelt = head && FELT[head.def.id];
+    if (hatFelt) S.piece(ctx, r, pose, hatFelt[0], true, this._accK(head));
     ctx.save(); S.headT(ctx, r, pose);
-    if (this.cosmetics.hairAcc) paintHairAcc(ctx, this.cosmetics.hairAcc, r, this.t);
-    const head = this.accShown.hat;
-    if (head) {
+    if (this.cosmetics.hairAcc && !accFelt) paintHairAcc(ctx, this.cosmetics.hairAcc, r, this.t);
+    if (head && !hatFelt) {
       if (head.def.shape) this._shapedHat(ctx, r, head, tuftSquash);
       else this._hat(ctx, r, head, outline, ow, tuftSquash);
     }

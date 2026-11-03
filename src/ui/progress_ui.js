@@ -4,6 +4,7 @@
    Sem números para a criança: estrelinha voa até o pote, o pote enche e,
    cheio, um presente aparece ao lado do bichinho; 3 toques abrem.
    Tudo desenhado no estilo do jogo (ícones em canvas, sem emoji). */
+import { artReady } from "../core/art.js";
 import { drawIcon } from "./icons.js";
 import { PRIZES, loveNeeded } from "../data/prizes.js";
 import { PETS } from "../data/pets.js";
@@ -36,7 +37,10 @@ export class ProgressUI {
     this.missEl = document.getElementById("missions");
     this.missList = document.getElementById("missionList");
     const starIco = document.getElementById("starIco");
-    if (starIco) starIco.appendChild(iconCanvas(30, "star"));
+    if (starIco) {
+      starIco.appendChild(iconCanvas(30, "star"));
+      artReady().then(() => starIco.replaceChildren(iconCanvas(30, "star")));   // estrela em feltro
+    }
     const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener("click", fn); };
     on("btnShop", () => this.openShop());
     on("starPill", () => this.openShop());

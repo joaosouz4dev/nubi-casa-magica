@@ -8,6 +8,7 @@ import { FoodItem } from "../entities/food_item.js";
 import { FOODS, KITCHEN_FOOD_SLOTS, MOUTH_OFFSET, FOOD_TABS, SLOT_X, SLOT_Y, TAB_Y, TAB_X0, TAB_DX, tabOf } from "../data/foods.js";
 import { drawIcon } from "../ui/icons.js";
 import { drawScrapSprite, scrapReady } from "../entities/food_sprites.js";
+import { art, drawArt } from "../core/art.js";
 import { touchNubi } from "./nubi_touch.js";
 import { Spring, Spring2, clamp, Ease, Motion, softShadow, roundRect, darken } from "../core/anim.js";
 
@@ -420,6 +421,17 @@ export class KitchenRoom {
   _bin(ctx) {
     const b = this.binPos(), r = b.r;
     softShadow(ctx, b.x, b.y + r * 0.95, r * 0.95, r * 0.2, 0.22);
+    // lixeira em feltro: fechada ou aberta (as duas têm o mesmo recorte)
+    const name = this.lid.x > 0.25 ? "cozinha/cozinha_lixeira_aberta" : "cozinha/cozinha_lixeira";
+    const im = art(name);
+    if (im) {
+      const dh = r * 2.75, dw = dh * (im.naturalWidth / im.naturalHeight);
+      const sq = Math.max(0, this.lid.x - 1) * 0.06;   // "boing" quando algo cai dentro
+      ctx.save(); ctx.translate(b.x, b.y + r * 1.0); ctx.scale(1 + sq, 1 - sq);
+      ctx.drawImage(im, -dw / 2, -dh, dw, dh);
+      ctx.restore();
+      return;
+    }
     ctx.save(); ctx.translate(b.x, b.y);
     ctx.lineJoin = "round";
     // corpo
@@ -458,6 +470,7 @@ export class KitchenRoom {
       ctx.strokeStyle = "rgba(80,80,140,.7)"; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -this.t * 0.03;
       ctx.beginPath(); ctx.arc(0, 0, r * 1.5, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
     }
+    if (drawArt(ctx, "cozinha/cozinha_saquinho", -r * 0.95, -r * 1.25, r * 1.9)) { ctx.restore(); return; }
     ctx.beginPath(); ctx.moveTo(-r * 0.15, -r * 0.55); ctx.quadraticCurveTo(-r * 0.8, -r * 0.2, -r * 0.65, r * 0.55); ctx.quadraticCurveTo(0, r * 0.9, r * 0.65, r * 0.55);
     ctx.quadraticCurveTo(r * 0.8, -r * 0.2, r * 0.15, -r * 0.55); ctx.closePath();
     ctx.fillStyle = "#5a6478"; ctx.fill(); ctx.strokeStyle = "#1d2330"; ctx.lineWidth = Math.max(2, r * 0.08); ctx.stroke();
@@ -472,6 +485,17 @@ export class KitchenRoom {
     if (this.truckT <= 0) return;
     const w = this.scene.window(), m = Math.min(this.vp.w, this.vp.h);
     const u = 1 - this.truckT / 3200;
+    const tr = art("cozinha/cozinha_caminhao");
+    if (tr && this.scene.hasArt()) {
+      // caminhão em feltro passando atrás do vidro da janela
+      const g = this.scene.glass(), tw = g.w * 0.75, th = tw * (tr.naturalHeight / tr.naturalWidth);
+      const tx = g.x - tw + u * (g.w + tw * 2), ty = g.y + g.h * 0.92 - th;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(g.x, g.y, g.w, g.h); ctx.clip();
+      ctx.drawImage(tr, tx, ty + (Motion.reduce ? 0 : Math.sin(u * 40) * th * 0.02), tw, th);
+      ctx.restore();
+      return;
+    }
     const x = w.x - w.w * 0.4 + u * w.w * 1.8, y = w.y + w.h * 0.72;
     const s = m * 0.05;
     ctx.save();

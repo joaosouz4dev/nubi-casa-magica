@@ -90,7 +90,7 @@ export class SceneManager {
   /* Desenhado por último no quadro (por cima de cena, efeitos e UI do canvas). */
   drawTransition() {
     this.hasDrawn = true;
-    if (!this.trans || !this.snap) return;
+    if (!this.trans || !this.snap || !this.snap.width || !this.snap.height) return;   // tela sem tamanho (aba escondida)
     const vp = this.vp, ctx = vp.ctx;
     const dur = Motion.reduce ? DURATION * 0.6 : DURATION;
     const k = clamp(this.trans.t / dur);

@@ -2,6 +2,8 @@
    molas e utilidades de cor. Tudo que anima no jogo passa por aqui, para que
    o timing seja consistente e o "Reduzir movimento" valha em todo lugar. */
 
+import { artVersion } from "./art.js";
+
 // Preferência global de acessibilidade (ligada pela área dos responsáveis).
 export const Motion = { reduce: false };
 
@@ -114,7 +116,7 @@ export class CachedLayer {
   constructor(vp, paint) { this.vp = vp; this.paint = paint; this.canvas = null; this.key = ""; }
   draw() {
     const vp = this.vp;
-    const key = `${vp.w}x${vp.h}@${vp.dpr}`;
+    const key = `${vp.w}x${vp.h}@${vp.dpr}#${artVersion()}`;   // repinta quando chega uma arte nova
     if (key !== this.key || !this.canvas) {
       this.canvas = this.canvas || document.createElement("canvas");
       this.canvas.width = Math.max(1, Math.floor(vp.w * vp.dpr));

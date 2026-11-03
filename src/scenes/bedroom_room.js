@@ -11,6 +11,19 @@ import { ITEMS, PAGES, LOOKS, GIFTS } from "../data/wardrobe.js";
 import { wearIcon } from "../entities/wear.js";
 import { drawIcon } from "../ui/icons.js";
 import { atmosphere, frame, artStar, rug } from "../ui/scenery.js";
+import { art, drawArt } from "../core/art.js";
+
+/* Cenário cobrindo a tela; ax diz qual parte da largura fica quando sobra
+   largura (0 = esquerda, 1 = direita). Em 4:3 puxa para a direita para a
+   cama e a janela não sumirem (o lado esquerdo da arte é parede vazia). */
+function backdropX(c, name, w, h, ax) {
+  const im = art(name);
+  if (!im) return false;
+  const k = Math.max(w / im.naturalWidth, h / im.naturalHeight);
+  const dw = im.naturalWidth * k, dh = im.naturalHeight * k;
+  c.drawImage(im, (w - dw) * ax, (h - dh) * 0.5, dw, dh);
+  return true;
+}
 
 const SLOTS = ["hat", "face", "neck", "cape", "body", "boots"];
 const ROW_Y = [0.3, 0.5, 0.7];
@@ -376,6 +389,15 @@ export class BedroomRoom {
     ctx.save();
     ctx.translate(this.ball.px, this.ball.py + r * s * 0.8);
     ctx.scale(1 + s, 1 - s);
+    // bola em feltro girando conforme rola
+    const im = art("quarto/quarto_bola");
+    if (im) {
+      ctx.rotate(this.ballAngle);
+      const d = r * 2.06;
+      ctx.drawImage(im, -d / 2, -d / 2 * (im.naturalHeight / im.naturalWidth), d, d * (im.naturalHeight / im.naturalWidth));
+      ctx.restore();
+      return;
+    }
     // contorno
     ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.strokeStyle = "#a83a22"; ctx.lineWidth = Math.max(2, r * 0.12); ctx.stroke();
@@ -400,7 +422,20 @@ export class BedroomRoom {
   /* Fundo do cesto: interior aberto e escuro (profundidade), parede de trás
      trançada e a metade de trás da borda. Antes era uma elipse marrom chapada
      que parecia uma tampa. */
+  /* Cesto de vime em feltro (fundo e frente com o mesmo recorte, 640x464):
+     a boca (~20% da altura da arte) fica onde era a borda antiga
+     (b.y - 0,4r) e a base em b.y + r. */
+  basketArt(b) {
+    const bw = b.r * 2.35, bh = bw * (464 / 640);
+    return { x: b.x - bw / 2, y: b.y + b.r - bh, w: bw, h: bh };
+  }
+
   _drawBasketBack(ctx, b) {
+    if (art("quarto/quarto_cesto_fundo") && art("quarto/quarto_cesto_frente")) {
+      const a = this.basketArt(b);
+      drawArt(ctx, "quarto/quarto_cesto_fundo", a.x, a.y, a.w, a.h);
+      return;
+    }
     const top = b.y - b.r * 0.4;
     const rx = b.r * 1.02, ry = b.r * 0.26;
     // parede de trás aparecendo acima da boca
@@ -429,6 +464,11 @@ export class BedroomRoom {
   }
 
   _drawBasketFront(ctx, b) {
+    if (art("quarto/quarto_cesto_fundo") && art("quarto/quarto_cesto_frente")) {
+      const a = this.basketArt(b);
+      drawArt(ctx, "quarto/quarto_cesto_frente", a.x, a.y, a.w, a.h);
+      return;
+    }
     const top = b.y - b.r * 0.4;
     ctx.beginPath();
     ctx.moveTo(b.x - b.r * 1.02, top);
@@ -572,7 +612,23 @@ export class BedroomRoom {
     ctx.restore();
   }
 
+  /* Guarda-roupa aberto em feltro atrás das peças (x 0,08; linhas 0,3/0,5/
+     0,7): o cabideiro (~25% da altura da arte) fica na altura do gancho da
+     primeira peça e o móvel desce até o piso (~0,82 da altura). Em telas
+     estreitas a porta esquerda sai um pouco pela borda. */
+  wardrobeArt() {
+    const w = this.vp.w, h = this.vp.h, r = this.accR();
+    const gh = h * 0.78, gw = gh * (466 / 640);
+    return { x: w * 0.08 - gw / 2, y: h * ROW_Y[0] - r * 1.05 - gh * 0.25, w: gw, h: gh };
+  }
+
   _paintBack(c, w, h, m) {
+    if (backdropX(c, "quarto/fundo_quarto", w, h, 0.8)) {
+      const a = this.wardrobeArt();
+      softShadow(c, a.x + a.w / 2, a.y + a.h * 0.98, a.w * 0.42, m * 0.02, 0.22);
+      if (!drawArt(c, "quarto/quarto_guardaroupa", a.x, a.y, a.w, a.h)) this._paintWardrobe(c, w, h, m);
+      return;
+    }
     // parede lilás com estrelinhas
     const g = c.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, "#f3e9ff"); g.addColorStop(1, "#dccbf7");
@@ -640,6 +696,12 @@ export class BedroomRoom {
     c.fillStyle = fg; c.fillRect(0, h * 0.86, w, h * 0.14);
     // tapete redondo com borda pespontada e bolinhas
     rug(c, w * 0.5, h * 0.925, w * 0.38, h * 0.06, "#ff9fc4", "rgba(255,255,255,.55)");
+    this._paintWardrobe(c, w, h, m);
+    atmosphere(c, w, h, m, { floorY: 0.85, light: { x: 0.7, y: 0.22, r: 1.0, color: "250,240,255" }, tint: "70,40,120", vignette: 0.18 });
+  }
+
+  /* Guarda-roupa desenhado em código (reserva sem a arte). */
+  _paintWardrobe(c, w, h, m) {
     // guarda-roupa (móvel de madeira com portas abertas)
     const gx = w * 0.015, gy = h * 0.16, gw = w * 0.13, gh = h * 0.7;
     softShadow(c, gx + gw / 2, gy + gh, gw * 0.6, m * 0.02, 0.22);
@@ -648,6 +710,5 @@ export class BedroomRoom {
     c.fillStyle = "#b5773f"; roundRect(c, gx - m * 0.01, gy - m * 0.02, gw + m * 0.02, m * 0.035, m * 0.015); c.fill();
     c.strokeStyle = "#a2763f"; c.lineWidth = Math.max(2, m * 0.008);
     c.beginPath(); c.moveTo(gx + m * 0.02, gy + gh * 0.08); c.lineTo(gx + gw - m * 0.02, gy + gh * 0.08); c.stroke();
-    atmosphere(c, w, h, m, { floorY: 0.85, light: { x: 0.7, y: 0.22, r: 1.0, color: "250,240,255" }, tint: "70,40,120", vignette: 0.18 });
   }
 }
