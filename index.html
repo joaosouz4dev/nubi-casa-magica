@@ -24,6 +24,25 @@
       font-family: "Fredoka", "Comic Sans MS", system-ui, sans-serif;
       touch-action: none; user-select: none; -webkit-user-select: none; overscroll-behavior: none;
     }
+    /* Layout do HUD: tudo sai daqui.
+       --safe-*: recorte da câmera/cantos (env() no navegador; --nat-* vem do
+       APK, cujo WebView às vezes informa 0). --btn: botão redondo, pela
+       altura do palco e limitado pela largura (cabem 8 botões + contador na
+       linha de cima de um celular deitado). */
+    body {
+      --safe-l: max(env(safe-area-inset-left, 0px), var(--nat-l, 0px));
+      --safe-r: max(env(safe-area-inset-right, 0px), var(--nat-r, 0px));
+      --safe-t: max(env(safe-area-inset-top, 0px), var(--nat-t, 0px));
+      --safe-b: max(env(safe-area-inset-bottom, 0px), var(--nat-b, 0px));
+      --edge: 10px;
+      --btn: clamp(38px, min(calc(12.5 * var(--vh)), calc((100 * var(--vw) - 130px) / 11.4)), 58px);
+      --gap: clamp(6px, calc(var(--btn) * .18), 10px);
+      --row-t: calc(var(--safe-t) + var(--edge));
+    }
+    /* palco girado (retrato no navegador): o recorte não está onde o palco pensa */
+    body.rot { --safe-l: 0px; --safe-r: 0px; --safe-t: 0px; --safe-b: 0px; }
+    /* celular deitado: não cabem 8 cômodos em pé; o mapa (botão da casa) é a navegação */
+    body.compact #nav { display: none; }
     #game { display: block; width: calc(100 * var(--vw)); height: calc(100 * var(--vh)); }
 
     /* Botões "de brinquedo": volume, contorno macio, resposta ao toque */
@@ -40,7 +59,7 @@
     /* Barra de cômodos */
     #nav {
       position: fixed; top: 50%; transform: translateY(-50%);
-      right: calc(env(safe-area-inset-right, 0px) + 10px); z-index: 6;
+      right: calc(var(--safe-r) + var(--edge)); z-index: 6;
       display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,.55);
       padding: 10px 8px; border-radius: 999px; backdrop-filter: blur(6px);
       box-shadow: 0 6px 20px rgba(70,40,110,.15);
@@ -62,14 +81,14 @@
     @keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.3); } 100% { transform: scale(1); } }
 
     .corner { position: fixed; z-index: 6; }
-    #btnSound { top: calc(env(safe-area-inset-top, 0px) + 10px); right: 12px; }
-    #btnAlbum { top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(12px + min(calc(12 * var(--vw)), 54px) * 1 + 10px); }
-    #btnShop { top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(12px + min(calc(12 * var(--vw)), 54px) * 2 + 20px); }
-    #btnMissions { top: calc(env(safe-area-inset-top, 0px) + 10px); right: calc(12px + min(calc(12 * var(--vw)), 54px) * 3 + 30px); }
-    #btnBack { top: calc(env(safe-area-inset-top, 0px) + 10px); left: 12px; }
-    #btnHome { top: calc(env(safe-area-inset-top, 0px) + 10px); left: calc(12px + min(calc(12 * var(--vw)), 54px) * 1 + 10px); }
-    #btnPets { top: calc(env(safe-area-inset-top, 0px) + 10px); left: calc(12px + min(calc(12 * var(--vw)), 54px) * 2 + 20px); }
-    #btnParent { top: calc(env(safe-area-inset-top, 0px) + 10px); left: calc(12px + min(calc(12 * var(--vw)), 54px) * 3 + 30px); }
+    #btnSound { top: var(--row-t); right: calc(var(--safe-r) + var(--edge)); }
+    #btnAlbum { top: var(--row-t); right: calc(var(--safe-r) + var(--edge) + (var(--btn) + var(--gap)) * 1); }
+    #btnShop { top: var(--row-t); right: calc(var(--safe-r) + var(--edge) + (var(--btn) + var(--gap)) * 2); }
+    #btnMissions { top: var(--row-t); right: calc(var(--safe-r) + var(--edge) + (var(--btn) + var(--gap)) * 3); }
+    #btnBack { top: var(--row-t); left: calc(var(--safe-l) + var(--edge)); }
+    #btnHome { top: var(--row-t); left: calc(var(--safe-l) + var(--edge) + (var(--btn) + var(--gap)) * 1); }
+    #btnPets { top: var(--row-t); left: calc(var(--safe-l) + var(--edge) + (var(--btn) + var(--gap)) * 2); }
+    #btnParent { top: var(--row-t); left: calc(var(--safe-l) + var(--edge) + (var(--btn) + var(--gap)) * 3); }
     #btnBack { background: linear-gradient(180deg, #fff7c2 0%, #ffe680 100%); box-shadow: 0 4px 0 #e0a21c, 0 6px 14px rgba(160,100,10,.2); transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s; }
     #btnBack.off { opacity: 0; transform: scale(.4); pointer-events: none; }
     #btnBack.hey { animation: bump .6s cubic-bezier(.34,1.56,.64,1); }
@@ -83,14 +102,14 @@
 
     /* Contador de estrelinhas + coração de carinho (topo, centro) */
     #starPill {
-      position: fixed; z-index: 6; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 50%; transform: translateX(-50%);
-      display: flex; align-items: center; gap: 8px; padding: 5px 14px 5px 8px; border: none; cursor: pointer;
+      position: fixed; z-index: 6; top: calc(var(--row-t) + var(--btn) * .1); left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: calc(var(--btn) * .14); padding: calc(var(--btn) * .09) calc(var(--btn) * .26) calc(var(--btn) * .09) calc(var(--btn) * .15); border: none; cursor: pointer;
       border-radius: 999px; background: linear-gradient(180deg, #ffffff 0%, #fff4c9 100%);
       box-shadow: 0 4px 0 #e6c86a, 0 6px 14px rgba(160,100,10,.18); font: inherit; color: #6b4a14;
     }
     #starPill.bump { animation: pillBump .45s cubic-bezier(.34,1.56,.64,1); }
     @keyframes pillBump { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.18); } 100% { transform: translateX(-50%) scale(1); } }
-    #starCount { font-size: 22px; font-weight: bold; min-width: 1.6em; text-align: left; }
+    #starCount { font-size: calc(var(--btn) * .4); font-weight: bold; min-width: 1.6em; text-align: left; }
     #lvlBadge {
       font-size: 13px; font-weight: bold; color: #fff; background: linear-gradient(180deg, #b48cff, #8a5cf0);
       padding: 2px 8px; border-radius: 999px; box-shadow: 0 2px 0 #6e42c0; white-space: nowrap;
@@ -139,7 +158,7 @@
     .chestDots i { width: 16px; height: 16px; border-radius: 50%; background: #e9e1f5; border: 2px solid #c9b8e6; }
     .chestDots i.on { background: #62c370; border-color: #2f7a3e; }
     /* presente do dia: pula no canto, não bloqueia o jogo */
-    #dailyGift { position: fixed; z-index: 7; left: 18px; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); width: 72px; height: 72px;
+    #dailyGift { position: fixed; z-index: 7; left: calc(var(--safe-l) + 18px); bottom: calc(var(--safe-b) + 18px); width: calc(var(--btn) * 1.3); height: calc(var(--btn) * 1.3);
       background: linear-gradient(180deg, #fff7c2, #ffe680); box-shadow: 0 4px 0 #e0a21c, 0 0 0 6px rgba(255,214,90,.45), 0 8px 18px rgba(160,100,10,.3);
       animation: giftHop 1.2s cubic-bezier(.34,1.56,.64,1) infinite; }
     #dailyGift canvas { pointer-events: none; }
@@ -154,7 +173,7 @@
     .petCard.active { border-color: #ffc93a; background: #fff7d6; }
     .overlay.show .petCard { animation: cardIn .45s cubic-bezier(.34,1.56,.64,1) backwards; }
     .petName { font-size: 18px; margin-top: 2px; }
-    .corner button { position: fixed; width: min(calc(12 * var(--vw)), 54px); height: min(calc(12 * var(--vw)), 54px); }
+    .corner button { position: fixed; width: var(--btn); height: var(--btn); }
     #btnSound .slash { opacity: 0; transition: opacity .2s; }
     #btnSound.off .slash { opacity: 1; }
     #btnSound.off .waves { opacity: .2; }
@@ -231,11 +250,13 @@
     /* Palco: sempre paisagem. Em retrato no navegador, body.rot gira o palco
        90° (o Viewport troca os eixos). --vw/--vh são 1% da largura/altura do
        PALCO, então os tamanhos abaixo valem nas duas situações. */
+    /* --vw/--vh: valor inicial; o Viewport troca por px da área visível real
+       (o 100vh do celular inclui a barra do navegador) */
     :root { --vw: 1vw; --vh: 1vh; }
     body.rot { --vw: 1vh; --vh: 1vw; }
     #stage { position: fixed; inset: 0; overflow: hidden; }
     body.rot #stage {
-      inset: auto; top: 0; left: 100vw; width: 100vh; height: 100vw;
+      inset: auto; top: 0; left: calc(100 * var(--vh)); width: calc(100 * var(--vw)); height: calc(100 * var(--vh));
       transform: rotate(90deg); transform-origin: top left;
     }
 
@@ -338,15 +359,16 @@
     /* barra de cômodos: vidro fosco, começa ABAIXO da fileira de cima
        (antes o topo dela passava por trás do botão de som) */
     #nav {
-      top: calc(env(safe-area-inset-top, 0px) + min(calc(12 * var(--vw)), 54px) + 20px);
+      top: calc(var(--row-t) + var(--btn) + var(--gap) * 1.5);
       transform: none; background: var(--glass);
       border: 2px solid var(--glass-line); backdrop-filter: blur(10px) saturate(1.3); -webkit-backdrop-filter: blur(10px) saturate(1.3);
       box-shadow: 0 10px 30px rgba(70,40,110,.18), 0 1px 0 rgba(255,255,255,.9) inset;
       gap: 6px; padding: 8px 7px;
     }
     #nav button {
-      width: min(calc(13 * var(--vw)), 52px, calc((100 * var(--vh) - 120px) / 7.6));
-      height: min(calc(13 * var(--vw)), 52px, calc((100 * var(--vh) - 120px) / 7.6));
+      /* 8 botões na altura que sobra abaixo da linha de cima */
+      width: min(var(--btn), calc((100 * var(--vh) - var(--row-t) - var(--btn) - var(--gap) * 1.5 - 10px - 16px) / 8 - 6px));
+      height: min(var(--btn), calc((100 * var(--vh) - var(--row-t) - var(--btn) - var(--gap) * 1.5 - 10px - 16px) / 8 - 6px));
     }
     #nav button.active {
       background: radial-gradient(120% 70% at 50% 0%, #fffbe0 0%, rgba(255,251,224,0) 60%), linear-gradient(180deg, #ffe680 0%, #ffbf2e 100%);

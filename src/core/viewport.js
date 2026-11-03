@@ -13,6 +13,8 @@ export class Viewport {
     this.resize();
     window.addEventListener("resize", () => this.resize());
     window.addEventListener("orientationchange", () => setTimeout(() => this.resize(), 120));
+    // entrar/sair da tela cheia nem sempre dispara "resize" a tempo no celular
+    for (const ev of ["fullscreenchange", "webkitfullscreenchange"]) document.addEventListener(ev, () => setTimeout(() => { this.resize(); window.dispatchEvent(new Event("resize")); }, 80));
   }
   resize() {
     const W = window.innerWidth, H = window.innerHeight;
@@ -27,6 +29,21 @@ export class Viewport {
     this.canvas.style.height = this.h + "px";
     this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     this.isPortrait = false;   // o palco é sempre deitado
+    // --vw/--vh = 1% da largura/altura do PALCO em px da área visível de
+    // verdade (o 100vh do celular conta a barra do navegador e passava da
+    // tela). "compact" = celular deitado: pouca altura para a barra lateral.
+    const st = document.body.style;
+    st.setProperty("--vw", (this.w / 100).toFixed(2) + "px");
+    st.setProperty("--vh", (this.h / 100).toFixed(2) + "px");
+    document.body.classList.toggle("compact", this.h < 520);
+  }
+
+  /* Faixa do topo ocupada pelos botões (px do palco). Espelha o --btn e o
+     --edge do CSS (em paisagem o recorte da câmera fica nas laterais, não no
+     topo); os cômodos usam para não pôr objetos tocáveis embaixo dela. */
+  hudBottom() {
+    const btn = Math.max(38, Math.min(this.h * 0.125, (this.w - 130) / 11.4, 58));
+    return 10 + btn;
   }
   // ponto da tela (clientX/Y) -> palco
   toStage(cx, cy) {

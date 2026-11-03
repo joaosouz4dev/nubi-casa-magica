@@ -37,6 +37,8 @@ cp -r "$SRC"/android-res/. "$RES"/
 MANIFEST=android/app/src/main/AndroidManifest.xml
 sed -i -E 's# android:screenOrientation="[^"]*"##g' "$MANIFEST"
 sed -i -E 's#(android:name="\.MainActivity")#\1 android:screenOrientation="sensorLandscape"#' "$MANIFEST"
+# tela cheia imersiva (sem barras do Android) + recorte da câmera repassado à página
+cp "$SRC/android-src/MainActivity.java" "android/app/src/main/java/${APP_ID//.//}/MainActivity.java"
 rm -rf www && mkdir -p www
 cp -r "$SRC/index.html" "$SRC/manifest.webmanifest" "$SRC/sw.js" "$SRC/src" "$SRC/assets" www/
 npx cap copy android

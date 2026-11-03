@@ -74,12 +74,19 @@ fs.mkdirSync(OUT, { recursive: true });
   await page.click('#btnHome', { force: true }); await wait(800);
   R.hub = (await room()) === 'hub';
   R.backHiddenInHub = await ev(() => document.getElementById('btnBack').classList.contains('off'));
+  R.compactNavHidden = await ev(() => document.body.classList.contains('compact') && getComputedStyle(document.getElementById('nav')).display === 'none');
   await shot('g05-mapa');
   R.fpsHub = (await fps()) > 30;
   const tile = (id) => ev((r) => window.__nubi.hub.tileCenter(r), id);
   let p = await tile('bathroom'); await page.mouse.click(p.x, p.y); await wait(900);
   R.tileToBathroom = (await room()) === 'bathroom';
-  await page.click('[data-room="bedroom"]', { force: true }); await wait(800);
+  // celular deitado: pedido em outro cômodo faz o botão do mapa pulsar
+  await ev(() => { window.__nubi.guide.wish = { act: 'look', icon: 'looks', room: 'bedroom' }; });
+  await wait(200);
+  R.compactHomePulse = await ev(() => document.getElementById('btnHome').classList.contains('wish'));
+  // 960x440 = celular deitado: a barra lateral fica escondida (o mapa é a
+  // navegação); o botão dela continua levando ao cômodo nos tablets
+  await page.$eval('[data-room="bedroom"]', (b) => b.click()); await wait(800);
   await page.click('#btnBack', { force: true }); await wait(800);
   R.backToBathroom = (await room()) === 'bathroom';
   await page.click('#btnBack', { force: true }); await wait(800);
@@ -112,7 +119,9 @@ fs.mkdirSync(OUT, { recursive: true });
   await feedItem(0);
   R.feedSpecial = (await acts()).includes('feed:special') && (await ev(() => !!window.__nubi.save.state.discoveries.nubi_estrelado));
   // roupa ganha aparece no guarda-roupa (página de presentes)
-  await page.click('[data-room="bedroom"]', { force: true }); await wait(800);
+  // 960x440 = celular deitado: a barra lateral fica escondida (o mapa é a
+  // navegação); o botão dela continua levando ao cômodo nos tablets
+  await page.$eval('[data-room="bedroom"]', (b) => b.click()); await wait(800);
   R.crownInWardrobe = await ev(() => { const b = window.__nubi.bedroom; return b.availablePages().some(pg => pg.gifts) && b.giftUnlocked({ id: 'goldcrown', gift: 'cozinha_nao_feito' }); });
 
   // ================= MISSÕES DO DIA =================

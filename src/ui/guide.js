@@ -119,9 +119,13 @@ export class Guide {
 
     // botão do cômodo do pedido pulsa quando o pedido é em outro lugar
     const navWish = w && !inRoom ? w.room : null;
-    if (navWish !== this._navWish) {
-      this._navWish = navWish;
+    // celular deitado (sem barra lateral): quem pulsa é o botão do mapa
+    const compact = document.body.classList.contains("compact");
+    if (navWish !== this._navWish || compact !== this._navCompact) {
+      this._navWish = navWish; this._navCompact = compact;
       document.querySelectorAll("[data-room]").forEach(b => b.classList.toggle("wish", b.getAttribute("data-room") === navWish));
+      const home = document.getElementById("btnHome");
+      if (home) home.classList.toggle("wish", compact && !!navWish);
     }
     // pedido de interface (ex.: escolher bichinho): o botão correspondente pulsa
     const domWish = w && w.dom ? w.dom : null;

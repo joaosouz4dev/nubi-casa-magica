@@ -168,7 +168,7 @@ export class GamesRoom {
       g.holes = ids.map((shape, i) => ({ shape, i, filled: false }));
       g.pieces = order.map((shape, i) => ({ shape, i, placed: false, pos: null, pop: new Spring(0, { stiffness: 320, damping: 14 }) }));
       g.n = n; g.drag = null; g.done = 0;
-      this.nubi.sizeK = 0.52; this.nubi.pos = { x: 0.12, y: 0.3 };
+      this.nubi.sizeK = 0.52; this.nubi.pos = { x: 0.12, y: 0.7 };
     } else if (id === "colors") {
       g.rounds = mode === "solve" ? 5 : mode === "experiment" ? 4 : 3;
       g.round = 0; g.pick = []; g.mixed = null; g.target = this._colorTarget();
@@ -339,15 +339,17 @@ export class GamesRoom {
   shapeHoleRect(i) {
     const vp = this.vp, g = this.game, n = g.n;
     const x0 = 0.3, x1 = 0.86, span = x1 - x0, step = span / n;
-    return { x: vp.dx(x0 + step * (i + 0.5)), y: vp.dy(0.4), r: vp.s(0.065) };
+    return { x: vp.dx(x0 + step * (i + 0.5)), y: vp.dy(0.4), r: this.shapeR() };
   }
   shapePieceRect(i) {
     const vp = this.vp, g = this.game, n = g.n;
     const x0 = 0.3, x1 = 0.86, span = x1 - x0, step = span / n;
     const p = g.pieces[i];
-    if (p.pos) return { x: p.pos.x, y: p.pos.y, r: vp.s(0.06) };
-    return { x: vp.dx(x0 + step * (i + 0.5)), y: vp.dy(0.78), r: vp.s(0.06) };
+    if (p.pos) return { x: p.pos.x, y: p.pos.y, r: this.shapeR() * 0.92 };
+    return { x: vp.dx(x0 + step * (i + 0.5)), y: vp.dy(0.78), r: this.shapeR() * 0.92 };
   }
+  // formas grandes para mãos pequenas, sem encostar umas nas outras
+  shapeR() { const vp = this.vp; return Math.min(vp.s(0.09), vp.dx(0.56 / this.game.n) * 0.36); }
   shapePieceAt(px, py) {
     const g = this.game;
     for (let i = g.pieces.length - 1; i >= 0; i--) {
@@ -740,7 +742,8 @@ export class GamesRoom {
 
   _hud(ctx, g, w, h, m) {
     // placar da partida (estrela + número), canto esquerdo abaixo dos botões
-    const x = w * 0.04, y = h * 0.2;
+    // (no celular deitado a fileira de botões ocupa mais da altura: desce junto)
+    const x = w * 0.04, y = Math.max(h * 0.2, this.vp.hudBottom() + m * 0.06);
     ctx.save();
     ctx.fillStyle = "rgba(255,255,255,.88)"; roundRect(ctx, x, y - m * 0.04, m * 0.2, m * 0.08, m * 0.04); ctx.fill();
     ctx.strokeStyle = "#e6c86a"; ctx.lineWidth = Math.max(2, m * 0.005); roundRect(ctx, x, y - m * 0.04, m * 0.2, m * 0.08, m * 0.04); ctx.stroke();
@@ -750,7 +753,7 @@ export class GamesRoom {
     ctx.restore();
     // tempo: um solzinho que anda numa trilha (sem número, sem "acabou o tempo")
     if (g.id === "catch" || g.id === "bubbles") {
-      const k = clamp(g.t / PLAY_MS), x0 = w * 0.3, x1 = w * 0.8, yy = h * 0.135;
+      const k = clamp(g.t / PLAY_MS), x0 = w * 0.3, x1 = w * 0.8, yy = Math.max(h * 0.135, this.vp.hudBottom() + m * 0.045);
       ctx.save();
       ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = m * 0.022; ctx.lineCap = "round";
       ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x1, yy); ctx.stroke();

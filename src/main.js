@@ -3,6 +3,7 @@
    A aparência do Nubi persiste ao trocar de cômodo e entre sessões. */
 import { EventBus } from "./core/events.js";
 import { Viewport } from "./core/viewport.js";
+import { keepFullscreen } from "./core/fullscreen.js";
 import { Input } from "./core/input.js";
 import { SceneManager } from "./core/scene_manager.js";
 import { Audio } from "./systems/audio.js";
@@ -60,6 +61,7 @@ export function boot() {
   scenes.onBeforeEnter = () => { nubi.sizeK = 1; };
 
   new Input(canvas, bus);
+  keepFullscreen();   // celular no navegador: saiu da tela cheia, o próximo toque volta
 
   // pedidos/capítulos + guia (direcionamento e celebração)
   const quests = new Quests(bus, save);

@@ -18,6 +18,15 @@ orientam sem pressionar.
   destino.
 - Abre direto numa tela inicial animada com botão Play. No Android o app fica
   sempre em paisagem; num navegador com o celular em pé o jogo se gira sozinho.
+- Tela inteira: o APK esconde as barras do Android (modo imersivo) e desenha
+  até o recorte da câmera (`android-src/MainActivity.java`, copiado pelo build).
+  No navegador do celular o Play pede tela cheia, e se a criança sair dela o
+  próximo toque pede de novo (`src/core/fullscreen.js`).
+- Responsivo: o tamanho vem da área visível real (não do `100vh`, que no
+  celular conta a barra do navegador). Os botões se ajustam à altura da tela,
+  respeitam o recorte da câmera e, no celular deitado (menos de 520px de
+  altura), a barra lateral de cômodos dá lugar ao mapa (o botão da casa pulsa
+  quando o pedido é em outro cômodo).
 
 ## Telas
 
