@@ -25,10 +25,9 @@ fi
 
 echo "=== copiando o jogo ==="
 cd "$APP"
-# voz do bichinho no APK: o WebView do Android não tem speechSynthesis, então
-# a fala usa o TTS do aparelho por este plugin (src/systems/voice.js)
-TTS_PLUGIN="@capacitor-community/text-to-speech@4.1.1"
-grep -q '"@capacitor-community/text-to-speech"' package.json || npm install --no-audit --no-fund "$TTS_PLUGIN"
+# a voz sintetizada saiu (soava robótica; src/systems/voice.js só toca
+# gravações): tira o plugin de TTS de projetos criados antes
+if grep -q '"@capacitor-community/text-to-speech"' package.json; then npm uninstall --no-audit --no-fund @capacitor-community/text-to-speech; fi
 # nome e ícone sempre sincronizados com o repositório (também em projetos já criados)
 printf '{ "appId": "%s", "appName": "%s", "webDir": "www" }\n' "$APP_ID" "$APP_NAME" > capacitor.config.json
 STRINGS=android/app/src/main/res/values/strings.xml

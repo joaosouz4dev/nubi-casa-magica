@@ -1,7 +1,9 @@
 // Voz (ação 2): o bichinho fala os balões, o pedido quando o balão aparece,
 // o nome do cômodo e "Vamos para..." quando o pedido é em outro cômodo.
 // Tocar no balão repete; canal de falas desligado = silêncio; minijogo não
-// fala pedidos. Confere pelo registro da voz (o headless não tem alto-falante).
+// fala pedidos. Confere pelo registro da voz (o headless não tem alto-falante). Sem
+// gravações em assets/voice/ a voz fica em silêncio (não há voz sintetizada),
+// mas o registro mostra o que seria falado.
 const { chromium } = require('playwright');
 const URL = 'http://127.0.0.1:8742/index.html?notitle';
 
@@ -21,7 +23,8 @@ const URL = 'http://127.0.0.1:8742/index.html?notitle';
   await ev(() => { try { localStorage.clear(); } catch (e) {} });
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => !!window.__nubi && window.__nubi.room);
-  R.voiceReady = await ev(() => !!window.__nubi.voice && ['web', 'native', 'none'].includes(window.__nubi.voice.backend));
+  R.voiceReady = await ev(() => !!window.__nubi.voice && ['clip', 'none'].includes(window.__nubi.voice.backend));
+  R.noSynthVoice = await ev(() => { let n = 0; const orig = window.speechSynthesis && window.speechSynthesis.speak; if (orig) window.speechSynthesis.speak = () => { n++; }; window.__nubi.nubi.say('Teste sem voz sintetizada'); if (orig) window.speechSynthesis.speak = orig; return n === 0; });
 
   // acorda: o balão "Oi!" é falado; depois o pedido da recepção (carinho)
   await page.mouse.click(480, 200);
