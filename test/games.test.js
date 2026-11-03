@@ -170,6 +170,9 @@ fs.mkdirSync(OUT, { recursive: true });
   // garante estado "ainda não ganhou hoje" (determinístico, sem depender do relógio/carga)
   await ev(() => { try { const s = window.__nubi.save.state; if (s.daily) s.daily.gift = null; window.__nubi.save.persist(); } catch (e) {} });
   await page.click('#btnPlay', { force: true });
+  // a tela inicial sai em ~1,1s; antes disso ela cobre o presente (no jogo o
+  // presente só aparece 1,2s depois do Play)
+  await page.waitForSelector('#title', { state: 'detached', timeout: 5000 }).catch(() => {});
   // oferece diretamente (o auto-timer de 1.2s pós-Play fica flaky sob carga)
   await ev(() => window.__nubi.progressUI.offerDailyGift());
   await page.waitForSelector('#dailyGift', { timeout: 5000 }).catch(() => {});

@@ -162,7 +162,9 @@ export class BedroomRoom {
     else if (this.held.kind === "ball") {
       this.ball.px = p.x; this.ball.py = p.y;
       const now = performance.now();
-      if (this.lastMove) { this.ball.vx = (p.x - this.lastMove.x); this.ball.vy = (p.y - this.lastMove.y); }
+      // velocidade por tempo (px a cada 16,67ms): o arremesso tem a mesma
+      // força com toque amostrado a 60Hz ou 120Hz
+      if (this.lastMove) { const k = 16.67 / Math.max(4, now - this.lastMove.t); this.ball.vx = (p.x - this.lastMove.x) * k; this.ball.vy = (p.y - this.lastMove.y) * k; }
       this.lastMove = { x: p.x, y: p.y, t: now };
       this.nubi.look({ x: p.x / this.vp.w, y: p.y / this.vp.h });
     }
@@ -262,11 +264,15 @@ export class BedroomRoom {
     if (this.ballPop < 1) this.ballPop = Math.min(1, this.ballPop + dt / 380);
     if (this.held && this.held.kind === "ball") return;
 
-    // ---- física (inalterada) ----
+    // ---- física ----
+    // Rolando no chão a bola não "cai" de novo a cada quadro: antes a
+    // gravidade a afundava no piso todo quadro e o atrito do quique (0.9)
+    // valia por quadro, então a 120Hz ela rolava metade da distância.
     const r = this.ballR();
     const floorY = this.vp.dy(0.9);
     const prevX = this.ball.px;
-    this.ball.vy += this.vp.s(0.0012) * dt;
+    const rolling = this.ball.vy === 0 && this.ball.py >= floorY - 0.5;
+    if (!rolling) this.ball.vy += this.vp.s(0.0012) * dt;
     this.ball.px += this.ball.vx * dt * 0.06;
     this.ball.py += this.ball.vy * dt * 0.06;
     if (this.ball.py > floorY) {
@@ -276,7 +282,8 @@ export class BedroomRoom {
     }
     if (this.ball.px < r) { this.ball.px = r; this.ball.vx *= -0.7; }
     if (this.ball.px > this.vp.w - r) { this.ball.px = this.vp.w - r; this.ball.vx *= -0.7; }
-    this.ball.vx *= 0.985;
+    // atrito por tempo (igual em 60Hz e 120Hz); no chão = o rolar de antes a 60Hz
+    this.ball.vx *= Math.pow(rolling ? 0.9 * 0.985 : 0.985, dt / 16.67);
     const bk = this.basketPos();
     const mouth = bk.r * 1.3;
     const dxb = bk.x - this.ball.px;
