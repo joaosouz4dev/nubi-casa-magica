@@ -1,5 +1,7 @@
 # Arte do jogo em feltro (clay 3D)
 
+> O que ainda falta gerar está em [`ARTE_PENDENTE.md`](ARTE_PENDENTE.md).
+
 Tudo no mesmo estilo da Nubi em feltro. As imagens chegam por fases: cada fase entra no jogo antes de começar a próxima, para conferir se o caminho funciona.
 
 ## Regras para todas as imagens
