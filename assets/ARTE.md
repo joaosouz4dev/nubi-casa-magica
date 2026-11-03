@@ -25,6 +25,8 @@ E, para objetos e personagens, termine com:
 
 Um alimento por imagem, de frente e levemente de cima, gordinho e brilhante de feltro. Nome do arquivo: `comida_<id>.png`.
 
+**Já está no jogo** (`assets/comidas/`, recortadas com `python scripts/food-sprites.py <pasta>`). Para trocar uma comida, gere de novo só aquela imagem e rode o script na pasta.
+
 | Arquivo | Pedido |
 |---|---|
 | `comida_blueberry.png` | one big round blueberry with a small green leaf |

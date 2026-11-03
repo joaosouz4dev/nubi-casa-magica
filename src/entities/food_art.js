@@ -1,9 +1,12 @@
-/* Arte das comidas: um pintor por formato, todos centrados em (0,0) e
+/* Arte das comidas. Hoje cada comida é uma imagem em feltro
+   (entities/food_sprites.js); os pintores abaixo ficam como reserva enquanto
+   a imagem carrega. Um pintor por formato, todos centrados em (0,0) e
    dimensionados pelo raio r. Estilo comum (o mesmo do resto do jogo):
    contorno macio e escuro, gradiente com luz vinda do alto à esquerda,
    brilho especular e pequenos detalhes de textura (sementes, poros, gotas).
    Usado pelo FoodItem (mesa da cozinha) e pelos ícones (balão, álbum). */
 import { lighten, darken } from "../core/anim.js";
+import { drawFoodSprite } from "./food_sprites.js";
 
 function outlineFill(ctx, fill, edge, ow) {
   ctx.strokeStyle = edge; ctx.lineWidth = ow * 2; ctx.stroke();
@@ -389,6 +392,7 @@ function roundTop(ctx, x, y, w, h, rad) {
 
 /* Pinta a comida def centrada em (0,0). r = raio visual. */
 export function paintFood(ctx, def, r) {
+  if (drawFoodSprite(ctx, def.id, r)) return;   // imagem em feltro (entities/food_sprites.js)
   const ow = Math.max(1.8, r * 0.085);
   ctx.lineJoin = "round"; ctx.lineCap = "round";
   const fn = P[def.shape];

@@ -1,6 +1,6 @@
 /* Service worker — joga 100% offline. Precache de todos os módulos e assets.
    Estratégia cache-first: ótimo para um jogo estático que não muda em runtime. */
-const CACHE = "nubi-v24";
+const CACHE = "nubi-v25";
 const ASSETS = [
   "./",
   "./index.html",
@@ -28,6 +28,32 @@ const ASSETS = [
   "./assets/nubi/nubi_comendo.webp",
   "./assets/nubi/nubi_dormindo.webp",
   "./assets/nubi/nubi_sentada.webp",
+  "./assets/comidas/comida_blueberry.webp",
+  "./assets/comidas/comida_strawberry.webp",
+  "./assets/comidas/comida_banana.webp",
+  "./assets/comidas/comida_pear.webp",
+  "./assets/comidas/comida_watermelon.webp",
+  "./assets/comidas/comida_grapes.webp",
+  "./assets/comidas/comida_orange.webp",
+  "./assets/comidas/comida_apple.webp",
+  "./assets/comidas/comida_sandwich.webp",
+  "./assets/comidas/comida_pizza.webp",
+  "./assets/comidas/comida_carrot.webp",
+  "./assets/comidas/comida_broccoli.webp",
+  "./assets/comidas/comida_cupcake.webp",
+  "./assets/comidas/comida_popsicle.webp",
+  "./assets/comidas/comida_milk.webp",
+  "./assets/comidas/comida_juice.webp",
+  "./assets/comidas/comida_rainbowcake.webp",
+  "./assets/comidas/comida_starcookie.webp",
+  "./assets/comidas/comida_icecream.webp",
+  "./assets/comidas/comida_donut.webp",
+  "./assets/comidas/resto_bananapeel.webp",
+  "./assets/comidas/resto_pearcore.webp",
+  "./assets/comidas/resto_stem.webp",
+  "./assets/comidas/resto_stick.webp",
+  "./assets/comidas/resto_twig.webp",
+  "./assets/comidas/resto_wrapper.webp",
   "./src/entities/food_item.js",
   "./src/scenes/kitchen_room.js",
   "./src/scenes/kitchen.js",
@@ -68,7 +94,8 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  // cache: "reload" = busca no servidor, sem pegar cópia velha do cache HTTP do navegador
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS.map((u) => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (e) => {

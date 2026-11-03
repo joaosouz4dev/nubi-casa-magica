@@ -7,6 +7,7 @@ import { KitchenScene } from "./kitchen.js";
 import { FoodItem } from "../entities/food_item.js";
 import { FOODS, KITCHEN_FOOD_SLOTS, MOUTH_OFFSET, FOOD_TABS, SLOT_X, SLOT_Y, TAB_Y, TAB_X0, TAB_DX, tabOf } from "../data/foods.js";
 import { drawIcon } from "../ui/icons.js";
+import { drawScrapSprite, scrapReady } from "../entities/food_sprites.js";
 import { touchNubi } from "./nubi_touch.js";
 import { Spring, Spring2, clamp, Ease, Motion, softShadow, roundRect, darken } from "../core/anim.js";
 
@@ -338,6 +339,7 @@ export class KitchenRoom {
 
   // ---------------- desenho da rotina de limpeza ----------------
   _peel(ctx, p) {
+    if (this._scrapSprite(ctx, p)) return;
     const WRAP = { sandwich: "#fff1d0", pizza: "#f2d29a", cupcake: "#7fd0ff", popsicle: null, milk: "#ffffff", juice: "#ffb347", rainbowcake: "#ffd6ea", starcookie: "#ffe48a", icecream: "#f2c27a", donut: "#ffd6ea" };
     if (p.food in WRAP) return this._wrapper(ctx, p, WRAP[p.food]);
     const q = p.disp || this.peelPos(p);
@@ -370,6 +372,23 @@ export class KitchenRoom {
       ctx.fillStyle = "#4caf6a"; ctx.beginPath(); ctx.ellipse(r * 0.1, -r * 0.3, r * 0.28, r * 0.14, -0.4, 0, Math.PI * 2); ctx.fill();
     }
     ctx.restore();
+  }
+
+  /* Resto em imagem de feltro (casca, talo, palito, embalagem). false = ainda carregando. */
+  _scrapSprite(ctx, p) {
+    const q = p.disp || this.peelPos(p);
+    const r = this.peelR() * Ease.outBack(clamp(p.pop), 2.2) * (p.held ? 1.15 : 1);
+    if (!scrapReady(p.food)) return false;
+    if (r < 0.5) return true;
+    if (!p.held) softShadow(ctx, q.x, q.y + r * 0.6, r * 0.9, r * 0.2, 0.18);
+    ctx.save(); ctx.translate(q.x, q.y);
+    if (this.selPeel === p) {
+      ctx.strokeStyle = "rgba(80,80,140,.7)"; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -this.t * 0.03;
+      ctx.beginPath(); ctx.arc(0, 0, r * 1.6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    }
+    drawScrapSprite(ctx, p.food, r);
+    ctx.restore();
+    return true;
   }
 
   /* Embalagem amassada (doces/bebidas) ou palito de picolé, no lugar da casca. */
