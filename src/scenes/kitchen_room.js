@@ -123,9 +123,12 @@ export class KitchenRoom {
 
   mouthPoint() {
     const r = this.nubi.radius();
-    return { x: this.nubi.px() + MOUTH_OFFSET.x * r, y: this.nubi.py() + MOUTH_OFFSET.y * r, r: MOUTH_OFFSET.r * r };
+    // Nubi em imagens: a boca fica onde a pose mostra
+    const m = (this.nubi.mouthOffset && this.nubi.mouthOffset()) || MOUTH_OFFSET;
+    return { x: this.nubi.px() + m.x * r, y: this.nubi.py() + m.y * r, r: MOUTH_OFFSET.r * r };
   }
-  overMouth(px, py) { const m = this.mouthPoint(); return Math.hypot(px - m.x, py - m.y) <= m.r; }
+  // vale soltar na boca ou em qualquer lugar do corpo do bichinho (mãos pequenas erram)
+  overMouth(px, py) { const m = this.mouthPoint(); return Math.hypot(px - m.x, py - m.y) <= m.r || !!(this.nubi.overBody && this.nubi.overBody(px, py)); }
   overNubi(px, py) { const r = this.nubi.radius() * 1.2; return Math.hypot(px - this.nubi.px(), py - this.nubi.py()) <= r; }
   topItemAt(px, py) { for (let i = this.items.length - 1; i >= 0; i--) if (this.items[i].contains(px, py)) return this.items[i]; return null; }
 

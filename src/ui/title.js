@@ -27,7 +27,7 @@ export function showTitle({ audio, onStart }) {
         <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M17 11 L38 24 L17 37 Z" fill="#fff" stroke="#3a2f4f" stroke-width="3.5" stroke-linejoin="round"/></svg>
       </button>
     </div>
-    <div class="tRight"><div class="tShadow"></div><img class="tNubi" src="assets/nubi.svg" alt="" draggable="false"/></div>`;
+    <div class="tRight"><div class="tShadow"></div><img class="tNubi" src="assets/nubi/nubi_acenando.webp" alt="" draggable="false"/></div>`;
   stage.appendChild(el);
 
   let started = false;
