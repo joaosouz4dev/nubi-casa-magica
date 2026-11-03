@@ -1,5 +1,7 @@
 # Arte do jogo em feltro (clay 3D)
 
+> As Fases 6 a 9 (roupas, salão, interface e minijogos) estão em [`ARTE_PENDENTE.md`](ARTE_PENDENTE.md), com o jeito de pedir peças novas.
+
 Tudo no mesmo estilo da Nubi em feltro. As imagens chegam por fases: cada fase entra no jogo antes de começar a próxima, para conferir se o caminho funciona.
 
 ## Regras para todas as imagens

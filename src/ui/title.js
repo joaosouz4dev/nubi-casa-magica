@@ -24,7 +24,7 @@ export function showTitle({ audio, onStart }) {
       </h1>
       <button id="btnPlay" class="toy" aria-label="Jogar">
         <span class="ring"></span><span class="ring r2"></span>
-        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M17 11 L38 24 L17 37 Z" fill="#fff" stroke="#3a2f4f" stroke-width="3.5" stroke-linejoin="round"/></svg>
+        <img class="felt" src="assets/hud/hud_play.webp" alt="" draggable="false">
       </button>
     </div>
     <div class="tRight"><div class="tShadow"></div><img class="tNubi" src="assets/nubi/nubi_acenando.webp" alt="" draggable="false"/></div>`;

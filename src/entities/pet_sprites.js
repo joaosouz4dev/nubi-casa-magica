@@ -94,13 +94,14 @@ class PetSprites {
   /* Peça em feltro feita sobre a Nubi parada (roupa, acessório, penteado),
      com o recorte dela no quadro original (art.json) e o recorte das poses
      (sprites.json "box"). head: segue os olhos da pose (lugar e tamanho);
-     senão só acompanha o quanto a cabeça desceu ou andou (sentada).
+     senão só acompanha o quanto a cabeça desceu ou andou (sentada);
+     "fixed": fica onde está na parada (calçados, no chão).
      k = escala em volta do centro da peça (aparecer); tint = cor (cabelo). */
   piece(ctx, r, pose, name, head, k = 1, tint = null) {
     const im = art(name), pm = artMeta(name), B = this.meta.box;
     if (!im || !pm || !pm.box || !B) return false;
     const s = this.meta.h / (B[3] - B[1]);
-    const P = this._e("parada"), E = this._e(pose), q = head ? E[2] / P[2] : 1;
+    const P = this._e("parada"), E = head === "fixed" ? P : this._e(pose), q = head === true ? E[2] / P[2] : 1;
     const x = E[0] + ((pm.box[0] - B[0]) * s - P[0]) * q, y = E[1] + ((pm.box[1] - B[1]) * s - P[1]) * q;
     const W = (pm.box[2] - pm.box[0]) * s * q * this.F * r, H = (pm.box[3] - pm.box[1]) * s * q * this.F * r;
     ctx.save();

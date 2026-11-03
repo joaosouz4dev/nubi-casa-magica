@@ -640,6 +640,20 @@ export class GamesRoom {
     const sx = 1 + (Motion.reduce ? 0 : Math.sin(b.ph * 1.7) * 0.05), sy = 2 - sx;
     ctx.save(); ctx.translate(x, y); ctx.scale(sx, sy);
     const c = b.gold ? "#ffd54a" : b.color;
+    const ring = art("brinquedos/jogo_bolha");
+    if (ring) {
+      // bolha em feltro: um véu leve da cor por dentro do anel arco-íris
+      // (a cor é só enfeite; a dourada, que vale mais, fica bem mais forte e com estrela)
+      const g = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.1, 0, 0, r * 0.95);
+      g.addColorStop(0, "rgba(255,255,255,.5)"); g.addColorStop(0.6, hexA(c, b.gold ? 0.45 : 0.22)); g.addColorStop(1, hexA(c, b.gold ? 0.7 : 0.42));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r * 0.93, 0, Math.PI * 2); ctx.fill();
+      if (b.gold) { ctx.shadowColor = "rgba(255,200,40,.95)"; ctx.shadowBlur = r * 0.5; }
+      drawImgFit(ctx, ring, 0, 0, r * 2.08, r * 2.08);
+      ctx.shadowColor = "transparent";
+      if (b.gold) drawIcon(ctx, "star", 0, 0, r * 0.5);
+      ctx.restore();
+      return;
+    }
     const g = ctx.createRadialGradient(-r * 0.35, -r * 0.35, r * 0.1, 0, 0, r);
     g.addColorStop(0, "rgba(255,255,255,.85)"); g.addColorStop(0.55, hexA(c, 0.35)); g.addColorStop(1, hexA(c, 0.7));
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
@@ -665,6 +679,9 @@ export class GamesRoom {
       ctx.strokeStyle = c.matched ? "#e0a21c" : "#b49cff"; ctx.lineWidth = Math.max(2, m * (c.matched ? 0.009 : 0.006));
       roundRect(ctx, -r.w / 2, -r.h / 2, r.w, r.h, m * 0.025); ctx.stroke();
       drawIcon(ctx, c.icon, 0, 0, r.w * 0.3);
+    } else if (cardBackArt(r.w, r.h)) {
+      // verso em feltro (lilás com estrelinha)
+      ctx.drawImage(cardBackArt(r.w, r.h), -r.w / 2, -r.h / 2, r.w, r.h);
     } else {
       const g = ctx.createLinearGradient(0, -r.h / 2, 0, r.h / 2);
       g.addColorStop(0, "#c9b5ff"); g.addColorStop(1, "#9a7ff0");
@@ -686,6 +703,21 @@ export class GamesRoom {
     ctx.save(); ctx.translate(cx, r.y + r.h); ctx.scale(1 - k * 0.01, 1 + k * 0.01); ctx.translate(-cx, -(r.y + r.h));
     if (lit) { ctx.shadowColor = hexA(c, 0.9); ctx.shadowBlur = m * 0.05; }
     else { ctx.shadowColor = "rgba(70,40,110,.22)"; ctx.shadowBlur = m * 0.02; ctx.shadowOffsetY = m * 0.01; }
+    const btn = tintedArt("brinquedos/jogo_tecla", c);
+    if (btn) {
+      // tecla em feltro: botão redondo tingido, no meio da faixa de toque;
+      // acesa = brilho colorido em volta e a própria cor mais clara (somada)
+      const d = Math.min(r.w * 1.08, r.h * 0.78), cy = r.y + r.h * 0.5;
+      if (lit) ctx.shadowBlur = m * 0.07;
+      drawImgFit(ctx, btn, cx, cy, d, d);
+      if (lit) {
+        ctx.shadowColor = "transparent";
+        ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 0.2;
+        drawImgFit(ctx, btn, cx, cy, d, d);
+      }
+      ctx.restore();
+      return;
+    }
     // sininho: corpo arredondado em cima, boca larga embaixo
     const top = r.y + r.h * 0.12, bot = r.y + r.h * 0.82;
     ctx.beginPath();
@@ -738,6 +770,15 @@ export class GamesRoom {
   _hole(ctx, i, m) {
     const g = this.game, h = g.holes[i], r = this.shapeHoleRect(i);
     ctx.save();
+    const sil = holeArt("brinquedos/" + SHAPE_ART[h.shape]);
+    if (sil) {
+      // buraco = silhueta da própria peça, escurecida (um pouco maior que a peça)
+      const d = r.r * SHAPE_ART_K[h.shape];
+      ctx.globalAlpha = h.filled ? 0.5 : 0.45;
+      drawImgFit(ctx, sil, r.x, r.y, d, d);
+      ctx.restore();
+      return;
+    }
     // furo "vazado": contorno tracejado onde a peça encaixa
     ctx.setLineDash(h.filled ? [] : [m * 0.02, m * 0.015]);
     ctx.strokeStyle = h.filled ? darken(this._shapeColor(h.shape), 0.2) : "rgba(120,90,150,.6)";
@@ -753,6 +794,15 @@ export class GamesRoom {
     const k = 1 - clamp(pc.pop.x, -1, 1) * 0.06;
     ctx.save(); ctx.translate(r.x, r.y); ctx.scale(k, k); ctx.translate(-r.x, -r.y);
     ctx.shadowColor = "rgba(70,40,110,.25)"; ctx.shadowBlur = m * 0.02; ctx.shadowOffsetY = m * 0.008;
+    const im = art("brinquedos/" + SHAPE_ART[pc.shape]);
+    if (im) {
+      // peça em feltro (cada forma já vem com a sua cor)
+      if (g.drag && g.pieces[g.drag.i] === pc) { ctx.shadowBlur = m * 0.035; ctx.shadowOffsetY = m * 0.02; }
+      const d = r.r * SHAPE_ART_K[pc.shape];   // r da peça já é 0,92 do buraco: cabe dentro da silhueta
+      drawImgFit(ctx, im, r.x, r.y, d, d);
+      ctx.restore();
+      return;
+    }
     const gr = ctx.createLinearGradient(r.x, r.y - r.r, r.x, r.y + r.r);
     gr.addColorStop(0, lighten(col, 0.4)); gr.addColorStop(1, col);
     ctx.fillStyle = gr; this._shapePath(ctx, pc.shape, r.x, r.y, r.r); ctx.fill();
@@ -777,6 +827,14 @@ export class GamesRoom {
     for (let i = 0; i < 3; i++) {
       const r = this.swatchRect(i);
       ctx.save();
+      const pot = paintPotArt(r.color);
+      if (pot) {
+        // pote de tinta em feltro com a tinta na cor (o toque continua no círculo de raio r)
+        softShadow(ctx, r.x, r.y + r.r * 1.3, r.r * 1.1, m * 0.014, 0.2);
+        drawImgFit(ctx, pot, r.x, r.y - r.r * 0.05, r.r * 2.9, r.r * 2.9);
+        ctx.restore();
+        continue;
+      }
       softShadow(ctx, r.x, r.y + r.r, r.r * 0.9, m * 0.012, 0.2);
       const gr = ctx.createLinearGradient(r.x, r.y - r.r, r.x, r.y + r.r);
       gr.addColorStop(0, lighten(r.color, 0.3)); gr.addColorStop(1, r.color);
@@ -953,6 +1011,123 @@ export class GamesRoom {
     for (let i = 0; i < 18; i++) { c.beginPath(); c.ellipse(w * (i / 18 + 0.02), h * (0.93 + (i % 3) * 0.02), m * 0.012, m * 0.005, 0, 0, Math.PI * 2); c.fill(); }
     softShadow(c, w * 0.15, h * 0.84, m * 0.1, m * 0.022, 0.14);
   }
+}
+
+/* ---------- peças em feltro (assets/brinquedos) ----------
+   Cada função devolve um canvas pronto (em cache) ou null quando a arte
+   ainda não carregou; aí quem desenha usa o desenho em código. */
+const SHAPE_ART = { circle: "jogo_forma_circulo", square: "jogo_forma_quadrado", triangle: "jogo_forma_triangulo", star: "jogo_forma_estrela", heart: "jogo_forma_coracao" };
+// tamanho da arte (lado da caixa, em raios) para ocupar o mesmo espaço da forma em código
+const SHAPE_ART_K = { circle: 2.05, square: 1.85, triangle: 2.1, star: 2.2, heart: 2.2 };
+const artCache = new Map();
+function offscreen(w, h) {
+  if (typeof document === "undefined") return null;
+  const cv = document.createElement("canvas");
+  cv.width = Math.max(1, Math.round(w)); cv.height = Math.max(1, Math.round(h));
+  return cv;
+}
+/* Peça branca tingida mantendo o sombreado do feltro (multiplica a cor). */
+function tintedArt(name, color) {
+  const base = art(name);
+  if (!base) return null;
+  const key = "tint|" + name + "|" + color;
+  let cv = artCache.get(key);
+  if (!cv) {
+    cv = offscreen(base.naturalWidth, base.naturalHeight);
+    if (!cv) return null;
+    const c = cv.getContext("2d");
+    c.drawImage(base, 0, 0);
+    c.globalCompositeOperation = "multiply"; c.fillStyle = color; c.fillRect(0, 0, cv.width, cv.height);
+    c.globalCompositeOperation = "destination-in"; c.drawImage(base, 0, 0);
+    artCache.set(key, cv);
+  }
+  return cv;
+}
+/* Buraco do jogo de formas: a silhueta da peça escurecida (o feltro continua aparecendo). */
+function holeArt(name) {
+  const base = art(name);
+  if (!base) return null;
+  const key = "hole|" + name;
+  let cv = artCache.get(key);
+  if (!cv) {
+    cv = offscreen(base.naturalWidth, base.naturalHeight);
+    if (!cv) return null;
+    const c = cv.getContext("2d");
+    c.drawImage(base, 0, 0);
+    c.globalCompositeOperation = "source-atop"; c.fillStyle = "rgba(92,58,120,.72)"; c.fillRect(0, 0, cv.width, cv.height);
+    artCache.set(key, cv);
+  }
+  return cv;
+}
+/* Pote de tinta: só a tinta (os pixels brancos/acinzentados de cima) ganha a
+   cor; o pote creme fica igual. Branco devolve a arte original. */
+function paintPotArt(color) {
+  const base = art("brinquedos/jogo_pote_tinta");
+  if (!base) return null;
+  if (color.toLowerCase() === "#ffffff") return base;
+  const key = "pot|" + color;
+  if (artCache.has(key)) return artCache.get(key);
+  const cv = offscreen(base.naturalWidth, base.naturalHeight);
+  if (!cv) return null;
+  const c = cv.getContext("2d");
+  c.drawImage(base, 0, 0);
+  try {
+    const d = c.getImageData(0, 0, cv.width, cv.height), px = d.data;
+    const n = parseInt(color.replace("#", ""), 16), cr = (n >> 16) & 255, cg = (n >> 8) & 255, cb = n & 255;
+    const yMax = cv.height * 0.6;
+    for (let y = 0; y < yMax; y++) {
+      for (let x = 0; x < cv.width; x++) {
+        const i = (y * cv.width + x) * 4;
+        if (px[i + 3] < 8) continue;
+        const r = px[i], g = px[i + 1], b = px[i + 2];
+        // tinta: azulada/cinza (b perto de r); pote: creme (r bem acima de b)
+        const wgt = clamp((26 - (r - b)) / 12);
+        if (wgt <= 0 || r < 120) continue;
+        px[i] = r + (cr * r / 255 - r) * wgt;
+        px[i + 1] = g + (cg * g / 255 - g) * wgt;
+        px[i + 2] = b + (cb * b / 255 - b) * wgt;
+      }
+    }
+    c.putImageData(d, 0, 0);
+  } catch (e) { artCache.set(key, null); return null; }
+  artCache.set(key, cv);
+  return cv;
+}
+/* Verso da carta da memória num retângulo de qualquer proporção: as faixas
+   lisas de feltro entre a borda e a estrela esticam; cantos e estrela não. */
+function cardBackArt(w, h) {
+  const base = art("brinquedos/jogo_carta_verso");
+  if (!base) return null;
+  w = Math.round(w); h = Math.round(h);
+  const key = "card|" + w + "x" + h;
+  let cv = artCache.get(key);
+  if (!cv) {
+    cv = offscreen(w, h);
+    if (!cv) return null;
+    const c = cv.getContext("2d");
+    const iw = base.naturalWidth, ih = base.naturalHeight, k = h / ih;
+    const natW = iw * k;
+    if (natW >= w) c.drawImage(base, 0, 0, w, h);
+    else {
+      const a = 0.2, b = 0.3;                    // frações da largura da arte
+      const extra = (w - natW) / 2;              // cada faixa lisa ganha metade da sobra
+      const cols = [[0, a, 0], [a, b, extra], [b, 1 - b, 0], [1 - b, 1 - a, extra], [1 - a, 1, 0]];
+      let x = 0;
+      for (const [s0, s1, add] of cols) {
+        const sw = (s1 - s0) * iw, dw = sw * k + add;
+        c.drawImage(base, s0 * iw, 0, sw, ih, x, 0, dw + 0.6, h);
+        x += dw;
+      }
+    }
+    artCache.set(key, cv);
+  }
+  return cv;
+}
+function drawImgFit(ctx, im, cx, cy, maxW, maxH) {
+  const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+  const k = Math.min(maxW / iw, maxH / ih), dw = iw * k, dh = ih * k;
+  ctx.drawImage(im, cx - dw / 2, cy - dh / 2, dw, dh);
+  return { x: cx - dw / 2, y: cy - dh / 2, w: dw, h: dh };
 }
 
 function hexA(hex, a) {

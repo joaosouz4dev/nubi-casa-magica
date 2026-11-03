@@ -5,7 +5,7 @@
    cheio, um presente aparece ao lado do bichinho; 3 toques abrem.
    Tudo desenhado no estilo do jogo (ícones em canvas, sem emoji). */
 import { artReady } from "../core/art.js";
-import { drawIcon } from "./icons.js";
+import { drawIcon, hasIconArt } from "./icons.js";
 import { PRIZES, loveNeeded } from "../data/prizes.js";
 import { PETS } from "../data/pets.js";
 
@@ -16,8 +16,9 @@ function iconCanvas(size, key) {
   c.style.width = size + "px"; c.style.height = size + "px";
   const ctx = c.getContext("2d");
   ctx.scale(dpr, dpr);
-  // as peças de roupa são desenhadas menores que as comidas: compensa no cartão
-  drawIcon(ctx, key, size / 2, size / 2, size * (key.startsWith("wear:") ? 0.62 : 0.38));
+  // as peças de roupa em código são desenhadas menores que as comidas:
+  // compensa no cartão (a arte em feltro já ocupa a caixa toda)
+  drawIcon(ctx, key, size / 2, size / 2, size * (key.startsWith("wear:") && !hasIconArt(key) ? 0.62 : 0.38));
   return c;
 }
 function bump(el, cls = "bump") { if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
@@ -41,6 +42,11 @@ export class ProgressUI {
       starIco.appendChild(iconCanvas(30, "star"));
       artReady().then(() => starIco.replaceChildren(iconCanvas(30, "star")));   // estrela em feltro
     }
+    // o desenho do próximo presente nasce no boot: refaz com a arte em feltro
+    artReady().then(() => {
+      const icon = this.nextEl && this.nextEl.dataset.icon;
+      if (icon) this.nextEl.replaceChildren(iconCanvas(40, icon));
+    });
     const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener("click", fn); };
     on("btnShop", () => this.openShop());
     on("starPill", () => this.openShop());

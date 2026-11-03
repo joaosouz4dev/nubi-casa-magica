@@ -313,11 +313,19 @@ function replay(kind, id, { nubi, bus, audio }) {
 
 function wireQuickSound(audio, voice) {
   const sound = document.getElementById("btnSound");
-  if (sound) sound.addEventListener("click", () => {
+  if (!sound) return;
+  // o botão mostra o estado real do som (a área dos responsáveis também liga e desliga)
+  const show = () => {
+    sound.classList.toggle("off", !audio.enabled.sfx);
+    sound.setAttribute("aria-pressed", String(!audio.enabled.sfx));
+  };
+  sound.addEventListener("click", () => {
     const on = !audio.enabled.sfx;
     audio.enabled.sfx = on; audio.enabled.voice = on; audio.enabled.music = on;
     if (!on) voice.stop();
-    sound.classList.toggle("off", !on);
-    sound.setAttribute("aria-pressed", String(!on));
+    show();
   });
+  const bag = document.getElementById("btnBag");
+  if (bag) bag.addEventListener("click", show);
+  show();
 }

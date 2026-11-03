@@ -105,7 +105,7 @@ try {
     $resolvedPython = (& $python -c 'import sys; print(sys.executable)' | Select-Object -Last 1).Trim()
     if (Test-Path -LiteralPath $resolvedPython) { $python = $resolvedPython }
     $server = Start-Process -FilePath $python `
-      -ArgumentList "-m http.server $Port --bind 127.0.0.1 --directory `"$proj`"" `
+      -ArgumentList "`"$proj\scripts\serve.py`" $Port `"$proj`"" `
       -PassThru -WindowStyle Hidden
     Start-Sleep -Seconds 2
     Invoke-WebRequest -Uri "http://127.0.0.1:$Port/index.html" -UseBasicParsing -TimeoutSec 3 | Out-Null
