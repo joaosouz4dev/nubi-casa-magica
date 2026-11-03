@@ -4,6 +4,12 @@
   "h": 720,
   "feetX": 398,
   "bottom": 708,
+  "box": [
+    58,
+    43,
+    1187,
+    1218
+  ],
   "poses": {
     "acenando": {
       "eyes": [

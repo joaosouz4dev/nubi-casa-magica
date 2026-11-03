@@ -16,6 +16,7 @@ import { drawIcon } from "../ui/icons.js";
 import { atmosphere } from "../ui/scenery.js";
 import { FOODS } from "../data/foods.js";
 import { paintFood } from "../entities/food_art.js";
+import { art, drawBackdrop } from "../core/art.js";
 import { touchNubi } from "./nubi_touch.js";
 import { Skill } from "../systems/skill.js";
 
@@ -58,7 +59,10 @@ export class GamesRoom {
     this.press = GAMES.map(() => new Spring(0, { stiffness: 340, damping: 14 }));
     this.cardIn = 0;
     this.floaters = [];          // "+1" subindo
-    this.bg = new CachedLayer(vp, (c, w, h, m) => { this._paintBack(c, w, h, m); atmosphere(c, w, h, m, { vignette: 0.16 }); });
+    this.bg = new CachedLayer(vp, (c, w, h, m) => {
+      if (this._paintArt(c, w, h, m)) return;
+      this._paintBack(c, w, h, m); atmosphere(c, w, h, m, { vignette: 0.16 });
+    });
   }
 
   // ---------------- interface do cômodo ----------------
@@ -552,8 +556,12 @@ export class GamesRoom {
   draw() {
     const ctx = this.vp.ctx, vp = this.vp, w = vp.w, h = vp.h, m = Math.min(w, h);
     this.bg.draw();
-    this._bunting(ctx, w, h, m);
     const g = this.game;
+    if (art("brinquedos/fundo_brinquedos")) {
+      /* a tenda em feltro já tem as bandeirinhas; durante o minijogo um véu
+         creme acalma as listras para frutas, bolhas e cartas se destacarem */
+      if (g) { ctx.fillStyle = "rgba(255,247,238,.42)"; ctx.fillRect(0, 0, w, h); }
+    } else this._bunting(ctx, w, h, m);
     if (!g && !this.result) { GAMES.forEach((G, i) => this._card(ctx, G, i, m)); this.nubi.draw(); return; }
     if (this.result && !g) { this.nubi.draw(); this._result(ctx, w, h, m); this._resultButtons(ctx, m); this._floaters(ctx, m); return; }
 
@@ -915,6 +923,14 @@ export class GamesRoom {
       ctx.restore();
     }
     ctx.restore();
+  }
+
+  /* Tenda de circo em feltro (listras rosa e creme, bandeirinhas, chão de
+     grama); vale para o menu e para o fundo dos minijogos. */
+  _paintArt(c, w, h, m) {
+    if (!drawBackdrop(c, "brinquedos/fundo_brinquedos", w, h, 0.4)) return false;
+    softShadow(c, w * 0.15, h * 0.84, m * 0.1, m * 0.022, 0.14);
+    return true;
   }
 
   _paintBack(c, w, h, m) {

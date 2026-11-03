@@ -10,6 +10,7 @@
 import { Spring, clamp, Ease, Motion, CachedLayer, roundRect, softShadow, lighten, darken } from "../core/anim.js";
 import { drawIcon } from "../ui/icons.js";
 import { atmosphere } from "../ui/scenery.js";
+import { art, drawArtAt } from "../core/art.js";
 import { touchNubi } from "./nubi_touch.js";
 
 export const HUB_TILES = [
@@ -142,7 +143,7 @@ export class HubRoom {
   draw() {
     const ctx = this.vp.ctx, vp = this.vp, w = vp.w, h = vp.h, m = Math.min(w, h);
     this.back.draw();
-    this._clouds(ctx, w, h, m);
+    if (!this.hasArt()) this._clouds(ctx, w, h, m);   // o cenário em feltro já tem as nuvens dele
     if (this.decor("decor:rainbow")) this._rainbow(ctx, w, h, m);
     this._house(ctx, w, h, m);
     if (this.decor("decor:flags")) this._flags(ctx, w, h, m);
@@ -153,7 +154,60 @@ export class HubRoom {
   }
 
   // ---------------- casa ----------------
+  hasArt() { return !!art("mapa/fundo_mapa"); }
+
+  /* Casa em feltro (mapa/mapa_casa, 640x477) montada em 3 faixas, para as
+     paredes caberem as janelas dos cômodos em qualquer proporção de tela:
+       - telhado (y 0..200 da arte): largura da casa, achatado só o necessário;
+       - parede (y 200..335, sem a porta): esticada até perto do chão;
+       - rodapé (y 445..477): só os pedaços dos lados, emendados no meio com
+         uma transição suave (a porta fica de fora: estaria escondida atrás
+         das janelas do térreo).
+     As paredes da arte vão de x 28 a 612; elas ficam em 0.30..0.89 da tela,
+     em volta das janelas (HUB_TILES), e o beiral termina logo acima delas.
+     A casa montada fica guardada num canvas e só é refeita quando a tela muda. */
+  _houseArt(ctx, w, h, m) {
+    const im = art("mapa/mapa_casa");
+    if (!im) return false;
+    const wallL = w * 0.30, wallR = w * 0.89;
+    const W = (wallR - wallL) / (584 / 640), X = wallL - W * (28 / 640);
+    const eave = h * 0.292, yBot = h * 0.875;
+    const roofH = Math.min(W * (200 / 640), h * 0.33);
+    const top = eave - roofH;
+    const dpr = this.vp.dpr || 1, key = `${w}x${h}@${dpr}`;
+    let hc = this._houseCanvas;
+    if (!hc || hc.key !== key || hc.im !== im) {
+      const cw = Math.ceil(W), ch = Math.ceil(yBot - top);
+      const cv = document.createElement("canvas");
+      cv.width = Math.max(1, Math.ceil(cw * dpr)); cv.height = Math.max(1, Math.ceil(ch * dpr));
+      const c = cv.getContext("2d"); c.scale(dpr, dpr);
+      const k = im.naturalWidth / 640;            // a arte pode vir em outra escala
+      const botH = W * (32 / 640), midH = ch - botH - roofH;
+      c.drawImage(im, 0, 200 * k, 640 * k, 135 * k, 0, roofH - 1, W, midH + 2);
+      // rodapé: lado direito por baixo, lado esquerdo por cima sumindo no meio
+      const ov = W * 0.06, half = W / 2;
+      c.drawImage(im, 400 * k, 445 * k, 240 * k, 32 * k, half - ov, ch - botH, half + ov, botH);
+      const L = document.createElement("canvas");
+      L.width = Math.max(1, Math.ceil((half + ov) * dpr)); L.height = Math.max(1, Math.ceil(botH * dpr));
+      const lc = L.getContext("2d"); lc.scale(dpr, dpr);
+      lc.drawImage(im, 0, 445 * k, 240 * k, 32 * k, 0, 0, half + ov, botH);
+      const fade = lc.createLinearGradient(0, 0, half + ov, 0);
+      fade.addColorStop(0, "rgba(0,0,0,1)"); fade.addColorStop((half - ov) / (half + ov), "rgba(0,0,0,1)"); fade.addColorStop(1, "rgba(0,0,0,0)");
+      lc.globalCompositeOperation = "destination-in";
+      lc.fillStyle = fade; lc.fillRect(0, 0, half + ov, botH);
+      c.drawImage(L, 0, ch - botH, half + ov, botH);
+      c.drawImage(im, 0, 0, 640 * k, 200 * k, 0, 0, W, roofH);
+      hc = this._houseCanvas = { key, im, cv, cw, ch };
+    }
+    ctx.save();
+    ctx.shadowColor = "rgba(60,30,80,.22)"; ctx.shadowBlur = m * 0.03; ctx.shadowOffsetY = m * 0.012;
+    ctx.drawImage(hc.cv, X, top, hc.cw, hc.ch);
+    ctx.restore();
+    return true;
+  }
+
   _house(ctx, w, h, m) {
+    if (this._houseArt(ctx, w, h, m)) { HUB_TILES.forEach((t, i) => this._tile(ctx, t, i, m)); return; }
     const x0 = w * 0.31, x1 = w * 0.89, yRoof = h * 0.06, yTop = h * 0.27, yBot = h * 0.87;
     // telhado
     ctx.save();
@@ -223,7 +277,24 @@ export class HubRoom {
   }
 
   // ---------------- enfeites (prêmios) ----------------
+  /* Cada enfeite tem arte em feltro (enfeites/enfeite_*); o desenho em
+     código abaixo de cada um fica como reserva enquanto a arte não carregou. */
   _flags(ctx, w, h, m) {
+    // bandeirinhas: 2 ou 3 varais em feltro ao longo do beiral (mesma faixa 0.33..0.87)
+    const im = art("enfeites/enfeite_bandeirinhas");
+    if (im) {
+      const span = w * 0.56, ratio = im.naturalHeight / im.naturalWidth;
+      const n = Math.max(1, Math.round(span / ((h * 0.115) / ratio)));
+      const fw = span / n, fh = fw * ratio;
+      for (let i = 0; i < n; i++) {
+        const cx = w * 0.31 + fw * (i + 0.5);
+        const sway = Motion.reduce ? 0 : Math.sin(this.t * 0.0025 + i * 1.3) * 0.025;
+        ctx.save(); ctx.translate(cx, h * 0.28 - fh * 0.3); ctx.rotate(sway);
+        ctx.drawImage(im, -fw / 2, 0, fw, fh);
+        ctx.restore();
+      }
+      return;
+    }
     const x0 = w * 0.33, x1 = w * 0.87, y = h * 0.28;
     const cols = ["#ff6b9d", "#ffd54a", "#5bc0eb", "#9be564", "#b49cff"];
     ctx.strokeStyle = "#8a6a4a"; ctx.lineWidth = Math.max(1.5, m * 0.004);
@@ -239,6 +310,17 @@ export class HubRoom {
     }
   }
   _flowers(ctx, w, h, m) {
+    // buquês de flores em feltro na frente da casa, balançando de leve
+    if (art("enfeites/enfeite_flores")) {
+      for (let i = 0; i < 6; i++) {
+        const x = w * (0.31 + i * 0.11), y = h * (0.985 - (i % 2) * 0.015);
+        const sway = Motion.reduce ? 0 : Math.sin(this.t * 0.002 + i) * 0.06;
+        ctx.save(); ctx.translate(x, y); ctx.rotate(sway);
+        drawArtAt(ctx, "enfeites/enfeite_flores", 0, 0, null, h * (0.13 + (i % 3) * 0.012));
+        ctx.restore();
+      }
+      return;
+    }
     const cols = ["#ff6b9d", "#ffd54a", "#b49cff", "#ff8a5b"];
     for (let i = 0; i < 9; i++) {
       const x = w * (0.3 + i * 0.07), y = h * 0.93 + (i % 2) * h * 0.02;
@@ -253,6 +335,15 @@ export class HubRoom {
     }
   }
   _balloons(ctx, w, h, m) {
+    // cacho de balões em feltro preso no mesmo ponto (0.27, 0.55), flutuando
+    if (art("enfeites/enfeite_baloes")) {
+      const fl = Motion.reduce ? 0 : Math.sin(this.t * 0.002) * m * 0.01;
+      const tilt = Motion.reduce ? 0 : Math.sin(this.t * 0.0013) * 0.04;
+      ctx.save(); ctx.translate(w * 0.27, h * 0.55); ctx.rotate(tilt);
+      drawArtAt(ctx, "enfeites/enfeite_baloes", 0, fl * 0.3, null, h * 0.37 + fl);
+      ctx.restore();
+      return;
+    }
     const cols = ["#ff6b9d", "#5bc0eb", "#ffd54a"];
     const bx = w * 0.27, by = h * 0.55;
     cols.forEach((c, i) => {
@@ -267,6 +358,17 @@ export class HubRoom {
     });
   }
   _rainbow(ctx, w, h, m) {
+    /* arco-íris em feltro: o desenho é um arco grosso com nuvens nos pés, que
+       sumiria inteiro atrás da casa; ele fica no céu à esquerda, pousado nas
+       colinas por trás do bichinho, encostado na casa. */
+    const im = art("enfeites/enfeite_arcoiris");
+    if (im) {
+      const rw = Math.min(w * 0.3, m * 0.75), rh = rw * (im.naturalHeight / im.naturalWidth);
+      // telas mais altas (4:3): o bichinho cresce, então o arco sobe para aparecer
+      const bottom = Math.min(h * 0.64, w * 0.31);
+      ctx.drawImage(im, w * 0.16 - rw / 2, bottom - rh, rw, rh);
+      return;
+    }
     const cols = ["#ff6b6b", "#ffb04a", "#ffe14d", "#7fd88a", "#5bc0eb", "#b49cff"];
     ctx.save(); ctx.globalAlpha = 0.55; ctx.lineCap = "butt";
     cols.forEach((c, i) => { ctx.strokeStyle = c; ctx.lineWidth = m * 0.018; ctx.beginPath(); ctx.arc(w * 0.6, h * 0.95, m * (0.95 - i * 0.018), Math.PI * 1.05, Math.PI * 1.95); ctx.stroke(); });
@@ -285,6 +387,17 @@ export class HubRoom {
   }
 
   _paintBack(c, w, h, m) {
+    /* cenário em feltro (céu, colinas, árvores, caminho): preso à esquerda,
+       onde ficam as árvores e o bichinho; o que sobra é cortado à direita,
+       atrás da casa. */
+    const bg = art("mapa/fundo_mapa");
+    if (bg) {
+      const k = Math.max(w / bg.naturalWidth, h / bg.naturalHeight);
+      const dw = bg.naturalWidth * k, dh = bg.naturalHeight * k;
+      c.drawImage(bg, 0, (h - dh) * 0.6, dw, dh);
+      softShadow(c, w * 0.15, h * 0.84, m * 0.12, m * 0.025, 0.14);
+      return;
+    }
     const g = c.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, "#9fd8ff"); g.addColorStop(0.65, "#dff3ff"); g.addColorStop(1, "#fff4d6");
     c.fillStyle = g; c.fillRect(0, 0, w, h);

@@ -13,6 +13,7 @@ import { touchNubi } from "./nubi_touch.js";
 import { drawIcon } from "../ui/icons.js";
 import { atmosphere } from "../ui/scenery.js";
 import { SALON_PAGES, WIPE, STATIONS, STATION_ORDER, ACT_STATION } from "../data/salon.js";
+import { art, drawBackdrop } from "../core/art.js";
 
 const ROW_Y = [0.3, 0.5, 0.7];
 const PAGE_BTN = { x: 0.09, y: 0.9 };
@@ -24,6 +25,26 @@ const NUBI_AT = { null: { x: 0.52, y: 0.5, k: 1 }, hair: { x: 0.48, y: 0.5, k: 1
 const PAW = { x: 0.45, y: 0.52, r: 0.22 };
 const TOES = [[-0.62, -0.5], [-0.22, -0.82], [0.22, -0.82], [0.62, -0.5]];
 const FLIP = { x: 0.56, y: 0.9 };
+/* Artes em feltro do salão. */
+const DOOR_ART = { hair: "salao/salao_porta_cabelo", nails: "salao/salao_porta_unhas", makeup: "salao/salao_porta_maquiagem" };
+/* Lampadinhas da moldura do espelho em feltro (frações da arte). */
+const BULBS = [[0.502, 0.133], [0.214, 0.206], [0.78, 0.206], [0.096, 0.362], [0.902, 0.362], [0.068, 0.536],
+  [0.929, 0.536], [0.128, 0.7], [0.872, 0.7], [0.252, 0.828], [0.748, 0.828]];
+
+/* Balcão alto em feltro: topo (laço) e base (bancada e portinhas) na
+   proporção certa; no meio, a faixa de uma prateleira se repete (e estica
+   um pouco) até preencher a altura pedida: no 4:3 o balcão ganha mais
+   prateleiras em vez de deformar. */
+function drawShelves(c, im, x, W, top, bottom) {
+  const nw = im.naturalWidth, nh = im.naturalHeight, hk = W * (nh / nw);
+  const A = 0.32, B = 0.47;                        // faixa que se repete (meio da tábua até o meio da seguinte)
+  const topH = A * hk, botH = (1 - B) * hk, mid = bottom - top - topH - botH;
+  if (mid <= 0) { const k = (bottom - top) / hk; c.drawImage(im, x + (W - W * k) / 2, top, W * k, bottom - top); return; }
+  const n = Math.max(1, Math.round(mid / ((B - A) * hk * 1.5))), bh = mid / n;   // prateleiras até ~1,5x mais altas
+  c.drawImage(im, 0, 0, nw, A * nh, x, top, W, topH + 0.6);
+  for (let i = 0; i < n; i++) c.drawImage(im, 0, A * nh, nw, (B - A) * nh, x, top + topH + i * bh, W, bh + 0.6);
+  c.drawImage(im, 0, B * nh, nw, (1 - B) * nh, x, bottom - botH, W, botH);
+}
 
 export class SalonRoom {
   constructor({ vp, bus, nubi }) {
@@ -157,6 +178,19 @@ export class SalonRoom {
   faceCenter() {
     const f = (this.nubi.faceOffset && this.nubi.faceOffset()) || { x: 0, y: 0.05 };   // Nubi em imagens: rosto mais alto
     return { x: this.nubi.px() + f.x * this.nubi.radius(), y: this.nubi.py() + f.y * this.nubi.radius() };
+  }
+  /* Espelho em feltro (só desenho): no lugar do espelho antigo, em pé no
+     rodapé, com o bichinho na frente dele. */
+  mirrorArt() {
+    const w = this.vp.w, h = this.vp.h;
+    const H = Math.min(h * 0.8, (w * 0.5) / (468 / 640)), W = H * (468 / 640);
+    return { x: w * 0.48 - W / 2, y: h * 0.82 - H, w: W, h: H };
+  }
+  /* Balcão em feltro atrás da coluna de itens (e das portas da recepção). */
+  counterArt() {
+    const w = this.vp.w, h = this.vp.h;
+    const W = Math.min(w * 0.22, h * 0.36);
+    return { x: Math.max(w * 0.09, W * 0.45) - W / 2, w: W, top: h * 0.11, bottom: h * 0.93 };
   }
   overFace(px, py) { const f = this.faceCenter(); return Math.hypot(px - f.x, py - f.y) <= this.nubi.radius() * 0.85; }
 
@@ -451,6 +485,17 @@ export class SalonRoom {
       const s = Math.max(0, k) * (1 - press * 0.08);
       ctx.save(); ctx.translate(d.x, d.y + idle); ctx.scale(s, s);
       ctx.shadowColor = "rgba(110,40,80,.28)"; ctx.shadowBlur = d.r * 0.35; ctx.shadowOffsetY = d.r * 0.12;
+      const im = art(DOOR_ART[id]);
+      if (im) {
+        // selo redondo em feltro da estação
+        const R = d.r * 1.12, W = R * 2 * (im.naturalWidth / im.naturalHeight);
+        ctx.drawImage(im, -W / 2, -R, W, R * 2);
+        ctx.shadowColor = "transparent";
+        ctx.fillStyle = darken(st.color, 0.25);
+        ctx.beginPath(); ctx.moveTo(d.r * 1.22, -d.r * 0.16); ctx.lineTo(d.r * 1.46, 0); ctx.lineTo(d.r * 1.22, d.r * 0.16); ctx.closePath(); ctx.fill();
+        ctx.restore();
+        return;
+      }
       const g = ctx.createRadialGradient(-d.r * 0.3, -d.r * 0.35, d.r * 0.1, 0, 0, d.r * 1.1);
       g.addColorStop(0, lighten(st.color, 0.55)); g.addColorStop(1, st.color);
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, d.r, 0, Math.PI * 2); ctx.fill();
@@ -479,6 +524,16 @@ export class SalonRoom {
       const on = id === this.station;
       const s = 1 - clamp(this.chipK[i].x, -1, 1) * 0.08 + (on ? 0.1 : 0);
       ctx.save(); ctx.translate(c.x, c.y); ctx.scale(s, s);
+      const im = i ? art(DOOR_ART[id]) : null;
+      if (im) {
+        // atalho da estação: o mesmo selo em feltro da porta; a estação atual ganha um anel na cor dela
+        if (on) { ctx.fillStyle = STATIONS[id].color; ctx.beginPath(); ctx.arc(0, 0, c.r * 1.22, 0, Math.PI * 2); ctx.fill(); }
+        ctx.shadowColor = "rgba(110,40,80,.22)"; ctx.shadowBlur = c.r * 0.35; ctx.shadowOffsetY = c.r * 0.12;
+        const R = c.r * 1.08, W = R * 2 * (im.naturalWidth / im.naturalHeight);
+        ctx.drawImage(im, -W / 2, -R, W, R * 2);
+        ctx.restore();
+        continue;
+      }
       ctx.fillStyle = i === 0 ? "#fff1a8" : on ? STATIONS[id].color : "#ffffff";
       ctx.shadowColor = "rgba(110,40,80,.22)"; ctx.shadowBlur = c.r * 0.35; ctx.shadowOffsetY = c.r * 0.12;
       ctx.beginPath(); ctx.arc(0, 0, c.r, 0, Math.PI * 2); ctx.fill();
@@ -555,6 +610,18 @@ export class SalonRoom {
 
   _mirrorLights(ctx) {
     const w = this.vp.w, h = this.vp.h, m = Math.min(w, h);
+    if (art("salao/fundo_salao") && art("salao/salao_espelho")) {
+      // as lampadinhas já estão na arte: aqui só o brilho piscando por cima
+      const r = this.mirrorArt(), R = r.w * 0.09;
+      BULBS.forEach(([fx, fy], i) => {
+        const on = Motion.reduce ? 0.6 : 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(this.t * 0.004 + i * 0.9));
+        const x = r.x + fx * r.w, y = r.y + fy * r.h;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, R);
+        g.addColorStop(0, `rgba(255,245,200,${0.85 * on})`); g.addColorStop(1, "rgba(255,245,200,0)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.fill();
+      });
+      return;
+    }
     const cx = w * 0.48, cy = h * 0.42, rx = m * 0.42, ry = m * 0.47;
     for (let i = 0; i < 12; i++) {
       const a = (i / 12) * Math.PI * 2;
@@ -644,6 +711,21 @@ export class SalonRoom {
   }
 
   _paintBack(c, w, h, m) {
+    if (drawBackdrop(c, "salao/fundo_salao", w, h)) {
+      const mi = art("salao/salao_espelho");
+      if (mi) {
+        const r = this.mirrorArt();
+        softShadow(c, r.x + r.w / 2, r.y + r.h * 0.985, r.w * 0.4, h * 0.02, 0.18);
+        c.drawImage(mi, r.x, r.y, r.w, r.h);
+      }
+      const ci = art("salao/salao_balcao");
+      if (ci) {
+        const b = this.counterArt();
+        softShadow(c, b.x + b.w / 2, b.bottom - h * 0.01, b.w * 0.5, h * 0.022, 0.22);
+        drawShelves(c, ci, b.x, b.w, b.top, b.bottom);
+      }
+      return;
+    }
     const g = c.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, "#fff0f7"); g.addColorStop(1, "#ffd6ea");
     c.fillStyle = g; c.fillRect(0, 0, w, h);

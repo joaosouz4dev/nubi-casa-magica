@@ -13,6 +13,8 @@
    artes deles foram feitas para o desenho antigo, em coordenadas de r).
    ============================================================ */
 
+import { art, artMeta } from "../core/art.js";
+
 const DRAW_H = 3.0;        // altura desenhada em r (do mesmo tamanho do desenho antigo)
 const FEET_Y = 1.12;       // linha dos pés do desenho antigo (r)
 // cabeça do desenho antigo: olhos em y=-0.14r, afastados 0.35r do centro
@@ -88,6 +90,37 @@ class PetSprites {
   // boca e centro do rosto (em r, relativo ao centro do corpo)
   mouth(pose) { const [ex, ey, half] = this._e(pose); return { x: this.lx(ex), y: this.ly(ey + half * 0.62) }; }
   face(pose) { const [ex, ey, half] = this._e(pose); return { x: this.lx(ex), y: this.ly(ey + half * 0.3) }; }
+
+  /* Peça em feltro feita sobre a Nubi parada (roupa, acessório, penteado),
+     com o recorte dela no quadro original (art.json) e o recorte das poses
+     (sprites.json "box"). head: segue os olhos da pose (lugar e tamanho);
+     senão só acompanha o quanto a cabeça desceu ou andou (sentada).
+     k = escala em volta do centro da peça (aparecer); tint = cor (cabelo). */
+  piece(ctx, r, pose, name, head, k = 1, tint = null) {
+    const im = art(name), pm = artMeta(name), B = this.meta.box;
+    if (!im || !pm || !pm.box || !B) return false;
+    const s = this.meta.h / (B[3] - B[1]);
+    const P = this._e("parada"), E = this._e(pose), q = head ? E[2] / P[2] : 1;
+    const x = E[0] + ((pm.box[0] - B[0]) * s - P[0]) * q, y = E[1] + ((pm.box[1] - B[1]) * s - P[1]) * q;
+    const W = (pm.box[2] - pm.box[0]) * s * q * this.F * r, H = (pm.box[3] - pm.box[1]) * s * q * this.F * r;
+    ctx.save();
+    ctx.translate(this.lx(x) * r + W / 2, this.ly(y) * r + H / 2); ctx.scale(k, k);
+    ctx.drawImage(tint ? this._tintedPiece(name, im, tint) : im, -W / 2, -H / 2, W, H);
+    ctx.restore();
+    return true;
+  }
+  _tintedPiece(name, im, color) {
+    const key = "p|" + name + "|" + color;
+    let c = this.tintCache.get(key);
+    if (c) return c;
+    c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
+    const g = c.getContext("2d");
+    g.drawImage(im, 0, 0);
+    g.globalCompositeOperation = "color"; g.globalAlpha = 0.85; g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
+    g.globalAlpha = 1; g.globalCompositeOperation = "destination-in"; g.drawImage(im, 0, 0);
+    this.tintCache.set(key, c);
+    return c;
+  }
 
   /* Cor das comidas (mirtilo, melancia): imagem tingida em cache por pose e cor. */
   _tinted(pose, color) {

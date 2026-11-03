@@ -12,6 +12,20 @@ import { Spring, Spring2, damp, clamp, Ease, Motion, CachedLayer, roundRect, sof
 import { touchNubi } from "./nubi_touch.js";
 import { drawIcon } from "../ui/icons.js";
 import { atmosphere } from "../ui/scenery.js";
+import { art, drawArtAt, drawBackdrop } from "../core/art.js";
+
+/* Desenha a arte "fatiada" na vertical: largura W fixa e cada linha da arte
+   (fração 0..1 da altura) presa a um y da tela. Entre duas âncoras a faixa
+   estica ou encolhe; assim um móvel alto se ajusta aos lugares de toque
+   sem deformar a moldura de cima e de baixo. */
+function drawRows(c, im, x, W, anchors) {
+  const nw = im.naturalWidth, nh = im.naturalHeight;
+  for (let i = 0; i < anchors.length - 1; i++) {
+    const [f0, y0] = anchors[i], [f1, y1] = anchors[i + 1];
+    if (y1 - y0 < 0.5) continue;
+    c.drawImage(im, 0, f0 * nh, nw, (f1 - f0) * nh, x, y0, W, y1 - y0 + 0.6);
+  }
+}
 
 const PLAQUE = [0, 2, 4, 7, 9, 11];       // dentes com placa (determinístico)
 const BUGS = [1, 10];                     // dentes com bichinho de açúcar
@@ -95,6 +109,14 @@ export class DentistRoom {
     return best;
   }
   toolPos(t) { return { x: this.vp.dx(t.x), y: this.vp.dy(t.y) }; }
+  /* Bandeja em feltro (só desenho): os 3 compartimentos dela (centros em
+     31,5%, 58,5% e 84,5% da altura da arte) ficam atrás das 3 ferramentas. */
+  trayArt() {
+    const w = this.vp.w, h = this.vp.h, m = Math.min(w, h);
+    const W = Math.min(m * 0.42, w * 0.3), hk = W * (640 / 488);
+    const ys = this.tools.map(t => this.toolPos(t).y);
+    return { x: this.vp.dx(0.83) - W / 2, W, anchors: [[0, ys[0] - 0.315 * hk], [0.315, ys[0]], [0.585, ys[1]], [0.845, ys[2]], [1, ys[2] + 0.155 * hk]] };
+  }
   toolR() { return this.vp.s(0.075); }
   toolAt(px, py) { return this.tools.find(t => { const p = this.toolPos(t); return Math.hypot(px - p.x, py - p.y) <= this.toolR() * 1.4; }) || null; }
   overMouth(px, py) { const m = this.mouth(); return ((px - m.x) / (m.W * 0.5)) ** 2 + ((py - m.y) / (m.H * 0.5)) ** 2 <= 1; }
@@ -291,6 +313,8 @@ export class DentistRoom {
   _bib(ctx) {
     const n = this.nubi, r = n.radius();
     const x = n.px(), y = n.py() + r * 0.55;
+    // babador em feltro (com o dentinho), preso no peito do bichinho
+    if (drawArtAt(ctx, "dentista/dentista_babador", x, y + r * 0.62, r * 0.98)) return;
     ctx.save();
     ctx.beginPath(); ctx.moveTo(x - r * 0.55, y - r * 0.05); ctx.quadraticCurveTo(x, y + r * 0.08, x + r * 0.55, y - r * 0.05);
     ctx.lineTo(x + r * 0.35, y + r * 0.42); ctx.quadraticCurveTo(x, y + r * 0.55, x - r * 0.35, y + r * 0.42); ctx.closePath();
@@ -410,6 +434,16 @@ export class DentistRoom {
     const wob = Motion.reduce ? 0 : Math.sin(B.wob) * s.w * 0.06;
     const x = p.x + wob + (B.scared ? Math.sin(this.t * 0.06) * s.w * 0.04 : 0), y = p.y + (t.upper ? s.h * 0.15 : -s.h * 0.15);
     const R = s.w * 0.32 * k;
+    const im = art("dentista/dentista_bichinho");
+    if (im) {
+      // bichinho em feltro: encolhe conforme vai embora e treme quando assustado
+      const H = R * 3.2, W = H * (im.naturalWidth / im.naturalHeight);
+      ctx.save(); ctx.translate(x, y);
+      if (B.scared > 0.2) { ctx.rotate(Math.sin(this.t * 0.05) * 0.12); ctx.scale(1.06, 0.94); }
+      ctx.drawImage(im, -W / 2, -H * 0.55, W, H);
+      ctx.restore();
+      return;
+    }
     ctx.save(); ctx.translate(x, y);
     ctx.fillStyle = "#9be564"; ctx.strokeStyle = "#4f8a2a"; ctx.lineWidth = Math.max(1.5, R * 0.12);
     ctx.beginPath(); ctx.ellipse(0, 0, R, R * 0.85, 0, 0, Math.PI * 2); ctx.stroke(); ctx.fill();
@@ -448,9 +482,16 @@ export class DentistRoom {
       ctx.strokeStyle = "rgba(60,120,110,.7)"; ctx.lineWidth = 4; ctx.setLineDash([9, 7]); ctx.lineDashOffset = -this.t * 0.03;
       ctx.beginPath(); ctx.arc(0, 0, r * 1.3, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
     }
-    // base redonda da bandeja
-    ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.beginPath(); ctx.arc(0, 0, r * 1.05, 0, Math.PI * 2); ctx.fill();
-    if (t.id === "brush") drawIcon(ctx, "brush", 0, 0, r * 0.95);
+    // base redonda da bandeja (com a bandeja em feltro, a ferramenta fica no compartimento dela)
+    if (!this._trayOk()) { ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.beginPath(); ctx.arc(0, 0, r * 1.05, 0, Math.PI * 2); ctx.fill(); }
+    const wand = t.id === "wand" && art("dentista/dentista_varinha");
+    if (wand) {
+      // varinha em feltro, inclinadinha como a antiga
+      ctx.rotate(-0.4);
+      const H = r * 1.95, W = H * (wand.naturalWidth / wand.naturalHeight);
+      ctx.drawImage(wand, -W / 2, -H * 0.55, W, H);
+      if (!Motion.reduce) this._spark(ctx, W * 0.55, -H * 0.5, r * 0.15 * (0.6 + 0.4 * Math.sin(this.t * 0.01)), "#fff");
+    } else if (t.id === "brush") drawIcon(ctx, "brush", 0, 0, r * 0.95);
     else if (t.id === "cup") drawIcon(ctx, "cup", 0, 0, r * 0.8);
     else {
       // varinha brilhante
@@ -465,7 +506,28 @@ export class DentistRoom {
     ctx.restore();
   }
 
+  _trayOk() { return !!(art("dentista/fundo_dentista") && art("dentista/dentista_bandeja")); }
+
+  /* Cadeira em feltro atrás do bichinho (Nubi em 0,15 x 0,58): encosto à
+     esquerda, base no piso. */
+  chairArt() {
+    const w = this.vp.w, h = this.vp.h, m = Math.min(w, h);
+    const W = Math.min(m * 0.78, w * 0.36);
+    return { cx: Math.max(w * 0.15, W * 0.42), bottom: h * 0.93, W };
+  }
+
   _paintBack(c, w, h, m) {
+    if (drawBackdrop(c, "dentista/fundo_dentista", w, h)) {
+      const ch = this.chairArt();
+      softShadow(c, ch.cx, ch.bottom - ch.W * 0.02, ch.W * 0.36, h * 0.025, 0.2);
+      drawArtAt(c, "dentista/dentista_cadeira", ch.cx, ch.bottom, ch.W);
+      const im = art("dentista/dentista_bandeja");
+      if (im) {
+        const t = this.trayArt();
+        drawRows(c, im, t.x, t.W, t.anchors);
+      }
+      return;
+    }
     const g = c.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, "#e6fbf5"); g.addColorStop(1, "#c4efe3");
     c.fillStyle = g; c.fillRect(0, 0, w, h);

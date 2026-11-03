@@ -54,6 +54,8 @@ Restos que vão para a lixeira (pequenos): `resto_bananapeel.png` (banana peel),
 
 ## Fase 3: a cozinha (piloto dos cômodos)
 
+**Já está no jogo**, junto com as Fases 4 e 5: `python scripts/art-sprites.py <pasta da fase> [...]` recorta tudo, grava em `assets/<grupo>/` e anota as medidas em `assets/art.json`; o jogo desenha com `src/core/art.js`. Peças que se sobrepõem (lixeira fechada/aberta, metades da banheira e do cesto, estágios da planta) usam o mesmo recorte.
+
 Os cômodos são feitos em **duas partes**: um **fundo** (parede e chão, sem nada que a criança toque) e cada **móvel/objeto separado** (em fundo verde), que o jogo coloca no lugar certo. Assim funciona em qualquer tamanho de tela.
 
 **Fundo** `fundo_cozinha.png` (2560x1152, sem fundo verde):
@@ -105,9 +107,13 @@ Mesmo esquema: fundo sem nada tocável + objetos separados. **Só depois que a c
 - `fundo_mapa.png`: sunny sky, soft green hills, two round trees on the left, a stone path, little flowers along the bottom. EMPTY right two thirds (the house goes there).
 - `mapa_casa.png`: front of a cute two-story house with a red tiled roof and a small round attic window, cream walls with a big EMPTY wall area (the game draws the room windows on it). Wide (about 3:4.5 height:width).
 
-## Fase 5 (depois): enfeites, roupas e ícones
+## Fase 5: enfeites, roupas e ícones (coleção inicial no jogo)
 
-Enfeites da casa (bandeirinhas, flores, balões, arco-íris), as peças de roupa e acessórios, os itens do salão (penteados, esmaltes, maquiagem) e os ícones do HUD. Essas peças também precisam encaixar nas poses da Nubi, então vêm por último.
+Enfeites da casa (bandeirinhas, flores, balões, arco-íris), roupas (`roupa_colete`, `roupa_pijama`, `roupa_vestido`), acessórios (`acessorio_bone`, `acessorio_laco`, `acessorio_oculos`), itens do salão (`salao_penteado_cacheado`, `salao_penteado_curto`, `salao_batom`, `salao_esmalte_*`, `salao_paleta_maquiagem`) e ícones do HUD (`hud_*`).
+
+Roupas, acessórios e penteados são desenhados **no lugar certo sobre a Nubi parada**, num quadro do mesmo tamanho (1254x1254), com o resto em verde. O jogo guarda o recorte de cada peça e encaixa na pose: o que é da cabeça segue os olhos, a roupa acompanha o corpo. Para novas peças, use a mesma Nubi parada como base e peça "only the garment, in place, rest of the canvas solid green".
+
+Ainda em código (próximas levas): chapéu de mago, capa, botas, coroa, capacete, pirata, máscara, tapa-olho, gravata, cachecol, colar, astronauta, tênis, pantufas, sapatilhas, penteados rabo de cavalo/tranças/moicano e os enfeites de cabelo flor, estrela e tiara.
 
 ---
 

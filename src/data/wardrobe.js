@@ -21,7 +21,7 @@ export const ITEMS = {
   helmet:   { id: "helmet",   slot: "hat",   shape: "helmet",  color: "#e9eef6", label: "capacete espacial" },
   pirate:   { id: "pirate",   slot: "hat",   shape: "pirate",  color: "#3a3248", label: "chapéu de pirata" },
   // rosto
-  sunglasses: { id: "sunglasses", slot: "face", shape: "sunglasses", color: "#ff6b9d", label: "óculos de sol" },
+  sunglasses: { id: "sunglasses", slot: "face", shape: "sunglasses", color: "#ff6b9d", label: "óculos" },
   heromask:   { id: "heromask",   slot: "face", shape: "mask",       color: "#e5484d", label: "máscara de herói" },
   eyepatch:   { id: "eyepatch",   slot: "face", shape: "eyepatch",   color: "#2a2148", label: "tapa-olho" },
   // pescoço
@@ -29,8 +29,8 @@ export const ITEMS = {
   scarf:    { id: "scarf",    slot: "neck",  shape: "scarf",   color: "#5bc0eb", label: "cachecol" },
   flowers:  { id: "flowers",  slot: "neck",  shape: "flowers", color: "#ff9fc4", label: "colar de flores" },
   // corpo
-  tutu:     { id: "tutu",     slot: "body",  shape: "tutu",    color: "#ffb3d9", label: "saia de tule" },
-  shirt:    { id: "shirt",    slot: "body",  shape: "stripes", color: "#3a7bd5", label: "camiseta listrada" },
+  tutu:     { id: "tutu",     slot: "body",  shape: "tutu",    color: "#ffb3d9", label: "vestido" },
+  shirt:    { id: "shirt",    slot: "body",  shape: "stripes", color: "#3a7bd5", label: "colete" },
   pajama:   { id: "pajama",   slot: "body",  shape: "pajama",  color: "#b49cff", label: "pijama" },
   spacesuit:{ id: "spacesuit",slot: "body",  shape: "suit",    color: "#f4f6fb", label: "roupa de astronauta" },
   // pés

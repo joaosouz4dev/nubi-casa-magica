@@ -9,6 +9,28 @@ import { Spring, Spring2, damp, clamp, Ease, Motion, CachedLayer, roundRect, sof
 import { touchNubi } from "./nubi_touch.js";
 import { drawIcon } from "../ui/icons.js";
 import { atmosphere, plant, roundWindow } from "../ui/scenery.js";
+import { art, drawArt, drawArtFit } from "../core/art.js";
+
+/* Artes em feltro das ferramentas desenhadas aqui (a escova vem do drawIcon).
+   [nome, largura máx., altura máx., deslocamento y] em múltiplos de r. */
+const TOOL_ART = {
+  sponge: ["banheiro/banheiro_esponja", 2.1, 1.75, 0],
+  shower: ["banheiro/banheiro_chuveirinho", 2.0, 2.55, 0.1],
+  towel:  ["banheiro/banheiro_toalha", 2.25, 1.9, 0],
+  duck:   ["banheiro/banheiro_patinho", 1.95, 2.15, -0.05]
+};
+
+/* Cenário cobrindo a tela; ax diz qual parte da largura fica quando sobra
+   largura (0 = esquerda, 1 = direita). Em 4:3 puxa para a direita para a
+   janelinha redonda não sumir (o lado esquerdo da arte é parede vazia). */
+function backdropX(c, name, w, h, ax) {
+  const im = art(name);
+  if (!im) return false;
+  const k = Math.max(w / im.naturalWidth, h / im.naturalHeight);
+  const dw = im.naturalWidth * k, dh = im.naturalHeight * k;
+  c.drawImage(im, (w - dw) * ax, (h - dh) * 0.5, dw, dh);
+  return true;
+}
 
 export class BathroomRoom {
   constructor({ vp, bus, nubi, save }) {
@@ -260,6 +282,26 @@ export class BathroomRoom {
     this.back.draw();
     this._toilet(ctx);
 
+    // banheira em feltro: parede de trás + água atrás do Nubi, frente na frente
+    if (art("banheiro/banheiro_banheira_fundo") && art("banheiro/banheiro_banheira_frente")) {
+      const ta = this.tubArt();
+      drawArt(ctx, "banheiro/banheiro_banheira_fundo", ta.x, ta.y, ta.w, ta.h);
+      this.nubi.draw();
+      // lâmina de água ondulando na frente do Nubi, logo acima da borda
+      const amp = Motion.reduce ? m * 0.002 : m * 0.006;
+      const top = ta.y + ta.h * 0.2, x0 = ta.x + ta.w * 0.08, x1 = ta.x + ta.w * 0.92;
+      ctx.fillStyle = "rgba(120,215,205,.42)";
+      ctx.beginPath(); ctx.moveTo(x0, ta.y + ta.h * 0.34);
+      for (let x = x0; x <= x1 + 0.5; x += (x1 - x0) / 24) {
+        const u = x - ta.x;
+        ctx.lineTo(x, top + Math.sin(u * 0.035 + this.t * 0.003) * amp + Math.sin(u * 0.08 - this.t * 0.002) * amp * 0.4);
+      }
+      ctx.lineTo(x1, ta.y + ta.h * 0.34); ctx.closePath(); ctx.fill();
+      drawArt(ctx, "banheiro/banheiro_banheira_frente", ta.x, ta.y, ta.w, ta.h);
+      this._drawTools(ctx);
+      return;
+    }
+
     // fundo interno da banheira (atrás do Nubi)
     const tb = this._tub();
     ctx.fillStyle = "#e3f3ff";
@@ -305,15 +347,45 @@ export class BathroomRoom {
     ctx.fillStyle = "#ffcf5a";
     for (const fx of [tb.x + m * 0.07, tb.x + tb.w - m * 0.07]) { ctx.beginPath(); ctx.ellipse(fx, tb.y + tb.h + m * 0.01, m * 0.025, m * 0.018, 0, 0, Math.PI * 2); ctx.fill(); }
 
+    this._drawTools(ctx);
+  }
+
+  _drawTools(ctx) {
     // ferramentas (a segurada é desenhada por último)
     const order = this.tools.filter(t => t !== this.held).concat(this.held ? [this.held] : []);
     for (const t of order) this._drawTool(ctx, t);
     this._poop(ctx);
   }
 
+  /* Vaso em feltro: base no chão logo abaixo da área de toque (círculo de
+     raio 1,5r em volta de toilet()), com a boca do vaso mais ou menos no
+     centro dela. */
+  toiletArt() {
+    const T = this.toilet(), r = T.r, h = r * 3.2, w = h * (456 / 640);
+    return { x: T.x - w * 0.55, y: T.y + r * 1.5 - h, w, h };
+  }
+
   _toilet(ctx) {
     const T = this.toilet(), r = T.r;
     const sq = this.toiletK.x * 0.01;
+    const im = art("banheiro/banheiro_vaso");
+    if (im) {
+      const a = this.toiletArt(), base = a.y + a.h;
+      softShadow(ctx, a.x + a.w * 0.52, base - a.h * 0.02, a.w * 0.45, r * 0.16, 0.2);
+      ctx.save(); ctx.translate(T.x, base); ctx.scale(1 + sq, 1 - sq); ctx.translate(-T.x, -base);
+      ctx.drawImage(im, a.x, a.y, a.w, a.h);
+      // redemoinho da descarga dentro do vaso
+      if (this.flushT > 0) {
+        const k = this.flushT / 1400, bx = a.x + a.w * 0.62, by = a.y + a.h * 0.555, ro = a.w * 0.2;
+        ctx.strokeStyle = `rgba(160,215,255,${0.95 * k})`; ctx.lineWidth = Math.max(2, ro * 0.12); ctx.lineCap = "round";
+        for (let i = 0; i < 3; i++) {
+          const an = this.t * 0.02 + i * 2.1;
+          ctx.beginPath(); ctx.ellipse(bx, by, ro * (0.25 + i * 0.22) * k + ro * 0.08, ro * (0.09 + i * 0.07) * k + ro * 0.03, 0, an, an + 3.6); ctx.stroke();
+        }
+      }
+      ctx.restore();
+      return;
+    }
     softShadow(ctx, T.x, T.y + r * 1.25, r * 0.95, r * 0.18, 0.2);
     ctx.save(); ctx.translate(T.x, T.y); ctx.scale(1 + sq, 1 - sq);
     ctx.lineJoin = "round";
@@ -354,6 +426,7 @@ export class BathroomRoom {
     }
     const wob = Motion.reduce ? 0 : Math.sin(this.t * 0.005) * 0.04;
     ctx.scale(1 + wob, 1 - wob);
+    if (drawArtFit(ctx, "banheiro/banheiro_coco", 0, -r * 0.1, r * 2.1, r * 2.1)) { ctx.restore(); return; }
     for (const [yy, rx] of [[0.42, 0.85], [0.02, 0.62], [-0.36, 0.4]]) {
       ctx.beginPath(); ctx.ellipse(0, yy * r, rx * r, r * 0.3, 0, 0, Math.PI * 2);
       ctx.fillStyle = "#a86b3c"; ctx.fill(); ctx.strokeStyle = "#5e3818"; ctx.lineWidth = Math.max(1.5, r * 0.08); ctx.stroke();
@@ -364,6 +437,18 @@ export class BathroomRoom {
   }
 
   _tub() { const w = this.vp.w, h = this.vp.h; return { x: w * 0.3, y: h * 0.645, w: w * 0.46, h: h * 0.28 }; }
+
+  /* Banheira em feltro (fundo e frente têm o mesmo recorte, 640x310). A
+     borda da frente (a ~24% da altura da arte) passa um pouco abaixo do
+     meio do Nubi, como a água de antes; os pés ficam no piso. Centrada na
+     banheira antiga e com no máximo 48% da largura da tela. */
+  tubArt() {
+    const w = this.vp.w, h = this.vp.h, tb = this._tub();
+    const cut = h * 0.52 + this.vp.s(0.17) * 0.7;
+    const th = Math.min((h * 0.95 - cut) / 0.76, (w * 0.48) / (640 / 310));
+    const tw = th * (640 / 310);
+    return { x: tb.x + tb.w / 2 - tw / 2, y: cut - th * 0.24, w: tw, h: th };
+  }
 
   _drawTool(ctx, t) {
     if (!t.disp) return;
@@ -399,6 +484,9 @@ export class BathroomRoom {
       ctx.restore();
       return;
     }
+
+    const ta = TOOL_ART[t.id];
+    if (ta && drawArtFit(ctx, ta[0], 0, ta[3] * r, ta[1] * r, ta[2] * r)) { ctx.restore(); return; }
 
     if (t.id === "sponge") {
       roundRect(ctx, -r, -r * 0.65, r * 2, r * 1.3, r * 0.35);
@@ -453,7 +541,35 @@ export class BathroomRoom {
     ctx.restore();
   }
 
+  /* Painel alto em feltro (3 barras) atrás da esponja, do chuveirinho e da
+     toalha: a barra do meio fica sob o chuveirinho e as outras perto das
+     outras ferramentas (as barras ficam a ~27% da altura uma da outra). */
+  shelfArt() {
+    const w = this.vp.w, h = this.vp.h, r = this.toolR();
+    const sh = Math.min(h * 0.74, (w * 0.27) / (356 / 640)), sw = sh * (356 / 640);
+    return { x: w * 0.12 - sw / 2, y: h * 0.65 + r * 0.3 - sh * 0.52, w: sw, h: sh };
+  }
+
   _paintBack(c, w, h, m) {
+    if (backdropX(c, "banheiro/fundo_banheiro", w, h, 0.8)) {
+      const s = this.shelfArt();
+      softShadow(c, s.x + s.w / 2, s.y + s.h * 0.99, s.w * 0.42, m * 0.02, 0.18);
+      if (!drawArt(c, "banheiro/banheiro_prateleira", s.x, s.y, s.w, s.h)) {
+        c.fillStyle = "rgba(255,255,255,.55)";
+        roundRect(c, w * 0.035, h * 0.3, w * 0.17, h * 0.66, m * 0.04); c.fill();
+      }
+      // tapetinho do patinho
+      const rw = m * 0.27, rh = rw * (442 / 640) * 0.72;
+      softShadow(c, w * 0.9, h * 0.9 + rh * 0.42, rw * 0.48, m * 0.018, 0.14);
+      if (!drawArt(c, "banheiro/banheiro_tapete", w * 0.9 - rw / 2, h * 0.9 - rh / 2, rw, rh)) {
+        c.fillStyle = "#ffffff";
+        c.beginPath(); c.ellipse(w * 0.9, h * 0.9, m * 0.12, m * 0.035, 0, 0, Math.PI * 2); c.fill();
+      }
+      // sombra da banheira no piso
+      const ta = this.tubArt();
+      softShadow(c, ta.x + ta.w / 2, ta.y + ta.h * 0.97, ta.w * 0.46, m * 0.03, 0.2);
+      return;
+    }
     // parede de azulejos com rejunte e brilho
     const g = c.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, "#e2f4ff"); g.addColorStop(1, "#b9e3ff");

@@ -7,6 +7,7 @@ import { roundRect, lighten, darken } from "../core/anim.js";
 import { ITEMS } from "../data/wardrobe.js";
 import { wearIcon, paintHair, paintHairAcc, paintMakeupUnder, paintMakeupOver } from "../entities/wear.js";
 import { Nubi } from "../entities/nubi.js";
+import { art } from "../core/art.js";
 
 const foodCache = new Map();
 
@@ -24,7 +25,62 @@ function star(ctx, x, y, r, fill) {
   ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
 }
 
+/* Ícones que têm arte em feltro (src/core/art.js). Sem a arte carregada,
+   cai no desenho em código abaixo. */
+const ICON_ART = {
+  sponge: "banheiro/banheiro_esponja", shower: "banheiro/banheiro_chuveirinho", towel: "banheiro/banheiro_toalha",
+  duck: "banheiro/banheiro_patinho", comb: "banheiro/banheiro_pente", poop: "banheiro/banheiro_coco", "poop:flush": "banheiro/banheiro_vaso",
+  brush: "dentista/dentista_escova", "teeth:plaque": "dentista/dentista_escova", bug: "dentista/dentista_bichinho",
+  "teeth:bugs": "dentista/dentista_bichinho", cup: "dentista/dentista_copo", "teeth:rinse": "dentista/dentista_copo",
+  "teeth:align": "dentista/dentista_varinha",
+  trash: "cozinha/cozinha_lixeira", "trash:bin": "cozinha/cozinha_lixeira", bag: "cozinha/cozinha_saquinho", "trash:out": "cozinha/cozinha_saquinho",
+  ball: "quarto/quarto_bola", heart: "hud/hud_coracao", pet: "hud/hud_coracao", star: "hud/hud_estrela", moon: "hud/hud_sono",
+  back: "hud/hud_voltar", map: "hud/hud_casa", games: "hud/hud_diversao",
+  "room:kitchen": "hud/hud_comida", "room:bathroom": "hud/hud_banho", "room:bedroom": "hud/hud_sono",
+  "game:catch": "brinquedos/jogo_pegafrutas", "game:bubbles": "brinquedos/jogo_bolhas", "game:memory": "brinquedos/jogo_memoria",
+  "game:music": "brinquedos/jogo_musica", "game:shapes": "brinquedos/jogo_formas", "game:colors": "brinquedos/jogo_cores",
+  flower: "jardim/jardim_flor", sprout: "jardim/jardim_broto", watering: "jardim/jardim_regador", butterfly: "jardim/jardim_borboleta",
+  "makeup:lips": "salao/salao_batom", "makeup:shadow": "salao/salao_paleta_maquiagem",
+  "hair:curls": "salao/salao_penteado_cacheado", "hair:quiff": "salao/salao_penteado_curto", "acc:bow": "acessorios/acessorio_laco",
+  "wear:cap": "acessorios/acessorio_bone", "wear:sunglasses": "acessorios/acessorio_oculos",
+  "wear:pajama": "roupas/roupa_pijama", "wear:shirt": "roupas/roupa_colete", "wear:tutu": "roupas/roupa_vestido",
+  "decor:flags": "enfeites/enfeite_bandeirinhas", "decor:flowers": "enfeites/enfeite_flores",
+  "decor:balloons": "enfeites/enfeite_baloes", "decor:rainbow": "enfeites/enfeite_arcoiris"
+};
+const ICON_BOX = 1.9;   // lado da caixa onde a arte cabe, em r
+
+/* Esmalte em feltro na cor pedida: o vidro (parte de baixo) ganha a cor e
+   mantém o sombreado; a tampa fica como está. */
+const polishCache = new Map();
+function polishArt(color) {
+  const base = art("salao/salao_esmalte_rosa");
+  if (!base) return null;
+  let cv = polishCache.get(color);
+  if (!cv) {
+    cv = document.createElement("canvas");
+    cv.width = base.naturalWidth; cv.height = base.naturalHeight;
+    const c = cv.getContext("2d");
+    c.drawImage(base, 0, 0);
+    c.globalCompositeOperation = "color"; c.fillStyle = color; c.fillRect(0, cv.height * 0.44, cv.width, cv.height);
+    c.globalCompositeOperation = "destination-in"; c.drawImage(base, 0, 0);
+    polishCache.set(color, cv);
+  }
+  return cv;
+}
+
+function drawIconArt(ctx, key, x, y, r) {
+  let im = null;
+  if (key.startsWith("polish:")) im = polishArt(key.slice(7));
+  else if (ICON_ART[key]) im = art(ICON_ART[key]);
+  if (!im) return false;
+  const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+  const k = (r * ICON_BOX) / Math.max(iw, ih);
+  ctx.drawImage(im, x - (iw * k) / 2, y - (ih * k) / 2, iw * k, ih * k);
+  return true;
+}
+
 export function drawIcon(ctx, key, x, y, r) {
+  if (drawIconArt(ctx, key, x, y, r)) return;
   const ow = Math.max(1.4, r * 0.07);
   if (EXTRA[key]) {
     ctx.save(); ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.translate(x, y);

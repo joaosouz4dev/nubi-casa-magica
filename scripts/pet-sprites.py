@@ -103,6 +103,7 @@ def main(src, species):
     meta = {
         "prefix": prefix, "w": size[0], "h": size[1],
         "feetX": round(feet_x(st)), "bottom": st.getchannel("A").getbbox()[3],
+        "box": list(box),   # recorte no quadro original (roupas da Fase 5 se encaixam por ele)
         "poses": poses
     }
     with open(os.path.join(out_dir, "sprites.json"), "w", encoding="utf-8") as f:

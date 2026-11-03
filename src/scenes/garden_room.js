@@ -11,10 +11,15 @@
 import { Spring, clamp, Motion, CachedLayer, roundRect, softShadow, lighten, darken } from "../core/anim.js";
 import { drawIcon } from "../ui/icons.js";
 import { atmosphere } from "../ui/scenery.js";
+import { art, drawArtAt } from "../core/art.js";
 import { touchNubi } from "./nubi_touch.js";
 
 const FRUITS = ["strawberry", "blueberry", "grapes", "orange"];
 const GROW_STEPS = 3;        // broto -> folhas -> flor/fruta
+// artes em feltro de cada estágio (as três têm o mesmo recorte e a base do
+// caule fica embaixo, no meio); o estágio 3 é a flor com a fruta pendurada
+const PLANT_ART = ["jardim/jardim_broto", "jardim/jardim_folhas", "jardim/jardim_flor", "jardim/jardim_flor"];
+const POUR_MS = 900;         // regador em feltro despejando água no canteiro
 
 export class GardenRoom {
   constructor({ vp, bus, nubi, save }) {
@@ -22,7 +27,11 @@ export class GardenRoom {
     this.t = 0; this.unsub = [];
     this.beds = FRUITS.map((f, i) => ({ fruit: f, stage: 0, ripe: false, pop: new Spring(0, { stiffness: 320, damping: 13 }) }));
     this.butterflies = [];
-    this.bg = new CachedLayer(vp, (c, w, h, m) => { this._paintBack(c, w, h, m); atmosphere(c, w, h, m, { floorY: 0.72, light: { x: 0.15, y: 0.14, r: 1.1, color: "255,246,200" }, tint: "60,110,70", vignette: 0.14 }); });
+    this.bg = new CachedLayer(vp, (c, w, h, m) => {
+      if (this._paintArt(c, w, h, m)) return;
+      this._paintBack(c, w, h, m); atmosphere(c, w, h, m, { floorY: 0.72, light: { x: 0.15, y: 0.14, r: 1.1, color: "255,246,200" }, tint: "60,110,70", vignette: 0.14 });
+    });
+    this.pour = null;            // { i, t }: o regador indo regar o canteiro i (só desenho)
   }
 
   // ---- interface do cômodo ----
@@ -95,6 +104,7 @@ export class GardenRoom {
           this._persist();
         } else if (b.stage < GROW_STEPS) {  // REGAR / CRESCER
           b.stage++;
+          this.pour = { i, t: POUR_MS };
           this.bus.emit("audio:water");
           this.bus.emit("fx:burst", { x: r.x, y: r.y - r.h * 0.4, color: "#8fd3ff", small: true });
           if (b.stage >= GROW_STEPS) { b.ripe = true; this.bus.emit("audio:note", 4); this.bus.emit("fx:burst", { x: r.x, y: r.y - r.h, color: "#ffd54a" }); }
@@ -119,14 +129,17 @@ export class GardenRoom {
   update(dt) {
     this.t += dt;
     for (const b of this.beds) b.pop.update(dt);
+    if (this.pour && (this.pour.t -= dt) <= 0) this.pour = null;
     for (const bf of this.butterflies) { if (bf.flee > 0) bf.flee -= dt; else bf.y = clamp(bf.y + (Math.random() - 0.5) * 0.0006 * dt, 0.12, 0.5); }
   }
 
   draw() {
     const ctx = this.vp.ctx, w = this.vp.w, h = this.vp.h, m = Math.min(w, h);
     this.bg.draw();
+    this._wateringCan(ctx, m);
     // canteiros + plantas
     this.beds.forEach((b, i) => this._bed(ctx, b, i, m));
+    this._pouring(ctx, m);
     this.nubi.draw();
     // borboletas por cima
     for (const bf of this.butterflies) { const p = this.butterflyPos(bf); const fl = Motion.reduce ? 1 : (Math.sin(this.t * 0.02 + bf.ph) * 0.3 + 1); ctx.save(); ctx.translate(p.x, p.y); ctx.scale(1, fl); drawIcon(ctx, "butterfly", 0, 0, m * 0.04); ctx.restore(); }
@@ -136,6 +149,7 @@ export class GardenRoom {
     const r = this.bedRect(i);
     const k = 1 - clamp(b.pop.x, -1, 1) * 0.06;
     ctx.save(); ctx.translate(r.x, r.y); ctx.scale(k, k); ctx.translate(-r.x, -r.y);
+    if (this._bedArt(ctx, b, i, r, m)) { ctx.restore(); return; }
     // vaso de terra
     softShadow(ctx, r.x, r.y + r.h * 0.5, r.w * 0.9, m * 0.012, 0.2);
     ctx.fillStyle = "#9a6a3a"; roundRect(ctx, r.x - r.w * 0.6, r.y, r.w * 1.2, r.h * 0.6, m * 0.012); ctx.fill();
@@ -157,6 +171,76 @@ export class GardenRoom {
       }
     }
     ctx.restore();
+  }
+
+  /* Canteiro e planta em feltro. O canteiro (caixa de madeira) fica com o
+     meio da terra em (r.x, r.y), onde o caule nasce; a planta cresce dali. */
+  _bedArt(ctx, b, i, r, m) {
+    const box = art("jardim/jardim_canteiro"), plant = art(PLANT_ART[b.stage] || PLANT_ART[0]);
+    if (!box || !plant) return false;
+    const bw = r.w * 1.3, bh = bw * (box.naturalHeight / box.naturalWidth);
+    const by = r.y - bh * 0.17;                       // terra a ~17% do alto da caixa
+    softShadow(ctx, r.x, by + bh * 0.97, bw * 0.55, m * 0.014, 0.22);
+    ctx.drawImage(box, r.x - bw / 2, by, bw, bh);
+    const ph = Math.min(r.h * 1.3, r.w * 1.32);       // altura do quadro da planta
+    const sway = Motion.reduce ? 0 : Math.sin(this.t * 0.0016 + i * 1.7) * 0.03;
+    ctx.save(); ctx.translate(r.x, r.y + bh * 0.02); ctx.rotate(sway);
+    const pr = drawArtAt(ctx, PLANT_ART[b.stage] || PLANT_ART[0], 0, 0, null, ph);
+    ctx.restore();
+    if (b.stage >= GROW_STEPS && b.ripe && pr) {
+      const bob = Motion.reduce ? 0 : Math.sin(this.t * 0.004 + i) * m * 0.006;
+      const fx = r.x + pr.w * 0.36, fy = r.y - ph * 0.5;
+      drawIcon(ctx, "food:" + b.fruit, fx, fy - bob, m * 0.06);
+      // brilho de "pode colher"
+      const p = Motion.reduce ? 0.6 : (Math.sin(this.t * 0.006) + 1) / 2;
+      ctx.save(); ctx.globalAlpha = 0.4 + p * 0.3; drawIcon(ctx, "star", fx + m * 0.05, fy - m * 0.06, m * 0.025); ctx.restore();
+    }
+    return true;
+  }
+
+  /* Regador em feltro: descansa no gramado, à esquerda dos canteiros (fora
+     das áreas de toque), e voa até o canteiro regado, inclinado, soltando
+     gotinhas. É só enfeite: regar continua sendo tocar no canteiro. */
+  _canSize(m) { const w = this.vp.w; return Math.min(w * 0.09, m * 0.2); }
+  _wateringCan(ctx, m) {
+    if (this.pour || !art("jardim/jardim_regador")) return;
+    const vp = this.vp, cw = this._canSize(m);
+    softShadow(ctx, vp.dx(0.065), vp.dy(0.93), cw * 0.45, m * 0.012, 0.2);
+    drawArtAt(ctx, "jardim/jardim_regador", vp.dx(0.065), vp.dy(0.935), cw);
+  }
+  _pouring(ctx, m) {
+    const P = this.pour, im = art("jardim/jardim_regador");
+    if (!P || !im) return;
+    const r = this.bedRect(P.i), u = 1 - P.t / POUR_MS;
+    const cw = this._canSize(m) * 0.9, ch = cw * (im.naturalHeight / im.naturalWidth);
+    const tilt = Motion.reduce ? 0.45 : 0.55 * Math.sin(Math.min(1, u * 1.4) * Math.PI * 0.5) * (u > 0.85 ? (1 - u) / 0.15 : 1);
+    const x = r.x - r.w * 0.55, y = r.y - r.h * 1.05;
+    ctx.save();
+    ctx.globalAlpha = u < 0.12 ? u / 0.12 : u > 0.88 ? (1 - u) / 0.12 : 1;
+    ctx.translate(x, y); ctx.rotate(tilt);
+    ctx.drawImage(im, -cw / 2, -ch / 2, cw, ch);
+    ctx.restore();
+    // gotinhas saindo do bico (na ponta direita do regador)
+    if (u > 0.2 && u < 0.85) {
+      const sx = x + Math.cos(tilt) * cw * 0.46 - Math.sin(tilt) * -ch * 0.2;
+      const sy = y + Math.sin(tilt) * cw * 0.46 + Math.cos(tilt) * -ch * 0.2;
+      ctx.save(); ctx.fillStyle = "rgba(120,190,255,.85)";
+      for (let k = 0; k < 5; k++) {
+        const q = ((u * 4 + k / 5) % 1);
+        ctx.beginPath(); ctx.ellipse(sx + (k - 2) * m * 0.006 + q * m * 0.01, sy + q * (r.y - sy), m * 0.005, m * 0.008, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+  }
+
+  /* Cenário em feltro (céu com nuvens, cerca branca, gramado vazio). */
+  _paintArt(c, w, h, m) {
+    const im = art("jardim/fundo_jardim");
+    if (!im) return false;
+    const k = Math.max(w / im.naturalWidth, h / im.naturalHeight);
+    const dw = im.naturalWidth * k, dh = im.naturalHeight * k;
+    c.drawImage(im, (w - dw) / 2, (h - dh) * 0.75, dw, dh);
+    return true;
   }
 
   _paintBack(c, w, h, m) {
