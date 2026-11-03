@@ -42,7 +42,7 @@ A Nubi do jogo vai ser feita com imagens no estilo do modelo em feltro, uma por 
 ## Como entram no jogo
 
 1. Gere as imagens com os nomes da tabela (fundo verde, mesmo enquadramento) e junte numa pasta.
-2. Rode `python scripts/nubi-sprites.py <pasta>`: ele recorta o verde, aplica o MESMO recorte em todas as poses e salva `nubi_<pose>.webp` aqui (e `sprites.json`).
-3. Pose nova (Fase 2): além do arquivo, registre a pose em `src/entities/nubi_sprites.js` (EYES: centro entre os olhos, em px) e diga quando ela aparece em `_choosePose()` (`src/entities/nubi.js`). Inclua o arquivo no `sw.js`.
+2. Rode `python scripts/pet-sprites.py <pasta> nubi`: ele recorta o verde, aplica o MESMO recorte em todas as poses, mede pés e olhos e salva `nubi_<pose>.webp` aqui (e `sprites.json`, que o jogo lê).
+3. Pose nova (Fase 2): diga quando ela aparece em `_choosePose()` (`src/entities/nubi.js`) e inclua o arquivo no `sw.js`.
 
 A Fase 1 já está no jogo: parada, piscando, falando, acenando, comemorando, comendo, dormindo e sentada.

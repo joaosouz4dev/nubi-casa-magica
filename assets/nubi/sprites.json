@@ -1,14 +1,65 @@
 {
+  "prefix": "nubi",
   "w": 692,
   "h": 720,
-  "poses": [
-    "acenando",
-    "comemorando",
-    "comendo",
-    "dormindo",
-    "falando",
-    "parada",
-    "piscando",
-    "sentada"
-  ]
+  "feetX": 398,
+  "bottom": 708,
+  "poses": {
+    "acenando": {
+      "eyes": [
+        458,
+        253,
+        84
+      ]
+    },
+    "comemorando": {
+      "eyes": [
+        440,
+        258,
+        76
+      ]
+    },
+    "comendo": {
+      "eyes": [
+        453,
+        253,
+        82
+      ]
+    },
+    "dormindo": {
+      "eyes": [
+        436,
+        333,
+        75
+      ]
+    },
+    "falando": {
+      "eyes": [
+        440,
+        259,
+        75
+      ]
+    },
+    "parada": {
+      "eyes": [
+        440,
+        259,
+        75
+      ]
+    },
+    "piscando": {
+      "eyes": [
+        451,
+        257,
+        82
+      ]
+    },
+    "sentada": {
+      "eyes": [
+        434,
+        319,
+        72
+      ]
+    }
+  }
 }

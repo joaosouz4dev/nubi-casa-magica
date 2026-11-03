@@ -20,7 +20,7 @@ import {
   paintHair, paintHairAcc, paintNails, paintMakeupUnder, paintMakeupOver, rainbowGradient
 } from "./wear.js";
 import { PETS } from "../data/pets.js";
-import { spritesReady, drawPose, headT, neckT, bodyT, torsoClip, feetT, mouthOffset, faceOffset, LILAC } from "./nubi_sprites.js";
+import { petSprites } from "./pet_sprites.js";
 
 // Nubi parada por tanto tempo (sem falar, comer ou brincar) senta para descansar
 const REST_MS = 15000;
@@ -105,13 +105,14 @@ export class Nubi {
     this.tintK = 0;
   }
 
-  /* A Nubi é desenhada com as imagens em feltro; Lili e Tito (e a Nubi,
-     enquanto as imagens carregam) continuam com o desenho em código. */
-  _spriteMode() { return this.species === "nubi" && spritesReady(); }
+  /* Bichinho com imagens em feltro (pet_sprites.js) ou null: sem imagens
+     (ou enquanto carregam) ele é desenhado em código. */
+  _sprites() { return petSprites(this.species); }
+  _spriteMode() { return !!this._sprites(); }
   // boca e centro do rosto (em r, relativo a px/py): a comida mira na boca,
   // o salão mira no rosto
-  mouthOffset() { return this._spriteMode() ? mouthOffset(this.spritePose) : null; }
-  faceOffset() { return this._spriteMode() ? faceOffset(this.spritePose) : null; }
+  mouthOffset() { const S = this._sprites(); return S ? S.mouth(this.spritePose) : null; }
+  faceOffset() { const S = this._sprites(); return S ? S.face(this.spritePose) : null; }
   // ponto sobre o corpo (cabeça ou barriga): alvo generoso para mãos pequenas
   overBody(px, py) {
     const r = this.radius(), x = (px - this.px()) / r, y = (py - this.py()) / r;
@@ -560,21 +561,22 @@ export class Nubi {
      acontece com ela, encaixado com as transformações de nubi_sprites.js. */
   _drawSprite(ctx, r, ow) {
     const pose = this.spritePose;
-    const outline = darken(LILAC, 0.62);
+    const S = this._sprites();
+    const fur = S.fur, outline = darken(fur, 0.62);
     const tuftSquash = clamp((this.hopY - this.tuftLag.x) / r, -0.5, 0.5);
     // capa / asas: atrás do corpo
     const cape = this.accShown.cape;
     if (cape) {
-      ctx.save(); bodyT(ctx, r);
+      ctx.save(); S.bodyT(ctx, r);
       if (cape.def.shape === "wings") { const k = this._accK(cape); ctx.scale(k, k); paintWings(ctx, cape.def, r, this.t); }
       else this._capeBack(ctx, r, cape, outline, ow);
       ctx.restore();
     }
-    drawPose(ctx, r, pose, this._spriteTint, this.tintK);
+    S.draw(ctx, r, pose, this._spriteTint, this.tintK);
     // lua no topete (banana)
     if (this.moonShown > 0.02) {
       const k = Ease.outBack(clamp(this.moonShown));
-      ctx.save(); headT(ctx, r, pose); ctx.translate(r * 0.2, -r * 1.25); ctx.rotate(-0.3); ctx.scale(k, k);
+      ctx.save(); S.headT(ctx, r, pose); ctx.translate(r * 0.2, -r * 1.25); ctx.rotate(-0.3); ctx.scale(k, k);
       const mg = ctx.createRadialGradient(-r * 0.15, -r * 0.15, 0, 0, 0, r * 0.6);
       mg.addColorStop(0, "#fff6c4"); mg.addColorStop(1, "#e8bd3c");
       ctx.fillStyle = mg; ctx.beginPath();
@@ -585,8 +587,8 @@ export class Nubi {
     }
     // pelo fofinho (toalha) e brilho do pente
     if (this.fluffyShown > 0.02 || this.shine > 0.01) {
-      ctx.save(); bodyT(ctx, r);
-      if (this.fluffyShown > 0.02) this._fur(ctx, r, LILAC, darken(LILAC, 0.45), ow * 0.6);
+      ctx.save(); S.bodyT(ctx, r);
+      if (this.fluffyShown > 0.02) this._fur(ctx, r, fur, darken(fur, 0.45), ow * 0.6);
       if (this.shine > 0.01) this._shine(ctx, r);
       ctx.restore();
     }
@@ -596,12 +598,12 @@ export class Nubi {
       const k = this._accK(bodyWear);
       ctx.save();
       ctx.globalAlpha = clamp(k);
-      if (bodyWear.def.shape === "tutu") { bodyT(ctx, r); ctx.translate(0, r * 0.65); ctx.scale(k, k); ctx.translate(0, -r * 0.65); paintTutu(ctx, bodyWear.def, r, this.t); }
-      else { torsoClip(ctx, r); bodyT(ctx, r); ctx.translate(0, (1 - clamp(k)) * r * 0.4); paintBody(ctx, bodyWear.def, r, this.t); }
+      if (bodyWear.def.shape === "tutu") { S.bodyT(ctx, r); ctx.translate(0, r * 0.65); ctx.scale(k, k); ctx.translate(0, -r * 0.65); paintTutu(ctx, bodyWear.def, r, this.t); }
+      else { S.torsoClip(ctx, r); S.bodyWearT(ctx, r); ctx.translate(0, (1 - clamp(k)) * r * 0.4); paintBody(ctx, bodyWear.def, r, this.t); }
       ctx.restore();
     }
     // cabeça: cabelo, maquiagem, pintura e acessório de rosto
-    ctx.save(); headT(ctx, r, pose);
+    ctx.save(); S.headT(ctx, r, pose);
     if (this.cosShown.hair > 0.02 && this.cosShown.hairStyle) {
       const k = Ease.outBack(clamp(this.cosShown.hair), 2);
       ctx.save(); ctx.translate(0, -r * 0.7); ctx.scale(k, k); ctx.translate(0, r * 0.7);
@@ -615,10 +617,10 @@ export class Nubi {
     this._slot(ctx, r, "face", paintFace);
     ctx.restore();
     // pescoço
-    ctx.save(); neckT(ctx, r, pose); this._slot(ctx, r, "neck", paintNeck); ctx.restore();
+    ctx.save(); S.neckT(ctx, r, pose); this._slot(ctx, r, "neck", paintNeck); ctx.restore();
     // molhado e espuma
     if (this.wetShown > 0.02 || this.foamShown > 0.02) {
-      ctx.save(); bodyT(ctx, r);
+      ctx.save(); S.bodyT(ctx, r);
       if (this.wetShown > 0.02) this._wet(ctx, r);
       if (this.foamShown > 0.02) this._foam(ctx, r);
       ctx.restore();
@@ -626,7 +628,7 @@ export class Nubi {
     // unhas e calçados
     const step = this.state === "celebrate" ? Math.sin(this.stateT * 0.03) * r * 0.03 : 0;
     const cs = this.cosShown;
-    ctx.save(); feetT(ctx, r);
+    ctx.save(); S.feetT(ctx, r);
     paintNails(ctx, [
       { x: -r * 0.46, y: r * 0.93 - step, color: cs.colorL, k: cs.nailsL },
       { x: r * 0.46, y: r * 0.93 + step, color: cs.colorR, k: cs.nailsR }
@@ -638,7 +640,7 @@ export class Nubi {
     }
     ctx.restore();
     // enfeite de cabelo e chapéu
-    ctx.save(); headT(ctx, r, pose);
+    ctx.save(); S.headT(ctx, r, pose);
     if (this.cosmetics.hairAcc) paintHairAcc(ctx, this.cosmetics.hairAcc, r, this.t);
     const head = this.accShown.hat;
     if (head) {
