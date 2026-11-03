@@ -22,6 +22,8 @@ fs.mkdirSync(OUT, { recursive: true });
   const wish = () => ev(() => { const c = window.__nubi.quests.current(); return c ? c.act : null; });
   const done = (id) => ev((i) => window.__nubi.quests.isDone(i), id);
   const wait = (ms) => page.waitForTimeout(ms);
+  // álbum, prêmios, missões, bichinhos e som moram na mochila
+  const openBag = async () => { await page.click('#btnBag', { force: true }); await wait(500); };   // pode estar pulsando
   const drag = async (from, to) => {
     await page.mouse.move(from.x, from.y); await page.mouse.down();
     for (let s = 1; s <= 12; s++) { await page.mouse.move(from.x + (to.x - from.x) * s / 12, from.y + (to.y - from.y) * s / 12); await wait(16); }
@@ -78,8 +80,8 @@ fs.mkdirSync(OUT, { recursive: true });
   p = await nubiPt(0); await page.mouse.click(p.x, p.y); await wait(900);
   R.banho = await done('banho');
   await wait(1200);
-  // agora o pedido é no quarto: o botão do quarto pulsa
-  R.navPulse = await ev(() => document.querySelector('[data-room="bedroom"]').classList.contains('wish'));
+  // agora o pedido é no quarto: o botão da casa (mapa) pulsa
+  R.navPulse = await ev(() => document.getElementById('btnHome').classList.contains('wish'));
   await shot('q05-pedido-outro-comodo');
 
   // ---- quarto: desfile (chapéu, capa, botas) ----
@@ -112,7 +114,7 @@ fs.mkdirSync(OUT, { recursive: true });
   await wait(2600);
 
   // ---- álbum vivo ----
-  await page.click('#btnAlbum'); await wait(700);
+  await openBag(); await page.click('#btnAlbum', { force: true }); await wait(700);
   R.albumStickers = (await page.$$('#albumStickers .sticker')).length === 6;
   await shot('q08-album');
   if (!R.albumStickers) { console.log('parcial:', JSON.stringify(R), 'pedido:', await wish(), errors); }

@@ -104,7 +104,8 @@ export class Guide {
   }
 
   _albumPoint() {
-    const btn = document.getElementById("btnAlbum");
+    // o álbum mora na mochila: o adesivo voa até ela (ou até o álbum, se aberta)
+    const btn = this.bag ? this.bag.target("btnAlbum") : document.getElementById("btnAlbum");
     if (!btn) return { x: this.vp.w - 40, y: 40 };
     const b = this.vp.rectToStage(btn.getBoundingClientRect());
     return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
@@ -117,16 +118,10 @@ export class Guide {
     const room = this.room();
     const inRoom = this.inRoom(w);
 
-    // botão do cômodo do pedido pulsa quando o pedido é em outro lugar
+    // pedido em outro cômodo: o botão da casa (mapa) pulsa; no mapa, a
+    // janela daquele cômodo ganha a estrela
     const navWish = w && !inRoom ? w.room : null;
-    // celular deitado (sem barra lateral): quem pulsa é o botão do mapa
-    const compact = document.body.classList.contains("compact");
-    if (navWish !== this._navWish || compact !== this._navCompact) {
-      this._navWish = navWish; this._navCompact = compact;
-      document.querySelectorAll("[data-room]").forEach(b => b.classList.toggle("wish", b.getAttribute("data-room") === navWish));
-      const home = document.getElementById("btnHome");
-      if (home) home.classList.toggle("wish", compact && !!navWish);
-    }
+    this._navWish = navWish;
     // pedido de interface (ex.: escolher bichinho): o botão correspondente pulsa
     const domWish = w && w.dom ? w.dom : null;
     if (domWish !== this._domWish) {
@@ -134,6 +129,9 @@ export class Guide {
       this._domWish = domWish;
       if (domWish) { const el = document.querySelector(domWish); if (el) el.classList.add("wish"); }
     }
+    // a casa pulsa pelos dois motivos (toggle sem mudança não mexe no DOM)
+    const home = document.getElementById("btnHome");
+    if (home) home.classList.toggle("wish", !!navWish || domWish === "#btnHome");
     // o pedido precisa de algo no cômodo (cocô, casca, saquinho): o cômodo garante
     if (w && inRoom && room && room.ensure) room.ensure(w.act);
     if (this.giftShow) { this.giftShow.t += dt; if (this.giftShow.t > 2600) this.giftShow = null; }

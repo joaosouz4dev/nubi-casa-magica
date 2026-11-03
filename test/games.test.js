@@ -19,6 +19,8 @@ fs.mkdirSync(OUT, { recursive: true });
   const shot = (name) => page.screenshot({ path: path.join(OUT, name + '.png') });
   const ev = (fn, arg) => page.evaluate(fn, arg);
   const wait = (ms) => page.waitForTimeout(ms);
+  // álbum, prêmios, missões, bichinhos e som moram na mochila
+  const openBag = async () => { await page.click('#btnBag', { force: true }); await wait(500); };   // pode estar pulsando
   const R = {};
   const room = () => ev(() => window.__nubi.room);
   const total = () => ev(() => window.__nubi.progress.total);
@@ -45,7 +47,7 @@ fs.mkdirSync(OUT, { recursive: true });
   R.hubHasGamesTile = !!tileG;
   await page.mouse.click(tileG.x, tileG.y); await wait(1000);
   R.inGames = (await room()) === 'games';
-  R.navHasGames = await ev(() => !!document.querySelector('#nav [data-room="games"].active'));
+  R.homeInGames = await ev(() => !document.getElementById('nav') && !document.getElementById('btnHome').classList.contains('off'));
   await shot('m01-brincadeiras');
 
   // ================= PEGA-FRUTAS (o bichinho segue o dedo) =================
@@ -136,19 +138,27 @@ fs.mkdirSync(OUT, { recursive: true });
 
   // ================= VOLTAR no meio da partida =================
   c = await cardCenter(1); await page.mouse.click(c.x, c.y); await wait(1800);
-  R.backVisibleInGame = await ev(() => !document.getElementById('btnBack').classList.contains('off'));
-  await page.click('#btnBack', { force: true }); await wait(500);
-  R.backLeavesGame = (await room()) === 'games' && (await ev(() => !window.__nubi.games.game));
-  await page.click('#btnBack', { force: true }); await wait(900);
-  R.secondBackToHub = (await room()) === 'hub';
+  // na partida o HUD some e fica só a pausa (nada de sair sem querer)
+  R.onlyPauseInGame = await ev(() => document.body.classList.contains('in-game') && getComputedStyle(document.getElementById('btnPause')).display !== 'none' && ['btnHome', 'btnBack', 'btnBag', 'starPill'].every(id => getComputedStyle(document.getElementById(id)).display === 'none'));
+  await page.click('#btnPause'); await wait(400);
+  const tP = await ev(() => window.__nubi.games.game.t); await wait(500);
+  R.pauseFreezes = await ev((t) => window.__nubi.games.paused && window.__nubi.games.game.t === t, tP);
+  await page.click('#btnResume'); await wait(300);
+  R.resumeContinues = await ev((t) => !window.__nubi.games.paused && window.__nubi.games.game.t > t, tP);
+  await page.click('#btnPause'); await wait(400);
+  await page.click('#btnQuit'); await wait(500);
+  R.quitLeavesGame = (await room()) === 'games' && (await ev(() => !window.__nubi.games.game && !document.body.classList.contains('in-game')));
+  await page.click('#btnHome', { force: true }); await wait(900);
+  R.homeToHub = (await room()) === 'hub';
   R.fpsGames = true;
 
   // ================= SURPRESA NO MAPA =================
   s0 = await total();
   await ev(() => window.__nubi.hub.spawnSurprise());
   await wait(3000);
-  const sp = await ev(() => window.__nubi.hub.surprisePos());
   await shot('m07-surpresa');
+  // o balão continua subindo: posição lida logo antes do toque
+  const sp = await ev(() => window.__nubi.hub.surprisePos());
   await page.mouse.click(sp.x, sp.y); await wait(900);
   R.surprisePopped = (await total()) - s0 >= 3;
 
@@ -156,7 +166,7 @@ fs.mkdirSync(OUT, { recursive: true });
   const ms = await ev(() => window.__nubi.progress.missions());
   R.missionHasGame = ms.filter(m => m.act.startsWith('game:')).length === 1;
   for (const m of ms) { if (!m.done) { await ev((a) => window.__nubi.bus.emit('act', a), m.act); await wait(300); } }
-  await page.click('#btnMissions', { force: true }); await wait(700);
+  await openBag(); await page.click('#btnMissions', { force: true }); await wait(700);
   R.chestReady = await ev(() => !!document.querySelector('#missionList .chestRow.ready'));
   await shot('m08-bau');
   s0 = await total();

@@ -19,6 +19,8 @@ fs.mkdirSync(OUT, { recursive: true });
   const shot = (name) => page.screenshot({ path: path.join(OUT, name + '.png') });
   const ev = (fn, arg) => page.evaluate(fn, arg);
   const wait = (ms) => page.waitForTimeout(ms);
+  // álbum, prêmios, missões, bichinhos e som moram na mochila
+  const openBag = async () => { await page.click('#btnBag', { force: true }); await wait(500); };   // pode estar pulsando
   const R = {};
   const drag = async (from, to, steps = 12) => {
     await page.mouse.move(from.x, from.y); await page.mouse.down();
@@ -44,7 +46,7 @@ fs.mkdirSync(OUT, { recursive: true });
   await page.mouse.click(380, 120); await wait(900);          // acorda
 
   // ================= BICHINHOS =================
-  await page.click('#btnPets'); await wait(700);
+  await openBag(); await page.click('#btnPets', { force: true }); await wait(700);
   R.petCards = (await page.$$('#petsGrid .petCard')).length === 3;
   await shot('f01-vitrine');
   await page.click('[data-pet="bunny"]'); await wait(900);
@@ -71,10 +73,10 @@ fs.mkdirSync(OUT, { recursive: true });
   R.lookAct = (await acts()).includes('look:heroi');
   await shot('f02-look-heroi');
   // aparência é por bichinho: o urso começa sem roupa; a coelha volta vestida
-  await page.click('#btnPets'); await wait(600); await page.click('[data-pet="bear"]'); await wait(800);
+  await openBag(); await page.click('#btnPets', { force: true }); await wait(600); await page.click('[data-pet="bear"]'); await wait(800);
   R.bearClean = await ev(() => window.__nubi.nubi.species === 'bear' && Object.keys(window.__nubi.nubi.accessories).length === 0);
   await shot('f03-ursinho');
-  await page.click('#btnPets'); await wait(600); await page.click('[data-pet="bunny"]'); await wait(800);
+  await openBag(); await page.click('#btnPets', { force: true }); await wait(600); await page.click('[data-pet="bunny"]'); await wait(800);
   R.bunnyKeeps = await ev(() => !!window.__nubi.nubi.accessories.cape && !!window.__nubi.nubi.accessories.face);
   // presente fixo: concluir a recepção (carinho + cócegas) libera os óculos de estrela
   for (const a of ['pet', 'tummy']) { await ev((x) => window.__nubi.bus.emit('act', x), a); await wait(200); }

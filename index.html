@@ -26,23 +26,22 @@
     }
     /* Layout do HUD: tudo sai daqui.
        --safe-*: recorte da câmera/cantos (env() no navegador; --nat-* vem do
-       APK, cujo WebView às vezes informa 0). --btn: botão redondo, pela
-       altura do palco e limitado pela largura (cabem 8 botões + contador na
-       linha de cima de um celular deitado). */
+       APK, cujo WebView às vezes informa 0). --btn: botão secundário, pela
+       altura do palco; --btn-main: os botões principais (casa, mochila,
+       pausa), um pouco maiores. */
     body {
       --safe-l: max(env(safe-area-inset-left, 0px), var(--nat-l, 0px));
       --safe-r: max(env(safe-area-inset-right, 0px), var(--nat-r, 0px));
       --safe-t: max(env(safe-area-inset-top, 0px), var(--nat-t, 0px));
       --safe-b: max(env(safe-area-inset-bottom, 0px), var(--nat-b, 0px));
       --edge: 10px;
-      --btn: clamp(38px, min(calc(12.5 * var(--vh)), calc((100 * var(--vw) - 130px) / 11.4)), 58px);
+      --btn: clamp(40px, calc(12.5 * var(--vh)), 58px);
+      --btn-main: calc(var(--btn) * 1.15);
       --gap: clamp(6px, calc(var(--btn) * .18), 10px);
       --row-t: calc(var(--safe-t) + var(--edge));
     }
     /* palco girado (retrato no navegador): o recorte não está onde o palco pensa */
     body.rot { --safe-l: 0px; --safe-r: 0px; --safe-t: 0px; --safe-b: 0px; }
-    /* celular deitado: não cabem 8 cômodos em pé; o mapa (botão da casa) é a navegação */
-    body.compact #nav { display: none; }
     #game { display: block; width: calc(100 * var(--vw)); height: calc(100 * var(--vh)); }
 
     /* Botões "de brinquedo": volume, contorno macio, resposta ao toque */
@@ -56,39 +55,40 @@
     .toy:active { transform: translateY(3px) scale(.92); box-shadow: 0 1px 0 #cdb8f0, 0 2px 6px rgba(70,40,110,.18); }
     .toy svg { width: 62%; height: 62%; overflow: visible; }
 
-    /* Barra de cômodos */
-    #nav {
-      position: fixed; top: 50%; transform: translateY(-50%);
-      right: calc(var(--safe-r) + var(--edge)); z-index: 6;
-      display: flex; flex-direction: column; gap: 8px; background: rgba(255,255,255,.55);
-      padding: 10px 8px; border-radius: 999px; backdrop-filter: blur(6px);
-      box-shadow: 0 6px 20px rgba(70,40,110,.15);
-      pointer-events: none;   /* só os botões recebem toque; o fundo não bloqueia o jogo */
-    }
-    #nav button { width: min(calc(13 * var(--vw)), 54px, calc(11 * var(--vh))); height: min(calc(13 * var(--vw)), 54px, calc(11 * var(--vh))); pointer-events: auto; }
-    #nav button.active {
-      background: linear-gradient(180deg, #ffe680 0%, #ffc93a 100%);
-      box-shadow: 0 4px 0 #e0a21c, 0 0 0 4px rgba(255,214,90,.45), 0 6px 14px rgba(160,100,10,.25);
-      animation: navPop .45s cubic-bezier(.34,1.56,.64,1);
-    }
-    #nav button.active:active { transform: translateY(3px) scale(.92); }
-    @keyframes navPop { 0% { transform: scale(.85); } 60% { transform: scale(1.08); } 100% { transform: none; } }
-    /* pedido em outro cômodo: o botão daquele cômodo chama com um pulso suave */
-    #nav button.wish { animation: wish 1.3s ease-in-out infinite; box-shadow: 0 4px 0 #cdb8f0, 0 0 0 5px rgba(255,214,90,.7), 0 0 18px 6px rgba(255,214,90,.55); }
     @keyframes wish { 0%,100% { transform: scale(1); } 50% { transform: scale(1.14) rotate(-4deg); } }
     /* adesivo chegou: o botão do álbum dá um pulinho */
     #btnAlbum.bump { animation: bump .6s cubic-bezier(.34,1.56,.64,1); }
     @keyframes bump { 0% { transform: scale(1); } 35% { transform: scale(1.3); } 100% { transform: scale(1); } }
 
     .corner { position: fixed; z-index: 6; }
-    #btnSound { top: var(--row-t); right: calc(var(--safe-r) + var(--edge)); }
-    #btnAlbum { top: var(--row-t); right: calc(var(--safe-r) + var(--edge) + (var(--btn) + var(--gap)) * 1); }
-    #btnShop { top: var(--row-t); right: calc(var(--safe-r) + var(--edge) + (var(--btn) + var(--gap)) * 2); }
-    #btnMissions { top: var(--row-t); right: calc(var(--safe-r) + var(--edge) + (var(--btn) + var(--gap)) * 3); }
-    #btnBack { top: var(--row-t); left: calc(var(--safe-l) + var(--edge)); }
-    #btnHome { top: var(--row-t); left: calc(var(--safe-l) + var(--edge) + (var(--btn) + var(--gap)) * 1); }
-    #btnPets { top: var(--row-t); left: calc(var(--safe-l) + var(--edge) + (var(--btn) + var(--gap)) * 2); }
-    #btnParent { top: var(--row-t); left: calc(var(--safe-l) + var(--edge) + (var(--btn) + var(--gap)) * 3); }
+    /* esquerda: casa (principal) e, só em sub-telas, voltar; direita: mochila */
+    #btnHome, #btnBag, #btnPause { width: var(--btn-main); height: var(--btn-main); }
+    #btnHome { top: var(--row-t); left: calc(var(--safe-l) + var(--edge)); }
+    #btnBack { top: calc(var(--row-t) + (var(--btn-main) - var(--btn)) / 2); left: calc(var(--safe-l) + var(--edge) + var(--btn-main) + var(--gap) * 1.5); }
+    #btnBag { top: var(--row-t); right: calc(var(--safe-r) + var(--edge)); }
+    #btnPause { top: var(--row-t); left: calc(var(--safe-l) + var(--edge)); display: none; }
+    #btnHome { transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s; }
+    #btnHome.off { opacity: 0; transform: scale(.4); pointer-events: none; }
+    /* minijogo: some tudo, fica só a pausa (nada de sair sem querer) */
+    body.in-game #btnHome, body.in-game #btnBack, body.in-game #btnBag, body.in-game #starPill { display: none; }
+    body.in-game #btnPause { display: grid; }
+    /* algo novo dentro da mochila: pontinho e pulso no botão dela */
+    #btnBag.ready::before {
+      content: ""; position: absolute; top: -3px; right: -3px; width: 18px; height: 18px; border-radius: 50%;
+      background: #ff4f7a; border: 3px solid #fff; animation: dotPulse 1.2s ease-in-out infinite;
+    }
+    #btnBag.wish, #btnBag.ready { animation: wish 1.4s ease-in-out infinite; }
+    #btnBag.bump { animation: bump .6s cubic-bezier(.34,1.56,.64,1); }
+    /* mochila aberta: botões grandes, só desenho */
+    #bag .panel { position: relative; padding: calc(var(--btn) * .9) calc(var(--btn) * .8); }
+    #bag .panel .close { position: absolute; top: 10px; right: 10px; float: none; }
+    .bagGrid { display: flex; flex-wrap: wrap; justify-content: center; gap: calc(var(--btn) * .4); max-width: calc(var(--btn) * 10); }
+    .bagGrid .toy { position: relative; width: calc(var(--btn) * 1.5); height: calc(var(--btn) * 1.5); }
+    #bag #btnParent { position: absolute; left: 12px; top: 12px; width: 40px; height: 40px; opacity: .75; }
+    /* pausa: continuar (grande, verde) e sair */
+    .pauseRow { display: flex; gap: calc(var(--btn) * .8); align-items: center; }
+    #btnResume { width: calc(var(--btn) * 2.4); height: calc(var(--btn) * 2.4); background: linear-gradient(180deg, #8be08f 0%, #4fbf5a 100%); box-shadow: 0 6px 0 #2a6f36, 0 10px 22px rgba(30,90,40,.3); }
+    #btnQuit { width: calc(var(--btn) * 1.6); height: calc(var(--btn) * 1.6); background: linear-gradient(180deg, #fff7c2 0%, #ffe680 100%); box-shadow: 0 4px 0 #e0a21c, 0 6px 14px rgba(160,100,10,.2); }
     #btnBack { background: linear-gradient(180deg, #fff7c2 0%, #ffe680 100%); box-shadow: 0 4px 0 #e0a21c, 0 6px 14px rgba(160,100,10,.2); transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s; }
     #btnBack.off { opacity: 0; transform: scale(.4); pointer-events: none; }
     #btnBack.hey { animation: bump .6s cubic-bezier(.34,1.56,.64,1); }
@@ -98,7 +98,7 @@
     }
     #btnShop.ready { animation: wish 1.6s ease-in-out infinite; }
     @keyframes dotPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
-    #btnShop.wish, #btnHome.wish { animation: wish 1.3s ease-in-out infinite; box-shadow: 0 4px 0 #cdb8f0, 0 0 0 5px rgba(255,214,90,.7), 0 0 18px 6px rgba(255,214,90,.55); }
+    #btnShop.wish, #btnHome.wish, .bagGrid .wish { animation: wish 1.3s ease-in-out infinite; box-shadow: 0 4px 0 #cdb8f0, 0 0 0 5px rgba(255,214,90,.7), 0 0 18px 6px rgba(255,214,90,.55); }
 
     /* Contador de estrelinhas + coração de carinho (topo, centro) */
     #starPill {
@@ -174,6 +174,7 @@
     .overlay.show .petCard { animation: cardIn .45s cubic-bezier(.34,1.56,.64,1) backwards; }
     .petName { font-size: 18px; margin-top: 2px; }
     .corner button { position: fixed; width: var(--btn); height: var(--btn); }
+    .corner #btnHome, .corner #btnBag, .corner #btnPause { width: var(--btn-main); height: var(--btn-main); }
     #btnSound .slash { opacity: 0; transition: opacity .2s; }
     #btnSound.off .slash { opacity: 1; }
     #btnSound.off .waves { opacity: .2; }
@@ -323,7 +324,6 @@
     body.reduce-motion #title * { animation-iteration-count: 1 !important; }
 
     body.reduce-motion *, body.reduce-motion *::after { animation-duration: .01s !important; transition-duration: .05s !important; }
-    @media (prefers-reduced-motion: reduce) { #nav button.active { animation: none; } }
 
     /* ================= v1.1: sistema visual moderno =================
        Tokens únicos (cores, raios, sombras) + componentes com brilho,
@@ -355,25 +355,6 @@
     }
     .toy svg { transition: transform .25s var(--ease-pop); }
     .toy:active svg { transform: scale(.9) rotate(-4deg); }
-
-    /* barra de cômodos: vidro fosco, começa ABAIXO da fileira de cima
-       (antes o topo dela passava por trás do botão de som) */
-    #nav {
-      top: calc(var(--row-t) + var(--btn) + var(--gap) * 1.5);
-      transform: none; background: var(--glass);
-      border: 2px solid var(--glass-line); backdrop-filter: blur(10px) saturate(1.3); -webkit-backdrop-filter: blur(10px) saturate(1.3);
-      box-shadow: 0 10px 30px rgba(70,40,110,.18), 0 1px 0 rgba(255,255,255,.9) inset;
-      gap: 6px; padding: 8px 7px;
-    }
-    #nav button {
-      /* 8 botões na altura que sobra abaixo da linha de cima */
-      width: min(var(--btn), calc((100 * var(--vh) - var(--row-t) - var(--btn) - var(--gap) * 1.5 - 10px - 16px) / 8 - 6px));
-      height: min(var(--btn), calc((100 * var(--vh) - var(--row-t) - var(--btn) - var(--gap) * 1.5 - 10px - 16px) / 8 - 6px));
-    }
-    #nav button.active {
-      background: radial-gradient(120% 70% at 50% 0%, #fffbe0 0%, rgba(255,251,224,0) 60%), linear-gradient(180deg, #ffe680 0%, #ffbf2e 100%);
-      border-color: #fff3b8;
-    }
 
     #starPill {
       background: radial-gradient(120% 80% at 50% 0%, #fff 0%, rgba(255,255,255,0) 60%), linear-gradient(180deg, #fffdf3 0%, #ffefb5 100%);
@@ -439,82 +420,10 @@
   <div id="stage">
   <canvas id="game"></canvas>
 
-  <nav id="nav">
-    <button class="toy" data-room="hub" aria-label="Mapa da casa">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <path d="M6 23L24 8l18 15" fill="#ff8a7a" stroke="#a8322c" stroke-width="3" stroke-linejoin="round"/>
-        <rect x="11" y="21" width="26" height="20" rx="3" fill="#fff4e2" stroke="#c9a37a" stroke-width="3"/>
-        <rect x="20" y="29" width="8" height="12" rx="2" fill="#ffd54a" stroke="#a8791a" stroke-width="2.5"/>
-        <rect x="14" y="25" width="5" height="5" rx="1" fill="#bfe6ff"/><rect x="29" y="25" width="5" height="5" rx="1" fill="#bfe6ff"/>
-      </svg>
-    </button>
-    <button class="toy" data-room="kitchen" aria-label="Cozinha">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <ellipse cx="24" cy="30" rx="18" ry="9" fill="#fff" stroke="#c98a52" stroke-width="3"/>
-        <circle cx="17" cy="24" r="6" fill="#4a74d6" stroke="#2d4a8f" stroke-width="2.5"/>
-        <path d="M27 27c-6-5-3-11 2-9 5-2 8 4 2 9z" fill="#e8426b" stroke="#9c1f3f" stroke-width="2.5" stroke-linejoin="round"/>
-        <path d="M33 20c3 0 6 3 6 6" fill="none" stroke="#f6cf3f" stroke-width="5" stroke-linecap="round"/>
-      </svg>
-    </button>
-    <button class="toy" data-room="bathroom" aria-label="Banheiro">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <circle cx="16" cy="13" r="4" fill="#bfe6ff" stroke="#4c7ea6" stroke-width="2"/>
-        <circle cx="26" cy="9" r="3" fill="#bfe6ff" stroke="#4c7ea6" stroke-width="2"/>
-        <path d="M5 24h38v4a12 12 0 0 1-12 12H17A12 12 0 0 1 5 28z" fill="#fff" stroke="#4c7ea6" stroke-width="3" stroke-linejoin="round"/>
-        <path d="M8 24h32" stroke="#8fd3ff" stroke-width="5" stroke-linecap="round"/>
-        <circle cx="35" cy="19" r="4" fill="#ffe14d" stroke="#b8860b" stroke-width="2"/>
-      </svg>
-    </button>
-    <button class="toy" data-room="garden" aria-label="Jardim">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <path d="M4 40h40" stroke="#5fa847" stroke-width="4" stroke-linecap="round"/>
-        <path d="M18 40V22" stroke="#3f9a56" stroke-width="3" stroke-linecap="round"/>
-        <circle cx="18" cy="16" r="4" fill="#ffd54a" stroke="#a8791a" stroke-width="2"/>
-        <g fill="#ff8fb3" stroke="#c7709a" stroke-width="1.5"><circle cx="13" cy="14" r="3.2"/><circle cx="23" cy="14" r="3.2"/><circle cx="15" cy="20" r="3.2"/><circle cx="21" cy="20" r="3.2"/></g>
-        <circle cx="18" cy="16" r="2.4" fill="#ffd54a"/>
-        <g stroke="#6e4aa3" stroke-width="1.6" fill="#b49cff"><ellipse cx="33" cy="18" rx="5" ry="4" transform="rotate(-20 33 18)"/><ellipse cx="37" cy="22" rx="4" ry="3.4" transform="rotate(20 37 22)"/></g>
-      </svg>
-    </button>
-    <button class="toy" data-room="bedroom" aria-label="Quarto">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <rect x="5" y="14" width="6" height="26" rx="3" fill="#b98ee6" stroke="#6e4aa3" stroke-width="2.5"/>
-        <rect x="9" y="25" width="34" height="11" rx="5" fill="#8fd3ff" stroke="#3c7fb0" stroke-width="2.5"/>
-        <rect x="12" y="20" width="11" height="8" rx="4" fill="#fff1a8" stroke="#c49a1a" stroke-width="2"/>
-        <path d="M9 36v4M41 36v4" stroke="#6e4aa3" stroke-width="3" stroke-linecap="round"/>
-      </svg>
-    </button>
-    <button class="toy" data-room="dentist" aria-label="Consultório dos dentinhos">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <path d="M12 12c-4 2-4 9-2 15 1.5 5 2 12 5 12 2.5 0 2.5-8 5-8h8c2.5 0 2.5 8 5 8 3 0 3.5-7 5-12 2-6 2-13-2-15-4-2-7 1-12 1s-8-3-12-1z" fill="#fff" stroke="#7fa3b8" stroke-width="3" stroke-linejoin="round"/>
-        <path d="M37 9l1.4 3 3.2.4-2.3 2.2.6 3.2-2.9-1.6-2.9 1.6.6-3.2-2.3-2.2 3.2-.4z" fill="#ffd54a"/>
-      </svg>
-    </button>
-    <button class="toy" data-room="salon" aria-label="Salão de beleza">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <circle cx="16" cy="14" r="6" fill="#f6cf3f" stroke="#a8791a" stroke-width="2.5"/>
-        <circle cx="25" cy="10" r="6" fill="#f6cf3f" stroke="#a8791a" stroke-width="2.5"/>
-        <circle cx="33" cy="15" r="6" fill="#f6cf3f" stroke="#a8791a" stroke-width="2.5"/>
-        <rect x="16" y="24" width="10" height="16" rx="4" fill="#ff6bb5" stroke="#a8325c" stroke-width="2.5"/>
-        <rect x="18" y="18" width="6" height="7" rx="2" fill="#3a2f4f"/>
-        <path d="M30 34c2-4 8-4 10 0-2 3-8 3-10 0z" fill="#e8426b" stroke="#8a1f3a" stroke-width="2"/>
-      </svg>
-    </button>
-    <button class="toy" data-room="games" aria-label="Quarto de Brinquedos">
-      <svg viewBox="0 0 48 48" aria-hidden="true">
-        <path d="M24 5L42 25H6z" fill="#ff8fb8" stroke="#a8325c" stroke-width="3" stroke-linejoin="round"/>
-        <path d="M24 6l-5 19h10z" fill="#fff"/>
-        <rect x="9" y="25" width="30" height="16" rx="3" fill="#fff4e2" stroke="#a8325c" stroke-width="3"/>
-        <path d="M19 41c1-8 9-8 10 0z" fill="#5b3a7a"/>
-        <path d="M24 5l7 3-7 3z" fill="#ffd54a"/>
-      </svg>
-    </button>
-  </nav>
 
-  <div class="corner"><button class="toy" id="btnBack" aria-label="Voltar">
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M36 24H13M23 13L12 24l11 11" fill="none" stroke="#8a5a0a" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </button></div>
+
+  <!-- HUD: no máximo 3 coisas na tela (casa, estrelinhas, mochila). Voltar só
+       aparece em sub-telas; no minijogo fica só a pausa. -->
   <div class="corner"><button class="toy" id="btnHome" aria-label="Mapa da casa">
     <svg viewBox="0 0 48 48" aria-hidden="true">
       <path d="M6 23L24 8l18 15" fill="#ff8a7a" stroke="#a8322c" stroke-width="3" stroke-linejoin="round"/>
@@ -522,20 +431,22 @@
       <rect x="20" y="29" width="8" height="12" rx="2" fill="#ffd54a" stroke="#a8791a" stroke-width="2.5"/>
     </svg>
   </button></div>
-  <div class="corner"><button class="toy" id="btnShop" aria-label="Lojinha de prêmios">
+  <div class="corner"><button class="toy" id="btnBack" aria-label="Voltar">
     <svg viewBox="0 0 48 48" aria-hidden="true">
-      <rect x="8" y="20" width="32" height="20" rx="4" fill="#fff7d6" stroke="#e0a21c" stroke-width="3"/>
-      <path d="M5 20l4-11h30l4 11z" fill="#ff6b9d" stroke="#a8325c" stroke-width="3" stroke-linejoin="round"/>
-      <path d="M15 10v9M24 10v9M33 10v9" stroke="#fff" stroke-width="4"/>
-      <path d="M24 23l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z" fill="#ffd54a" stroke="#b8860b" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M36 24H13M23 13L12 24l11 11" fill="none" stroke="#8a5a0a" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   </button></div>
-  <div class="corner"><button class="toy" id="btnMissions" aria-label="Missões do dia">
+  <div class="corner"><button class="toy" id="btnBag" aria-label="Mochila (álbum, prêmios, missões, bichinhos)">
     <svg viewBox="0 0 48 48" aria-hidden="true">
-      <rect x="11" y="8" width="26" height="34" rx="4" fill="#fff" stroke="#7fa3b8" stroke-width="3"/>
-      <rect x="18" y="5" width="12" height="6" rx="2" fill="#ffd54a" stroke="#a8791a" stroke-width="2"/>
-      <path d="M16 19l3 3 5-6M16 30l3 3 5-6" fill="none" stroke="#62c370" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <rect x="27" y="18" width="6" height="4" rx="2" fill="#e3d6fb"/><rect x="27" y="29" width="6" height="4" rx="2" fill="#e3d6fb"/>
+      <path d="M17 15v-3a7 7 0 0 1 14 0v3" fill="none" stroke="#a8325c" stroke-width="3.5" stroke-linecap="round"/>
+      <rect x="8" y="14" width="32" height="28" rx="9" fill="#ff8fb8" stroke="#a8325c" stroke-width="3"/>
+      <rect x="14" y="27" width="20" height="11" rx="4" fill="#ffd0e3" stroke="#a8325c" stroke-width="2.5"/>
+      <path d="M24 18.5l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z" fill="#ffd54a" stroke="#b8860b" stroke-width="1.2" stroke-linejoin="round"/>
+    </svg>
+  </button></div>
+  <div class="corner"><button class="toy" id="btnPause" aria-label="Pausar">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <rect x="14" y="12" width="7" height="24" rx="3" fill="#7a4fd6"/><rect x="27" y="12" width="7" height="24" rx="3" fill="#7a4fd6"/>
     </svg>
   </button></div>
 
@@ -567,23 +478,14 @@
     </div>
   </div>
 
-  <div class="corner"><button class="toy" id="btnSound" aria-label="Som">
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M8 19h7l10-8v26l-10-8H8z" fill="#ffd54a" stroke="#a8791a" stroke-width="3" stroke-linejoin="round"/>
-      <g class="waves" fill="none" stroke="#8a3bff" stroke-width="3.5" stroke-linecap="round">
-        <path d="M31 18a8 8 0 0 1 0 12"/><path d="M36 13a15 15 0 0 1 0 22"/>
-      </g>
-      <path class="slash" d="M30 16l12 16" stroke="#e5484d" stroke-width="4" stroke-linecap="round"/>
-    </svg>
-  </button></div>
-  <div class="corner"><button class="toy" id="btnAlbum" aria-label="Álbum de descobertas">
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M6 11c7-3 13-2 18 2v26c-5-4-11-5-18-2z" fill="#ff9bc4" stroke="#b3406f" stroke-width="3" stroke-linejoin="round"/>
-      <path d="M42 11c-7-3-13-2-18 2v26c5-4 11-5 18-2z" fill="#9fd3ff" stroke="#3c7fb0" stroke-width="3" stroke-linejoin="round"/>
-      <path d="M33 19l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z" fill="#ffd54a"/>
-    </svg>
-  </button></div>
-  <div class="corner"><button class="toy" id="btnPets" aria-label="Escolher bichinho">
+
+  <!-- Álbum -->
+  <!-- Mochila: o que não é brincar agora -->
+  <div class="overlay" id="bag">
+    <div class="panel">
+      <button class="close" id="bagClose" aria-label="Fechar">✕</button>
+      <div class="bagGrid">
+        <button class="toy" id="btnPets" aria-label="Escolher bichinho">
     <svg viewBox="0 0 48 48" aria-hidden="true">
       <ellipse cx="17" cy="9" rx="4" ry="9" fill="#ffe3ee" stroke="#c7709a" stroke-width="2.5"/>
       <ellipse cx="27" cy="9" rx="4" ry="9" fill="#ffe3ee" stroke="#c7709a" stroke-width="2.5"/>
@@ -593,15 +495,61 @@
       <circle cx="38" cy="34" r="7" fill="#d9a273" stroke="#7a4a1f" stroke-width="2.5"/>
       <circle cx="33.5" cy="28.5" r="2.6" fill="#d9a273" stroke="#7a4a1f" stroke-width="2"/><circle cx="42.5" cy="28.5" r="2.6" fill="#d9a273" stroke="#7a4a1f" stroke-width="2"/>
     </svg>
-  </button></div>
-  <div class="corner"><button class="toy" id="btnParent" aria-label="Área dos responsáveis (segure)">
+  </button>
+        <button class="toy" id="btnMissions" aria-label="Missões do dia">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <rect x="11" y="8" width="26" height="34" rx="4" fill="#fff" stroke="#7fa3b8" stroke-width="3"/>
+      <rect x="18" y="5" width="12" height="6" rx="2" fill="#ffd54a" stroke="#a8791a" stroke-width="2"/>
+      <path d="M16 19l3 3 5-6M16 30l3 3 5-6" fill="none" stroke="#62c370" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="27" y="18" width="6" height="4" rx="2" fill="#e3d6fb"/><rect x="27" y="29" width="6" height="4" rx="2" fill="#e3d6fb"/>
+    </svg>
+  </button>
+        <button class="toy" id="btnShop" aria-label="Lojinha de prêmios">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <rect x="8" y="20" width="32" height="20" rx="4" fill="#fff7d6" stroke="#e0a21c" stroke-width="3"/>
+      <path d="M5 20l4-11h30l4 11z" fill="#ff6b9d" stroke="#a8325c" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M15 10v9M24 10v9M33 10v9" stroke="#fff" stroke-width="4"/>
+      <path d="M24 23l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4-4.5 2.4.9-5-3.6-3.5 5-.7z" fill="#ffd54a" stroke="#b8860b" stroke-width="1.5" stroke-linejoin="round"/>
+    </svg>
+  </button>
+        <button class="toy" id="btnAlbum" aria-label="Álbum de descobertas">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M6 11c7-3 13-2 18 2v26c-5-4-11-5-18-2z" fill="#ff9bc4" stroke="#b3406f" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M42 11c-7-3-13-2-18 2v26c5-4 11-5 18-2z" fill="#9fd3ff" stroke="#3c7fb0" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M33 19l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z" fill="#ffd54a"/>
+    </svg>
+  </button>
+        <button class="toy" id="btnSound" aria-label="Som">
+    <svg viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M8 19h7l10-8v26l-10-8H8z" fill="#ffd54a" stroke="#a8791a" stroke-width="3" stroke-linejoin="round"/>
+      <g class="waves" fill="none" stroke="#8a3bff" stroke-width="3.5" stroke-linecap="round">
+        <path d="M31 18a8 8 0 0 1 0 12"/><path d="M36 13a15 15 0 0 1 0 22"/>
+      </g>
+      <path class="slash" d="M30 16l12 16" stroke="#e5484d" stroke-width="4" stroke-linecap="round"/>
+    </svg>
+  </button>
+      </div>
+      <button class="toy" id="btnParent" aria-label="Área dos responsáveis (segure)">
     <svg viewBox="0 0 48 48" aria-hidden="true">
       <path d="M24 6l4 4h6v6l4 4-4 4v6h-6l-4 4-4-4h-6v-6l-4-4 4-4v-6h6z" fill="#cdb8f0" stroke="#6e4aa3" stroke-width="3" stroke-linejoin="round"/>
       <circle cx="24" cy="24" r="6" fill="#fff" stroke="#6e4aa3" stroke-width="3"/>
     </svg>
-  </button></div>
+  </button>
+    </div>
+  </div>
 
-  <!-- Álbum -->
+  <!-- Pausa do minijogo: continuar ou sair (nunca sai sem querer) -->
+  <div class="overlay" id="pause">
+    <div class="pauseRow">
+      <button class="toy" id="btnResume" aria-label="Continuar">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M17 11 L38 24 L17 37 Z" fill="#fff" stroke="#2a6f36" stroke-width="3.5" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="toy" id="btnQuit" aria-label="Sair do jogo">
+        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M36 24H13M23 13L12 24l11 11" fill="none" stroke="#8a5a0a" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  </div>
+
   <div class="overlay" id="album">
     <div class="panel">
       <button class="close" id="albumClose" aria-label="Fechar">✕</button>

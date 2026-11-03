@@ -41,7 +41,7 @@ const BUBBLE_COLORS = ["#ff8fb8", "#8fd3ff", "#b49cff", "#9be564", "#ffb04a"];
 const KEY_COLORS = ["#ff6b6b", "#ffb04a", "#ffd54a", "#62c370", "#5bc0eb"];
 const PLAY_MS = 30000;
 const INTRO_MS = 900;
-const RESULT_MS = 3200;
+const RESULT_MS = 5200;   // tempo para escolher "de novo" ou "outro jogo"
 
 /* Estrelinhas por partida: sempre um mínimo (não existe perder). */
 export function starsFor(score) { return clamp(Math.ceil(score / 2), 3, 12); }
@@ -51,6 +51,7 @@ export class GamesRoom {
     this.vp = vp; this.bus = bus; this.nubi = nubi; this.save = save;
     this.t = 0; this.unsub = [];
     this.game = null;            // partida em andamento
+    this.paused = false;         // pausa (botão do HUD; ver wirePause no main)
     this.result = null;          // festa do fim da partida
     this.press = GAMES.map(() => new Spring(0, { stiffness: 340, damping: 14 }));
     this.cardIn = 0;
@@ -104,6 +105,18 @@ export class GamesRoom {
     if (this.result) { this.result = null; this._menuPose(); return true; }
     return false;
   }
+  _toMenu() { this.result = null; this._menuPose(); this.bus.emit("room:sub", "games"); }
+
+  /* Fim da partida: dois botões grandes embaixo do cartão da festa.
+     "De novo" repete o mesmo jogo; o outro volta para os cartões. */
+  resultButtons() {
+    const vp = this.vp, w = vp.w, h = vp.h, m = Math.min(w, h);
+    const cx = w * 0.6, y = Math.min(h * 0.5 + m * 0.25 + m * 0.12, h - m * 0.1), r = m * 0.075;
+    return [{ id: "again", x: cx - m * 0.11, y, r }, { id: "menu", x: cx + m * 0.11, y, r }];
+  }
+  resultButtonAt(px, py) {
+    return this.resultButtons().find(b => Math.hypot(px - b.x, py - b.y) <= b.r * 1.35) || null;
+  }
 
   // ---------------- cartões ----------------
   cardRect(i) {
@@ -125,7 +138,9 @@ export class GamesRoom {
 
   onTap(p) {
     if (this.result) {
-      if (this.result.t > 900) { this.result = null; this._menuPose(); }
+      const b = this.result.t > 350 ? this.resultButtonAt(p.x, p.y) : null;
+      if (b && b.id === "again") { const id = this.result.id; this.result = null; this.bus.emit("audio:pop"); this.start(id); return; }
+      if (b || this.result.t > 900) this._toMenu();
       return;
     }
     if (this.game) { this._gameTap(p); return; }
@@ -175,10 +190,12 @@ export class GamesRoom {
       this.nubi.sizeK = 0.6; this.nubi.pos = { x: 0.12, y: 0.68 };
     }
     this.game = g;
+    this.paused = false;
     this.nubi.arrive();
     this.nubi.say(["Vamos lá!", "Bora brincar!", "Já!"][Math.floor(Math.random() * 3)]);
     this.bus.emit("audio:sparkle");
     this.bus.emit("room:sub", "games");
+    this.bus.emit("game:playing", true);   // HUD: some tudo, fica só a pausa
   }
   _rnd5() { return Math.floor(Math.random() * KEY_COLORS.length); }
   _colorTarget() { return COLOR_MIX[Math.floor(Math.random() * COLOR_MIX.length)]; }
@@ -193,7 +210,8 @@ export class GamesRoom {
   /* Fim da partida: sempre festa e estrelinhas. quick = saiu pelo "voltar". */
   _finish({ quick = false } = {}) {
     const g = this.game; if (!g) return;
-    this.game = null;
+    this.game = null; this.paused = false;
+    this.bus.emit("game:playing", false);
     const best = this.best(g.id);
     const played = g.t > 1500 || g.score > 0;
     if (!played) return;                       // saiu antes de começar: nada a entregar
@@ -434,9 +452,9 @@ export class GamesRoom {
     this.cardIn = Math.min(1, this.cardIn + dt / 450);
     for (const s of this.press) s.update(dt);
     this.floaters = this.floaters.filter(f => (f.t += dt) < 900);
-    if (this.result) { this.result.t += dt; if (this.result.t > RESULT_MS) { this.result = null; this._menuPose(); } }
+    if (this.result) { this.result.t += dt; if (this.result.t > RESULT_MS) this._toMenu(); }
     const g = this.game;
-    if (!g) return;
+    if (!g || this.paused) return;   // pausado: a partida congela
     g.t += dt;
     if (g.t < 0) return;
     const speed = Motion.reduce ? 0.75 : 1;
@@ -512,7 +530,7 @@ export class GamesRoom {
     this._bunting(ctx, w, h, m);
     const g = this.game;
     if (!g && !this.result) { GAMES.forEach((G, i) => this._card(ctx, G, i, m)); this.nubi.draw(); return; }
-    if (this.result && !g) { this.nubi.draw(); this._result(ctx, w, h, m); this._floaters(ctx, m); return; }
+    if (this.result && !g) { this.nubi.draw(); this._result(ctx, w, h, m); this._resultButtons(ctx, m); this._floaters(ctx, m); return; }
 
     if (g.id === "catch") {
       for (const f of g.items) this._fruit(ctx, f, m);
@@ -829,6 +847,33 @@ export class GamesRoom {
       drawIcon(ctx, "trophy", -m * 0.085, 0, m * 0.022);
       ctx.fillStyle = "#ffffff"; ctx.font = `bold ${Math.round(m * 0.032)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Nova marca!", m * 0.02, m * 0.002);
+      ctx.restore();
+    }
+  }
+
+  _resultButtons(ctx, m) {
+    const t = this.result.t;
+    if (t < 350) return;
+    const k = Motion.reduce ? 1 : Ease.outBack(clamp((t - 350) / 380), 2.2);
+    for (const b of this.resultButtons()) {
+      const again = b.id === "again";
+      ctx.save(); ctx.translate(b.x, b.y); ctx.scale(k, k);
+      ctx.shadowColor = "rgba(70,40,110,.28)"; ctx.shadowBlur = m * 0.025; ctx.shadowOffsetY = m * 0.012;
+      ctx.fillStyle = again ? "#5fc76a" : "#ffffff";
+      ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowColor = "transparent";
+      ctx.lineWidth = Math.max(2, m * 0.008); ctx.strokeStyle = again ? "#2a6f36" : "#cdb8f0"; ctx.stroke();
+      if (again) {
+        // seta em círculo: "de novo"
+        const rr = b.r * 0.46;
+        ctx.strokeStyle = "#ffffff"; ctx.lineWidth = b.r * 0.17; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.arc(0, 0, rr, -Math.PI * 0.35, Math.PI * 1.35); ctx.stroke();
+        const a = -Math.PI * 0.35, hx = Math.cos(a) * rr, hy = Math.sin(a) * rr;
+        ctx.fillStyle = "#ffffff"; ctx.beginPath();
+        ctx.moveTo(hx + b.r * 0.2, hy - b.r * 0.02); ctx.lineTo(hx - b.r * 0.12, hy - b.r * 0.22); ctx.lineTo(hx - b.r * 0.06, hy + b.r * 0.2); ctx.closePath(); ctx.fill();
+      } else {
+        drawIcon(ctx, "games", 0, 0, b.r * 0.55);
+      }
       ctx.restore();
     }
   }

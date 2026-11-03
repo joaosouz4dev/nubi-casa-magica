@@ -23,10 +23,8 @@ orientam sem pressionar.
   No navegador do celular o Play pede tela cheia, e se a criança sair dela o
   próximo toque pede de novo (`src/core/fullscreen.js`).
 - Responsivo: o tamanho vem da área visível real (não do `100vh`, que no
-  celular conta a barra do navegador). Os botões se ajustam à altura da tela,
-  respeitam o recorte da câmera e, no celular deitado (menos de 520px de
-  altura), a barra lateral de cômodos dá lugar ao mapa (o botão da casa pulsa
-  quando o pedido é em outro cômodo).
+  celular conta a barra do navegador). Os botões se ajustam à altura da tela
+  e respeitam o recorte da câmera.
 
 ## Telas
 
@@ -96,9 +94,20 @@ não custa nada.
 - Modos dos responsáveis (Explorar / Experimentar / Resolver) mudam os pedidos e
   a paciência da ajuda.
 
-**Ir e voltar:** botão de voltar no topo (sai da estação do salão, depois refaz
-o caminho e por fim volta ao mapa), botão do mapa e a barra lateral de cômodos.
-Esc/Backspace também voltam no computador.
+**HUD enxuto (3 coisas na tela):** a **casa** (mapa) no canto esquerdo, as
+**estrelinhas** no centro e a **mochila** no canto direito. O mapa é a
+navegação: a casa pulsa quando o pedido é em outro cômodo. A mochila guarda
+bichinhos, missões, prêmios, álbum, som e, pequenininha no canto, a área dos
+responsáveis; o botão dela repete os sinais de dentro (pontinho de prêmio ou
+baú pronto, pulso de pedido, pulinho de adesivo novo).
+- **Voltar** só aparece em sub-telas (estação do salão) e sai delas.
+- **Minijogo:** o HUD some e fica só a **pausa**, que congela a partida e
+  oferece continuar (grande, verde) ou sair. Nada de sair sem querer. O jogo
+  também pausa sozinho quando o app vai para o segundo plano.
+- **Fim de partida:** além da festa, dois botões grandes: **de novo** (mesmo
+  jogo) e **outro jogo** (cartões).
+- Esc/Backspace no computador: fecham o que estiver aberto, pausam o
+  minijogo, saem da sub-tela ou vão para o mapa.
 
 **Estrelinhas (temporada 3):** contador no topo. Só sobem: nunca se perdem nem
 se gastam, e não existe errar. Brincar dá 1 (a mesma ação seguida não conta de
