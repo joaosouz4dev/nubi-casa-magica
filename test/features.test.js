@@ -45,13 +45,8 @@ fs.mkdirSync(OUT, { recursive: true });
   await ev(() => { window.__acts = []; window.__nubi.bus.on('act', (a) => window.__acts.push(a)); });
   await page.mouse.click(380, 120); await wait(900);          // acorda
 
-  // ================= BICHINHOS =================
-  await openBag(); await page.click('#btnPets', { force: true }); await wait(700);
-  R.petCards = (await page.$$('#petsGrid .petCard')).length === 3;
-  await shot('f01-vitrine');
-  await page.click('[data-pet="bunny"]'); await wait(900);
-  R.bunny = await ev(() => window.__nubi.nubi.species === 'bunny' && window.__nubi.save.currentPet() === 'bunny');
-  R.petAct = (await acts()).includes('pet:bunny');
+  // só a Nubi: sem vitrine de bichinhos
+  R.onlyNubi = await ev(() => window.__nubi.nubi.species === 'nubi' && !document.getElementById('btnPets'));
 
   // ================= GUARDA-ROUPA =================
   await go('bedroom');
@@ -72,12 +67,6 @@ fs.mkdirSync(OUT, { recursive: true });
   R.lookHero = await ev(() => { const a = window.__nubi.nubi.accessories; return a.cape && a.cape.id === 'cape' && a.face && a.face.id === 'heromask' && a.boots && !a.hat; });
   R.lookAct = (await acts()).includes('look:heroi');
   await shot('f02-look-heroi');
-  // aparência é por bichinho: o urso começa sem roupa; a coelha volta vestida
-  await openBag(); await page.click('#btnPets', { force: true }); await wait(600); await page.click('[data-pet="bear"]'); await wait(800);
-  R.bearClean = await ev(() => window.__nubi.nubi.species === 'bear' && Object.keys(window.__nubi.nubi.accessories).length === 0);
-  await shot('f03-ursinho');
-  await openBag(); await page.click('#btnPets', { force: true }); await wait(600); await page.click('[data-pet="bunny"]'); await wait(800);
-  R.bunnyKeeps = await ev(() => !!window.__nubi.nubi.accessories.cape && !!window.__nubi.nubi.accessories.face);
   // presente fixo: concluir a recepção (carinho + cócegas) libera os óculos de estrela
   for (const a of ['pet', 'tummy']) { await ev((x) => window.__nubi.bus.emit('act', x), a); await wait(200); }
   await wait(1700);
@@ -187,9 +176,9 @@ fs.mkdirSync(OUT, { recursive: true });
   // ================= PERSISTÊNCIA =================
   await page.reload({ waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.__nubi && window.__nubi.room);
-  R.persisted = await ev(() => window.__nubi.nubi.species === 'bunny' && window.__nubi.nubi.cosmetics.hair === 'ponytail' && window.__nubi.nubi.cosmetics.nails.R === '#e5484d' && (window.__nubi.nubi.accessories.face || {}).id === 'starglasses');
+  R.persisted = await ev(() => window.__nubi.nubi.species === 'nubi' && window.__nubi.nubi.cosmetics.hair === 'ponytail' && window.__nubi.nubi.cosmetics.nails.R === '#e5484d' && (window.__nubi.nubi.accessories.face || {}).id === 'starglasses');
   await go('salon'); await wait(400);
-  await shot('f11-coelhinha-persistida');
+  await shot('f11-nubi-persistida');
 
   await browser.close();
   for (const [k, v] of Object.entries(R)) console.log((v ? 'ok  ' : 'FAIL') + ' ' + k);

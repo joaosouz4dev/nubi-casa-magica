@@ -6,7 +6,7 @@
 (precisa de Playwright: `NODE_PATH=<node_modules com playwright> node scripts/make-icons.cjs`).
 
 Jogo 2D offline para crianças de 4 anos ou mais. A criança brinca com um
-bichinho (Nubi, a coelhinha Lili ou o ursinho Tito) manipulando objetos pela
+bichinho, a Nubi (uma chinchila das nuvens em feltro), manipulando objetos pela
 casa. O centro do jogo é descobrir como o bichinho reage, com pedidos que
 orientam sem pressionar.
 
@@ -80,13 +80,15 @@ para a loja.
 | Consultório dos dentinhos | escovar placas, espantar "bichinhos de açúcar" com a varinha, encaixar o dente torto, enxaguar; sorriso brilhante no fim |
 | Salão de beleza | recepção com 3 portas: **Cabelo**, **Unhas** (close da patinha, dedinho por dedinho, adesivinhos de estrela/coração) e **Maquiagem** (rosto em destaque); fileira embaixo com voltar e atalhos entre estações; 5 penteados, 5 cores, enfeites, esmalte por patinha, maquiagem leve, pinturas de rosto (bigode, herói, estrelas, sardas, barba); lencinho limpa |
 
-**Bichinhos:** vitrine no canto superior. Cada um guarda a própria aparência
-(cor, roupas, beleza); o progresso dos capítulos é da criança e vale para todos.
-Nenhuma opção é travada por gênero.
+**A Nubi:** a única bichinha do jogo (os amigos Lili e Tito saíram). Ela é
+desenhada com imagens em feltro, uma por pose (`assets/nubi/`, ver o LEIA-ME de
+lá), e o jogo troca de pose conforme o momento: parada, piscando, falando,
+acenando, comemorando, comendo, dormindo e sentada (quando fica quieta). Roupas,
+salão e efeitos se encaixam nela. Nenhuma opção é travada por gênero.
 
 **Capítulos e pedidos:** o bichinho mostra num balão de pensamento o que quer
 (desenho, sem texto). Temporada 1: recepção, cozinha, banho, desfile, bola e
-festa. Temporada 2: novos amigos, looks, dentista, rotina de limpeza e salão.
+festa. Temporada 2: looks, dentista, rotina de limpeza e salão.
 Depois disso vêm pedidos livres. Pedido é convite: nada é bloqueado e ignorar
 não custa nada.
 - O capítulo segue a criança: entrou no salão, o pedido vira o do salão.
@@ -103,7 +105,7 @@ não custa nada.
 **HUD enxuto (3 coisas na tela):** a **casa** (mapa) no canto esquerdo, as
 **estrelinhas** no centro e a **mochila** no canto direito. O mapa é a
 navegação: a casa pulsa quando o pedido é em outro cômodo. A mochila guarda
-bichinhos, missões, prêmios, álbum, som e, pequenininha no canto, a área dos
+missões, prêmios, álbum, som e, pequenininha no canto, a área dos
 responsáveis; o botão dela repete os sinais de dentro (pontinho de prêmio ou
 baú pronto, pulso de pedido, pulinho de adesivo novo).
 - **Voltar** só aparece em sub-telas (estação do salão) e sai delas.
@@ -219,8 +221,8 @@ um penteado ou esmalte novo, em `data/salon.js`; um capítulo, em
 joga os 6 minijogos de verdade (arrastar, estourar, virar cartas, tocar
 sininhos, encaixar formas, misturar cores), o voltar no meio da partida, a
 surpresa do mapa, o baú e o presente do dia. `garden` rega e colhe no jardim.
-`growth` cobre o nível do jogador e as conquistas. `features` cobre a vitrine e
-a aparência por bichinho, páginas do guarda-roupa, looks, presente de capítulo,
+`growth` cobre o nível do jogador e as conquistas. `features` cobre as
+páginas do guarda-roupa, looks, presente de capítulo,
 o dentista completo, lixo/caminhão/cocô/pente e o salão com persistência após
 recarregar. Capturas em `previews/`.
 

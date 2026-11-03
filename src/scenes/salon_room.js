@@ -154,7 +154,10 @@ export class SalonRoom {
     const t = this.toePos(this.pawSide, 0);
     return bd <= t.r * 1.7 ? best : -1;
   }
-  faceCenter() { return { x: this.nubi.px(), y: this.nubi.py() + this.nubi.radius() * 0.05 }; }
+  faceCenter() {
+    const f = (this.nubi.faceOffset && this.nubi.faceOffset()) || { x: 0, y: 0.05 };   // Nubi em imagens: rosto mais alto
+    return { x: this.nubi.px() + f.x * this.nubi.radius(), y: this.nubi.py() + f.y * this.nubi.radius() };
+  }
   overFace(px, py) { const f = this.faceCenter(); return Math.hypot(px - f.x, py - f.y) <= this.nubi.radius() * 0.85; }
 
   // ---------------- entrada ----------------

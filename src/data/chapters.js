@@ -66,17 +66,9 @@ export const CHAPTERS = [
       { act: "basket:cape",      icon: "combo:cape-ball", room: "bedroom" }
     ] }
   },
-  /* ---------- Temporada 2: novos amigos, looks, dentista, rotina, salão ----------
+  /* ---------- Temporada 2: looks, dentista, rotina, salão ----------
      Ficam disponíveis desde o início (o capítulo segue o cômodo onde a criança
      está), mas a ordem sugerida vem depois da festa. */
-  {
-    id: "amigos", room: null, sticker: "amigos", color: "#ff9fc4",
-    steps: { all: [
-      { act: "pet:bunny", icon: "pet:bunny", dom: "#btnPets" },
-      { act: "pet:bear",  icon: "pet:bear",  dom: "#btnPets" },
-      { act: "pet:nubi",  icon: "pet:nubi",  dom: "#btnPets" }
-    ] }
-  },
   {
     id: "looks", room: "bedroom", sticker: "looks", color: "#ffc93a",
     steps: {

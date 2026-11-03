@@ -405,7 +405,7 @@ function drawIconBase(ctx, key, x, y, r, ow) {
 
 /* Adesivo redondo de capítulo (álbum, voo de recompensa e varal). */
 export const STICKER_ICON = { nuvem: "cloud", fruta: "food:blueberry", bolha: "duck", chapeu: "hat", bola: "ball", festa: "star",
-  amigos: "pet:bunny", looks: "looks", dente: "tooth", limpeza: "trash", salao: "hair:curls", jogos: "games" };
+  looks: "looks", dente: "tooth", limpeza: "trash", salao: "hair:curls", jogos: "games" };
 
 export function drawSticker(ctx, sticker, color, x, y, r) {
   ctx.save();

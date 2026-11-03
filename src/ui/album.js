@@ -33,8 +33,6 @@ const CATALOG = {
   unhas_coloridas:{ title: "Unhas coloridas", color: "#ff6bb5", icon: "polish:#ff6bb5" },
   maquiagem:     { title: "Maquiagem",     color: "#ffb3d9", icon: "makeup:lips" },
   pintura:       { title: "Pintura de rosto", color: "#5bc0eb", icon: "paint:mustache" },
-  amigo_bunny:   { title: "Lili",          color: "#ffe3ee", icon: "pet:bunny" },
-  amigo_bear:    { title: "Tito",          color: "#f3d3b0", icon: "pet:bear" },
   jogo_catch:    { title: "Pega-frutas",   color: "#ff9a5b", icon: "game:catch" },
   jogo_bubbles:  { title: "Estoura-bolhas", color: "#5bc0eb", icon: "game:bubbles" },
   jogo_memory:   { title: "Memória",       color: "#b49cff", icon: "game:memory" },

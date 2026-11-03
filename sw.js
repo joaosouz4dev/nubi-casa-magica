@@ -1,6 +1,6 @@
 /* Service worker — joga 100% offline. Precache de todos os módulos e assets.
    Estratégia cache-first: ótimo para um jogo estático que não muda em runtime. */
-const CACHE = "nubi-v22";
+const CACHE = "nubi-v24";
 const ASSETS = [
   "./",
   "./index.html",
@@ -18,6 +18,16 @@ const ASSETS = [
   "./src/systems/save.js",
   "./src/systems/effects.js",
   "./src/entities/nubi.js",
+  "./src/entities/pet_sprites.js",
+  "./assets/nubi/sprites.json",
+  "./assets/nubi/nubi_parada.webp",
+  "./assets/nubi/nubi_piscando.webp",
+  "./assets/nubi/nubi_falando.webp",
+  "./assets/nubi/nubi_acenando.webp",
+  "./assets/nubi/nubi_comemorando.webp",
+  "./assets/nubi/nubi_comendo.webp",
+  "./assets/nubi/nubi_dormindo.webp",
+  "./assets/nubi/nubi_sentada.webp",
   "./src/entities/food_item.js",
   "./src/scenes/kitchen_room.js",
   "./src/scenes/kitchen.js",
@@ -37,7 +47,6 @@ const ASSETS = [
   "./src/scenes/nubi_touch.js",
   "./src/systems/quests.js",
   "./src/entities/wear.js",
-  "./src/ui/pets.js",
   "./src/data/pets.js",
   "./src/data/wardrobe.js",
   "./src/data/salon.js",

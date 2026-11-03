@@ -26,8 +26,6 @@ import { Progress } from "./systems/progress.js";
 import { ProgressUI } from "./ui/progress_ui.js";
 import { ITEMS } from "./data/wardrobe.js";
 import { FOODS } from "./data/foods.js";
-import { PetPicker } from "./ui/pets.js";
-import { PETS } from "./data/pets.js";
 import { Album } from "./ui/album.js";
 import { Bag } from "./ui/bag.js";
 import { ParentGate } from "./ui/parent_gate.js";
@@ -93,25 +91,6 @@ export function boot() {
   bus.on("game:reward", (e) => progress.add(e.stars, "game", e.at));
   bus.on("surprise:pop", (at) => progress.add(STAR_RULES.surprise, "surprise", at));
 
-  // vitrine de bichinhos: cada um guarda a própria aparência
-  new PetPicker(bus, save);
-  bus.on("pet:choose", (id) => {
-    if (save.switchPet(id) || nubi.species !== id) {
-      nubi.setSpecies(id);
-      nubi.restoreTint(save.state.tint || null);
-      nubi.accessories = { ...(save.state.accessories || {}) };
-      nubi.accShown = {};
-      nubi.setCosmetics(save.state.cosmetics);
-      nubi.foam = 0; nubi.wet = 0; nubi.fluffy = 0;
-      if (scenes.current && scenes.current.enter && scenes.currentId === "bedroom") bedroom._buildPage();
-    }
-    nubi.arrive(); nubi.startHop(0.35, 600);
-    nubi.say(PETS[id].hello);
-    audio.magic();
-    bus.emit("fx:burst", { x: nubi.px(), y: nubi.py(), color: "#ff9fc4" });
-    if (id !== "nubi") bus.emit("effect:discoveryOnly", { id: "amigo_" + id });
-    bus.emit("act", "pet:" + id);
-  });
 
   // rotina: depois de comer um pouquinho, o bichinho faz cocô (no banheiro)
   let feeds = 0;
