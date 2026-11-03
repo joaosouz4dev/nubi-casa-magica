@@ -93,6 +93,12 @@ não custa nada.
 - Ajuda por inatividade em degraus: olhar do bichinho -> objeto pula -> mãozinha.
 - Modos dos responsáveis (Explorar / Experimentar / Resolver) mudam os pedidos e
   a paciência da ajuda.
+- **Área dos responsáveis:** fica pequenininha dentro da mochila. Para abrir,
+  segure o botão por 3s e depois arraste a bolinha até o número escrito por
+  extenso ("Arraste a bolinha até o número sete", entre 6 números
+  sorteados; tocar no número também vale). Quem ainda não lê não sabe qual
+  escolher; a voz do jogo não lê essa tela. Errar fecha; 3 erros seguidos
+  travam por 30s. Não é comprovação de idade e nunca pede idade.
 
 **HUD enxuto (3 coisas na tela):** a **casa** (mapa) no canto esquerdo, as
 **estrelinhas** no centro e a **mochila** no canto direito. O mapa é a
@@ -189,7 +195,7 @@ um penteado ou esmalte novo, em `data/salon.js`; um capítulo, em
 ## Testes
 
 `play`, `stage2`, `mvp`, `visual`, `quests`, `features`, `growth`, `title`,
-`games`, `garden` e `voice` (Playwright headless, interações reais de ponteiro). `games`
+`games`, `garden`, `voice` e `parent` (Playwright headless, interações reais de ponteiro). `games`
 joga os 6 minijogos de verdade (arrastar, estourar, virar cartas, tocar
 sininhos, encaixar formas, misturar cores), o voltar no meio da partida, a
 surpresa do mapa, o baú e o presente do dia. `garden` rega e colhe no jardim.

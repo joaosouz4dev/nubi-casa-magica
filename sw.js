@@ -1,6 +1,6 @@
 /* Service worker — joga 100% offline. Precache de todos os módulos e assets.
    Estratégia cache-first: ótimo para um jogo estático que não muda em runtime. */
-const CACHE = "nubi-v17";
+const CACHE = "nubi-v18";
 const ASSETS = [
   "./",
   "./index.html",
@@ -43,6 +43,7 @@ const ASSETS = [
   "./src/ui/album.js",
   "./src/ui/bag.js",
   "./src/ui/parent_gate.js",
+  "./src/ui/adult_check.js",
   "./src/ui/hand_demo.js",
   "./src/ui/icons.js",
   "./src/ui/guide.js",

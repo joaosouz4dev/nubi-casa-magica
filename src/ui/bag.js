@@ -20,10 +20,13 @@ export class Bag {
     this.el.querySelectorAll(".bagGrid .toy").forEach(b => {
       if (b.id !== "btnSound") b.addEventListener("click", () => this.close(), true);
     });
-    // a área dos responsáveis abre por um timer (segurar): fecha quando ela aparece
-    const parent = document.getElementById("parent");
-    if (parent) new MutationObserver(() => { if (parent.classList.contains("show")) this.close(); })
-      .observe(parent, { attributes: true, attributeFilter: ["class"] });
+    // a área dos responsáveis abre por um timer (segurar) e um desafio:
+    // a mochila fecha quando um deles aparece
+    for (const id of ["gate", "parent"]) {
+      const el = document.getElementById(id);
+      if (el) new MutationObserver(() => { if (el.classList.contains("show")) this.close(); })
+        .observe(el, { attributes: true, attributeFilter: ["class"] });
+    }
     // sinais de dentro -> botão da mochila
     // ("bump" fica na classe depois do pulinho: só conta quando acabou de entrar)
     const justBumped = (m) => m.target.classList.contains("bump") && !/\bbump\b/.test(m.oldValue || "");

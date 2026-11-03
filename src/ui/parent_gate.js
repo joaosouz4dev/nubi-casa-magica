@@ -1,8 +1,13 @@
-/* Área dos responsáveis protegida por uma barreira simples (segurar o botão
-   por um instante) — reduz acessos acidentais; NÃO é comprovação de idade,
-   e nunca pede idade/data de nascimento. Dentro: três modos (Explorar /
-   Experimentar / Resolver) e controles de som. Sem links externos na área
-   infantil. */
+/* Área dos responsáveis protegida por duas etapas: SEGURAR o botão por 3s
+   e depois um desafio de leitura (ui/adult_check.js). Reduz acessos de
+   criança; NÃO é comprovação de idade, e nunca pede idade/data de
+   nascimento. Dentro: três modos (Explorar / Experimentar / Resolver),
+   controles de som, limite de tempo e relatório. Sem links externos na
+   área infantil. */
+import { AdultCheck } from "./adult_check.js";
+
+const HOLD_MS = 3000;
+
 export class ParentGate {
   constructor(bus, audio, save) {
     this.bus = bus; this.audio = audio; this.save = save;
@@ -10,9 +15,10 @@ export class ParentGate {
     this.btn = document.getElementById("btnParent");
     this.closeBtn = document.getElementById("parentClose");
     this.holdT = null;
+    this.check = new AdultCheck(audio);
     if (this.btn) {
-      // precisa SEGURAR ~1.2s para abrir (barreira contra toque acidental)
-      const start = (e) => { e.preventDefault(); this.holdT = setTimeout(() => this.open(), 1200); };
+      // 1) SEGURAR 3s (o anel do botão mostra o tempo); 2) desafio de leitura
+      const start = (e) => { e.preventDefault(); this.holdT = setTimeout(() => { this.holdT = null; this._held(); }, HOLD_MS); };
       const cancel = () => { if (this.holdT) { clearTimeout(this.holdT); this.holdT = null; } };
       this.btn.addEventListener("touchstart", start, { passive: false });
       this.btn.addEventListener("mousedown", start);
@@ -23,6 +29,10 @@ export class ParentGate {
     this._wireSound();
     this._wireReportAndLimit();
     this._startUsageTracking();
+  }
+  _held() {
+    // travado por erros seguidos: o botão só balança
+    if (!this.check.open(() => this.open())) { this.btn.classList.remove("nope"); void this.btn.offsetWidth; this.btn.classList.add("nope"); }
   }
   open() { if (this.el) { this._renderReport(); this.el.classList.add("show"); } }
   close() { if (this.el) this.el.classList.remove("show"); }
