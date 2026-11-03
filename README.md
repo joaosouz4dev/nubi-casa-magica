@@ -115,11 +115,22 @@ baú pronto, pulso de pedido, pulinho de adesivo novo).
 - Esc/Backspace no computador: fecham o que estiver aberto, pausam o
   minijogo, saem da sub-tela ou vão para o mapa.
 
-**Estrelinhas (temporada 3):** contador no topo. Só sobem: nunca se perdem nem
-se gastam, e não existe errar. Brincar dá 1 (a mesma ação seguida não conta de
-novo por 2,5s), cada pedido 2, cada capítulo 5, cada missão do dia 5.
-- **Lojinha de prêmios:** 12 prêmios (comidas especiais, roupas, enfeites da casa)
-  abrem quando o total alcança o preço; um toque ganha. Nada do jogo básico fica trancado.
+**Estrelinhas (temporada 3):** só sobem: nunca se perdem nem se gastam, e não
+existe errar. Brincar dá 1 (a mesma ação seguida não conta de novo por 2,5s),
+cada pedido 2, cada capítulo 5, cada missão do dia 5.
+- **Pote de estrelinhas (sem números):** no topo, um pote que enche até o
+  próximo presente, o desenho do próximo presente e o coração de carinho. As
+  estrelinhas voam até o pote; quando ele enche, **um presente aparece ao lado
+  do bichinho**, no cômodo: 2 toques balançam, o 3º abre e o prêmio pula para
+  fora (comida especial na geladeira, roupa no guarda-roupa, enfeite na casa).
+  Presente sem abrir continua esperando (inclusive depois de fechar o jogo);
+  no minijogo ele some e volta depois. Depois dos 12 prêmios, a cada 30
+  estrelinhas vem um presente-festa. Cada presente é um "nível".
+- **Coleção de prêmios** (na mochila): 12 prêmios (comidas especiais, roupas,
+  enfeites da casa), sem preços: ganho (cor e ✓), pronto (brilha), a ganhar
+  (silhueta); o próximo mostra a barrinha do pote. Nada do jogo básico fica
+  trancado. Os números (estrelinhas, presentes, preço do próximo) ficam no
+  relatório dos responsáveis.
 - **Carinho:** coração por bichinho que enche com cuidados; cada nível tem festa.
 - **Missões do dia:** 3 sugestões que trocam pela data (sempre uma delas é um
   minijogo), sem sequência nem cobrança; tocar numa missão leva até o cômodo dela.
@@ -167,9 +178,9 @@ botas brilhantes, capa arco-íris, medalha, chifre de unicórnio, asas de fada).
 O presente é sempre o mesmo pelo mesmo capítulo e nunca se perde.
 
 **Novidades da v1.1:**
-- **Nível do jogador:** um "Nv" ao lado do contador sobe com o total de
-  estrelinhas; cada nível tem festa. É só progressão por brincar, nunca perde.
-- **Conquistas (troféus):** marcos divertidos (primeira estrelinha, nível 3,
+- **Nível do jogador:** virou o pote de estrelinhas (cada presente aberto é
+  um nível). É só progressão por brincar, nunca perde.
+- **Conquistas (troféus):** marcos divertidos (primeira estrelinha, três presentes,
   melhor amigo, brincalhão, jardineiro...) aparecem no álbum. Sem punição.
 - **Área dos responsáveis ampliada:** relatório dos últimos dias (tempo de jogo,
   cuidados e brincadeiras) e um **limite de tempo opcional** - ao atingir, o
@@ -205,7 +216,7 @@ um penteado ou esmalte novo, em `data/salon.js`; um capítulo, em
 ## Testes
 
 `play`, `stage2`, `mvp`, `visual`, `quests`, `features`, `growth`, `title`,
-`games`, `garden`, `voice`, `parent` e `skill` (Playwright headless, interações reais de ponteiro). `games`
+`games`, `garden`, `voice`, `parent`, `skill` e `gift` (Playwright headless, interações reais de ponteiro). `games`
 joga os 6 minijogos de verdade (arrastar, estourar, virar cartas, tocar
 sininhos, encaixar formas, misturar cores), o voltar no meio da partida, a
 surpresa do mapa, o baú e o presente do dia. `garden` rega e colhe no jardim.

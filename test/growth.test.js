@@ -55,7 +55,8 @@ fs.mkdirSync(OUT, { recursive: true });
   await feedItem(1);                                           // morango
   R.starsUp = (await total()) > s0;
   await wait(900);
-  R.pillShows = await ev(() => Number(document.getElementById('starCount').textContent) === window.__nubi.progress.total);
+  // o pote (não um número) mostra o quanto falta para o próximo presente
+  R.pillShows = await ev(() => document.getElementById('jarFill').style.height === Math.round(window.__nubi.progress.jar().frac * 100) + '%');
   const eaten = [];
   for (const t of [1, 2, 3]) {
     await tapTab(t);
@@ -167,7 +168,7 @@ fs.mkdirSync(OUT, { recursive: true });
   await wait(200);
   R.levelRises = (await ev(() => window.__nubi.progress.level())) > lvl0;
   R.hasAchievements = await ev(() => window.__nubi.progress.achievedCount() >= 2);   // ach:first + ach:ten etc.
-  R.levelBadgeShown = await ev(() => { const b = document.getElementById('lvlBadge'); return !!b && /Nv \d/.test(b.textContent); });
+  R.noNumbersOnPill = await ev(() => !/\d/.test(document.getElementById('starPill').textContent));
 
   await browser.close();
   for (const [key, v] of Object.entries(R)) console.log((v ? 'ok  ' : 'FAIL') + ' ' + key);

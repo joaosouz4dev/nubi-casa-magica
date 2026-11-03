@@ -860,9 +860,6 @@ export class GamesRoom {
       const pop = Math.min(1, (t - i * 110) / 220);
       drawIcon(ctx, "star", x, y, m * 0.03 * (Motion.reduce ? 1 : Ease.outBack(clamp(pop), 2.5)));
     }
-    ctx.fillStyle = "#6b4a14"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.font = `bold ${Math.round(m * 0.05)}px Fredoka, system-ui, sans-serif`;
-    ctx.fillText("+" + R.stars, 0, ph * 0.33);
     ctx.restore();
     if (R.newBest && t > 500) {
       const k = clamp((t - 500) / 400), b = Motion.reduce ? 1 : Ease.outBack(k, 2.6);

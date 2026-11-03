@@ -218,6 +218,7 @@ export function boot() {
     scenes.update(dt);
     effects.update(dt);
     guide.update(dt);
+    progressUI.update();     // presente no cômodo acompanha o bichinho
 
     scenes.draw();
     guide.draw();

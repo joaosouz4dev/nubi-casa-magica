@@ -4,7 +4,7 @@
    (não se gasta nada), o carinho é por bichinho e as missões do dia trocam
    pela data, sem sequência e sem cobrança.
    Só emite eventos; a apresentação fica na UI (ui/progress_ui.js). */
-import { STAR_RULES, ACT_COOLDOWN, NO_STAR, LOVE_ACTS, loveNeeded, PRIZES, MISSION_POOL, ACHIEVEMENTS } from "../data/prizes.js";
+import { STAR_RULES, ACT_COOLDOWN, NO_STAR, LOVE_ACTS, loveNeeded, PRIZES, MISSION_POOL, ACHIEVEMENTS, JAR_BONUS } from "../data/prizes.js";
 
 function today() {
   const d = new Date();
@@ -27,7 +27,8 @@ export class Progress {
       love: { ...(p.love || {}) },
       daily: p.daily || null,
       achieved: { ...(p.achieved || {}) },
-      lvlSeen: p.lvlSeen || 0
+      lvlSeen: p.lvlSeen || 0,
+      bonusOpened: p.bonusOpened || 0    // presentes-festa já abertos (depois do último prêmio)
     };
     this._last = {};
     this._ensureDaily();
@@ -37,13 +38,44 @@ export class Progress {
   }
 
   get total() { return this.state.total; }
-  // ---------- nível do jogador (derivado do total de estrelinhas) ----------
-  // custo cumulativo do nível L = 10*L*(L+1)/2 -> níveis ficam gradualmente mais longos
-  level() { let l = 0; while (this.total >= this._levelCost(l + 1)) l++; return l; }
-  _levelCost(l) { return 5 * l * (l + 1); }   // 10,30,60,100,...
-  levelProgress() {
-    const l = this.level(), a = this._levelCost(l), b = this._levelCost(l + 1);
-    return { level: l, into: this.total - a, span: b - a, frac: Math.min(1, (this.total - a) / (b - a)) };
+  // ---------- POTE de estrelinhas: cada presente é um "nível" ----------
+  // O pote enche até o preço do próximo prêmio; ao encher, um presente
+  // aparece no cômodo para abrir. Depois do último prêmio, enche a cada
+  // JAR_BONUS estrelinhas com um presente-festa. Sem números para a criança.
+  _prices() { return PRIZES.map(p => p.price).sort((a, b) => a - b); }
+  level() {
+    const t = this._prices(), last = t[t.length - 1], tot = this.total;
+    return t.filter(x => tot >= x).length + (tot >= last ? Math.floor((tot - last) / JAR_BONUS) : 0);
+  }
+  jar() {
+    const t = this._prices(), last = t[t.length - 1], tot = this.total;
+    const next = t.find(x => x > tot);
+    let from, to;
+    if (next !== undefined) { to = next; from = t.filter(x => x <= tot).pop() || 0; }
+    else { from = last + Math.floor((tot - last) / JAR_BONUS) * JAR_BONUS; to = from + JAR_BONUS; }
+    return { from, to, frac: Math.max(0, Math.min(1, (tot - from) / (to - from))), prize: PRIZES.find(p => p.price === to && !this.owned(p.id)) || null };
+  }
+  levelProgress() { const j = this.jar(); return { level: this.level(), into: this.total - j.from, span: j.to - j.from, frac: j.frac }; }
+  bonusPending() {
+    const t = this._prices(), last = t[t.length - 1];
+    const earned = this.total >= last ? Math.floor((this.total - last) / JAR_BONUS) : 0;
+    return Math.max(0, earned - this.state.bonusOpened);
+  }
+  /* Próximo presente para abrir: o prêmio pronto mais barato, ou um presente-festa. */
+  nextGift() {
+    const p = PRIZES.filter(x => this.ready(x)).sort((a, b) => a.price - b.price)[0];
+    if (p) return { kind: "prize", prize: p };
+    return this.bonusPending() > 0 ? { kind: "bonus" } : null;
+  }
+  openGift(g) {
+    if (!g) return false;
+    if (g.kind === "prize") return this.claim(g.prize.id);
+    if (this.bonusPending() <= 0) return false;
+    this.state.bonusOpened++;
+    this._persist();
+    this.bus.emit("gift:bonus");
+    this.bus.emit("act", "prize");
+    return true;
   }
   // ---------- conquistas (troféus) ----------
   achievements() { return ACHIEVEMENTS.map(a => ({ ...a, got: !!this.state.achieved[a.id] })); }

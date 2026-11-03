@@ -6,6 +6,7 @@
    área infantil. */
 import { AdultCheck } from "./adult_check.js";
 import { Skill } from "../systems/skill.js";
+import { PRIZES, JAR_BONUS } from "../data/prizes.js";
 
 const HOLD_MS = 3000;
 
@@ -102,6 +103,12 @@ export class ParentGate {
     if (!days.length) html += "<tr><td colspan='4'>Ainda sem registro.</td></tr>";
     for (const d of days) { const r = u[d]; html += `<tr><td>${label(d)}</td><td>${fmt(r.secs || 0)}</td><td>${r.care || 0}</td><td>${r.play || 0}</td></tr>`; }
     html += "</table>";
+    // estrelinhas e presentes: a criança só vê o pote; os números ficam aqui
+    const st = this.save.state.stars || {};
+    const total = st.total || 0, owned = PRIZES.filter(p => st.claimed && st.claimed[p.id]).length;
+    const next = PRIZES.map(p => p.price).sort((a, b) => a - b).find(x => x > total);
+    html += `<p class='hint'>Estrelinhas: ${total}. Presentes abertos: ${owned} de ${PRIZES.length}. ` +
+      (next ? `Próximo presente com ${next} estrelinhas.` : `Todos os prêmios ganhos; a cada ${JAR_BONUS} estrelinhas vem um presente-festa.`) + "</p>";
     // minijogos: a dificuldade acompanha a criança (systems/skill.js)
     const games = new Skill(this.save).summary();
     if (games.length) {

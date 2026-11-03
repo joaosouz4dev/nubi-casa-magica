@@ -132,6 +132,10 @@ export class Nubi {
   }
 
   celebrate() {
+    // mastigando: a festa espera a mordida acabar (interromper perdia o fim da
+    // mastigação e a cozinha ficava "ocupada" para sempre)
+    if (this.state === "chewing") { this._celebrateAfter = true; return; }
+    this._celebrateAfter = false;
     this.setState("celebrate");
     this.jump = 1;
     this.startHop(0.42, 640);
@@ -252,7 +256,7 @@ export class Nubi {
         if (this.chewCount >= 3) {
           this.sq.target = 0;
           if (this._onChewed) { const cb = this._onChewed; this._onChewed = null; cb(); }
-          if (this.state === "chewing") this.setState("idle");
+          if (this.state === "chewing") { this.setState("idle"); if (this._celebrateAfter) this.celebrate(); }
         }
         break;
       }
