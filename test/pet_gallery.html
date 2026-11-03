@@ -1,0 +1,63 @@
+<!doctype html>
+<!-- Galeria da Nubi chinchila em clay 3D (ferramenta de revisão visual das poses e estados). -->
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Nubi Clay</title>
+<style>
+  body { margin: 0; background: #f7efe9; font-family: Fredoka, system-ui, sans-serif; color: #4a3a5c; }
+  h1 { font-size: 22px; margin: 18px 22px 4px; }
+  p { margin: 0 22px 12px; color: #7a6a8c; }
+  .grid { display: grid; grid-template-columns: repeat(4, 280px); gap: 14px; padding: 8px 22px 24px; }
+  figure { margin: 0; background: radial-gradient(120% 90% at 60% 30%, #fff3e8, #f6d6e2); border-radius: 22px; overflow: hidden; }
+  figcaption { text-align: center; padding: 6px 0 10px; font-weight: 600; }
+  canvas { display: block; width: 280px; height: 300px; }
+</style></head><body>
+<h1>Nubi, a chinchila das nuvens (clay 3D)</h1>
+<p>Protótipo com o mesmo código de desenho que vai para o jogo. Tudo animado: respira, pisca, balança a cauda e mexe as orelhas.</p>
+<div class="grid" id="g"></div>
+<script type="module">
+import { paintClayPet, CLAY } from "../src/entities/clay_pet.js";
+const POSES = [
+  { name: "Parada", st: {} },
+  { name: "Feliz (acenando)", st: { mood: "happy", wave: 1, mouthOpen: 1, hop: true } },
+  { name: "Comendo", st: { mood: "chew", cheeks: 0.6 } },
+  { name: "Dormindo", st: { mood: "sleep", sleep: true } },
+  { name: "Curiosa (olhando)", st: { gaze: { x: 1, y: -0.6 }, mouthOpen: 0.35, tilt: 0.12 } },
+  { name: "Depois do mirtilo", st: { body: "#8fb0f2", mouthOpen: 0.6 } },
+  { name: "Pelo fofinho", st: { fluffy: 1, mood: "happy" } },
+  { name: "Lua no topete", st: { moon: 1, mouthOpen: 0.5 } }
+];
+const g = document.getElementById("g"), items = [];
+for (const p of POSES) {
+  const f = document.createElement("figure"), c = document.createElement("canvas");
+  c.width = 560; c.height = 600;
+  f.appendChild(c); const cap = document.createElement("figcaption"); cap.textContent = p.name; f.appendChild(cap); g.appendChild(f);
+  items.push({ p, ctx: c.getContext("2d"), seed: Math.random() * 1000 });
+}
+function frame(now) {
+  for (const it of items) {
+    const { ctx, p } = it, t = now + it.seed, W = 560, H = 600, r = 150;
+    ctx.clearRect(0, 0, W, H);
+    const sleep = p.st.sleep;
+    const breathe = Math.sin(t * (sleep ? 0.0016 : 0.003)) * (sleep ? 0.03 : 0.018);
+    const hop = p.st.hop ? Math.max(0, Math.sin(t * 0.006)) * r * 0.12 : 0;
+    // sombra de contato
+    const sg = ctx.createRadialGradient(W / 2, H - 70, 0, W / 2, H - 70, r * 0.95);
+    sg.addColorStop(0, "rgba(120,60,80,.28)"); sg.addColorStop(1, "rgba(120,60,80,0)");
+    ctx.save(); ctx.translate(0, H - 70); ctx.scale(1, 0.18); ctx.translate(0, -(H - 70));
+    ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(W / 2, H - 70, r * (0.95 - hop / r), 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    ctx.save();
+    ctx.translate(W / 2 + 20, H - 70 - r - hop);
+    ctx.translate(0, r); ctx.rotate((p.st.tilt || 0) + Math.sin(t * 0.0011) * 0.02); ctx.scale(1 - breathe * 0.5, 1 + breathe); ctx.translate(0, -r);
+    const blinkPh = (t % 3600) / 3600;
+    paintClayPet(ctx, r, {
+      ...p.st, t,
+      blink: !sleep && blinkPh > 0.96 ? Math.sin((blinkPh - 0.96) / 0.04 * Math.PI) : 0,
+      earL: Math.sin(t * 0.0021) * 0.05, earR: Math.sin(t * 0.0018 + 1) * 0.05,
+      tailWag: Math.sin(t * 0.0024) * 0.12
+    });
+    ctx.restore();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+window.__done = true;
+</script></body></html>
