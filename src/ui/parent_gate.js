@@ -5,6 +5,7 @@
    controles de som, limite de tempo e relatório. Sem links externos na
    área infantil. */
 import { AdultCheck } from "./adult_check.js";
+import { Skill } from "../systems/skill.js";
 
 const HOLD_MS = 3000;
 
@@ -101,6 +102,13 @@ export class ParentGate {
     if (!days.length) html += "<tr><td colspan='4'>Ainda sem registro.</td></tr>";
     for (const d of days) { const r = u[d]; html += `<tr><td>${label(d)}</td><td>${fmt(r.secs || 0)}</td><td>${r.care || 0}</td><td>${r.play || 0}</td></tr>`; }
     html += "</table>";
+    // minijogos: a dificuldade acompanha a criança (systems/skill.js)
+    const games = new Skill(this.save).summary();
+    if (games.length) {
+      html += "<table class='report'><tr><th>Minijogo</th><th>Degrau</th><th>Acerto</th><th>Partidas</th></tr>";
+      for (const g of games) html += `<tr><td>${g.name}</td><td>${g.step} de ${g.of}</td><td>${g.avg}%</td><td>${g.plays}</td></tr>`;
+      html += "</table><p class='hint'>A dificuldade de cada minijogo sobe depois de 2 partidas com 85% de acerto ou mais e desce depois de 2 abaixo de 60%. O modo de brincadeira define até onde sobe.</p>";
+    }
     box.innerHTML = html;
   }
 
@@ -115,6 +123,7 @@ export class ParentGate {
         const mode = m.getAttribute("data-mode");
         this.save.state.mode = mode; this.save.persist();
         this.bus.emit("mode:changed", mode);
+        this._renderReport();   // o teto dos degraus depende do modo
       });
     });
   }

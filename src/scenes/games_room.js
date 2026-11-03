@@ -17,6 +17,7 @@ import { atmosphere } from "../ui/scenery.js";
 import { FOODS } from "../data/foods.js";
 import { paintFood } from "../entities/food_art.js";
 import { touchNubi } from "./nubi_touch.js";
+import { Skill } from "../systems/skill.js";
 
 export const GAMES = [
   { id: "catch",   icon: "game:catch",   color: "#ff9a5b" },
@@ -52,6 +53,7 @@ export class GamesRoom {
     this.t = 0; this.unsub = [];
     this.game = null;            // partida em andamento
     this.paused = false;         // pausa (botão do HUD; ver wirePause no main)
+    this.skill = new Skill(save); // dificuldade que acompanha a criança (systems/skill.js)
     this.result = null;          // festa do fim da partida
     this.press = GAMES.map(() => new Spring(0, { stiffness: 340, damping: 14 }));
     this.cardIn = 0;
@@ -105,6 +107,19 @@ export class GamesRoom {
     if (this.result) { this.result = null; this._menuPose(); return true; }
     return false;
   }
+  /* Acerto da partida (0..1) para a dificuldade adaptativa; null = sem dado. */
+  accuracy(g) {
+    const ratio = (ok, bad) => (ok + bad > 0 ? ok / (ok + bad) : null);
+    switch (g.id) {
+      case "catch": return ratio(g.caught, g.dropped);
+      case "bubbles": return ratio(g.popped, g.escaped);
+      case "memory": return ratio(g.pairs, g.misses);
+      case "music": return ratio(g.round, g.wrong);
+      case "shapes": return ratio(g.done, g.wrong);
+      case "colors": return ratio(g.round, g.miss);
+    }
+    return null;
+  }
   _toMenu() { this.result = null; this._menuPose(); this.bus.emit("room:sub", "games"); }
 
   /* Fim da partida: dois botões grandes embaixo do cartão da festa.
@@ -152,23 +167,25 @@ export class GamesRoom {
   // ---------------- partida ----------------
   start(id) {
     const mode = this.save.state.mode || "explore";
-    const g = { id, t: -INTRO_MS, score: 0, spawn: 0, items: [], mode };
+    // tamanho/ritmo da partida = degrau atual da criança neste jogo
+    const P = this.skill.param(id);
+    const g = { id, t: -INTRO_MS, score: 0, spawn: 0, items: [], mode, lvl: this.skill.level(id) };
     if (id === "catch") {
-      g.targetX = 0.47; g.every = mode === "solve" ? 650 : mode === "experiment" ? 760 : 900;
+      g.targetX = 0.47; g.every = P.every; g.speedK = P.speed; g.caught = 0; g.dropped = 0;
       this.nubi.sizeK = 0.62; this.nubi.pos = { x: 0.47, y: 0.8 };
     } else if (id === "bubbles") {
-      g.every = mode === "solve" ? 420 : 520;
+      g.every = P.every; g.sizeK = P.size; g.popped = 0; g.escaped = 0;
       this.nubi.sizeK = 0.6; this.nubi.pos = { x: 0.1, y: 0.8 };
     } else if (id === "memory") {
-      const pairs = mode === "solve" ? 6 : mode === "experiment" ? 4 : 3;
+      const pairs = P;
       const icons = MEMORY_ICONS.slice(0, pairs);
       const deck = icons.concat(icons).map((icon, k) => ({ icon, k, open: false, matched: false, flip: new Spring(0, { stiffness: 260, damping: 20 }) }));
       for (let k = deck.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [deck[k], deck[j]] = [deck[j], deck[k]]; }
       g.cards = deck; g.pairs = pairs; g.misses = 0; g.lock = 0; g.first = null;
-      g.cols = pairs === 3 ? 3 : 4;
+      g.cols = { 2: 2, 3: 3, 4: 4, 5: 5, 6: 4 }[pairs] || 4;
       this.nubi.sizeK = 0.6; this.nubi.pos = { x: 0.1, y: 0.8 };
     } else if (id === "music") {
-      g.maxLen = mode === "solve" ? 6 : mode === "experiment" ? 5 : 4;
+      g.maxLen = P; g.wrong = 0;
       g.seq = [this._rnd5(), this._rnd5()];
       g.phase = "listen"; g.idx = 0; g.wait = 600; g.lit = -1; g.litT = 0; g.round = 0;
       g.keys = KEY_COLORS.map(() => new Spring(0, { stiffness: 380, damping: 16 }));
@@ -176,16 +193,16 @@ export class GamesRoom {
       this.nubi.sizeK = 0.62; this.nubi.pos = { x: 0.14, y: 0.62 };
     } else if (id === "shapes") {
       // quantas formas encaixar (dificuldade por modo)
-      const n = mode === "solve" ? 5 : mode === "experiment" ? 4 : 3;
+      const n = P;
       const ids = SHAPE_DEFS.slice(0, n);
       // embaralha a ordem das peças soltas, mantendo os furos em ordem
       const order = ids.slice(); for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; }
       g.holes = ids.map((shape, i) => ({ shape, i, filled: false }));
       g.pieces = order.map((shape, i) => ({ shape, i, placed: false, pos: null, pop: new Spring(0, { stiffness: 320, damping: 14 }) }));
-      g.n = n; g.drag = null; g.done = 0;
+      g.n = n; g.drag = null; g.done = 0; g.wrong = 0;
       this.nubi.sizeK = 0.52; this.nubi.pos = { x: 0.12, y: 0.7 };
     } else if (id === "colors") {
-      g.rounds = mode === "solve" ? 5 : mode === "experiment" ? 4 : 3;
+      g.rounds = P; g.miss = 0;
       g.round = 0; g.pick = []; g.mixed = null; g.target = this._colorTarget();
       this.nubi.sizeK = 0.6; this.nubi.pos = { x: 0.12, y: 0.68 };
     }
@@ -222,6 +239,8 @@ export class GamesRoom {
     if (newBest) st.best[g.id] = g.score;
     st.plays[g.id] = (st.plays[g.id] || 0) + 1;
     this.save.persist();
+    // dificuldade: partida inteira conta (sair no meio, não)
+    if (!quick) { const acc = this.accuracy(g); if (acc !== null) this.skill.record(g.id, acc); }
     this.bus.emit("game:reward", { id: g.id, score: g.score, stars, newBest, at: { x: this.vp.w / 2, y: this.vp.h * 0.45 } });
     this.bus.emit("effect:discoveryOnly", { id: "jogo_" + g.id });
     this.bus.emit("act", "game:" + g.id);
@@ -250,7 +269,7 @@ export class GamesRoom {
         const b = g.items[i];
         const dx = p.x - this.vp.dx(b.x), dy = p.y - this.vp.dy(b.y), rr = this.vp.s(b.r) * 1.25;
         if (dx * dx + dy * dy <= rr * rr) {
-          g.items.splice(i, 1);
+          g.items.splice(i, 1); g.popped++;
           this._score(b.gold ? 3 : 1, { x: this.vp.dx(b.x), y: this.vp.dy(b.y) }, b.gold ? "#ffd54a" : b.color);
           this.bus.emit(b.gold ? "audio:sparkle" : "audio:pop");
           this.nubi.look({ x: b.x, y: b.y }); this.nubi.sq.kick(0.6);
@@ -347,6 +366,8 @@ export class GamesRoom {
       }
     } else {
       // errou a nota: sem castigo, o bichinho toca de novo a mesma melodia
+      g.wrong++;
+      if (g.wrong >= 5) { g.phase = "done"; g.endIn = 900; this.nubi.say("Que música!"); return true; }   // não fica preso: termina em festa (e o próximo fica mais fácil)
       this.nubi.say(["De novo!", "Escuta só!", "Outra vez!"][g.round % 3]);
       g.phase = "listen"; g.idx = 0; g.wait = 1000;
     }
@@ -398,6 +419,7 @@ export class GamesRoom {
         return;
       }
     }
+    if (pc.pos) g.wrong++;   // soltou fora do furo certo
     pc.pos = null;   // volta ao lugar (sem castigo)
     this.bus.emit("audio:plop");
   }
@@ -435,6 +457,7 @@ export class GamesRoom {
       else setTimeout(() => { if (this.game === g) { g.pick = []; g.mixed = null; g.target = this._colorTarget(); } }, 700);
     } else {
       // combinou diferente: nada de errado, só tenta de novo
+      g.miss++;
       this.nubi.say(["Hmm, que cor!", "Quase!", "Mistura outra!"][g.round % 3]);
       setTimeout(() => { if (this.game === g) { g.pick = []; g.mixed = null; } }, 700);
     }
@@ -467,7 +490,7 @@ export class GamesRoom {
         g.spawn = g.every * (0.8 + Math.random() * 0.4);
         const gold = Math.random() < 0.1;
         const fid = CATCH_FOODS[Math.floor(Math.random() * CATCH_FOODS.length)];
-        g.items.push({ x: 0.12 + Math.random() * 0.7, y: -0.06, vy: (0.17 + Math.min(0.12, g.t / 200000)) * speed, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 3, food: fid, gold });
+        g.items.push({ x: 0.12 + Math.random() * 0.7, y: -0.06, vy: (0.17 + Math.min(0.12, g.t / 200000)) * speed * g.speedK, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 3, food: fid, gold });
       }
       const mx = n.px(), my = n.py() - n.radius() * 0.2, rr = n.radius() * 1.05;
       for (let i = g.items.length - 1; i >= 0; i--) {
@@ -476,7 +499,7 @@ export class GamesRoom {
         const px = this.vp.dx(f.x), py = this.vp.dy(f.y);
         const dx = px - mx, dy = py - my;
         if (!f.landed && dx * dx + dy * dy < rr * rr) {
-          g.items.splice(i, 1);
+          g.items.splice(i, 1); g.caught++;
           this._score(f.gold ? 3 : 1, { x: px, y: py }, f.gold ? "#ffd54a" : (FOODS[f.food].color));
           this.bus.emit("audio:coin", g.score);
           n.sq.kick(1.1);
@@ -484,7 +507,7 @@ export class GamesRoom {
           continue;
         }
         // caiu no chão: só some devagar, sem castigo
-        if (f.y > 0.93) { f.landed = true; f.y = 0.93; f.vy = 0; f.vr = 0; f.fade = (f.fade || 0) + dt; if (f.fade > 500) g.items.splice(i, 1); }
+        if (f.y > 0.93) { if (!f.landed) g.dropped++; f.landed = true; f.y = 0.93; f.vy = 0; f.vr = 0; f.fade = (f.fade || 0) + dt; if (f.fade > 500) g.items.splice(i, 1); }
       }
       if (g.t >= PLAY_MS && !g.items.some(f => !f.landed)) this._finish();
     } else if (g.id === "bubbles") {
@@ -492,10 +515,12 @@ export class GamesRoom {
       if (g.t < PLAY_MS - 800 && g.spawn <= 0) {
         g.spawn = g.every * (0.7 + Math.random() * 0.6);
         const gold = Math.random() < 0.1;
-        g.items.push({ x: 0.22 + Math.random() * 0.62, y: 1.08, r: 0.05 + Math.random() * 0.035, vy: (0.12 + Math.random() * 0.08) * speed, ph: Math.random() * 6, gold, color: BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)] });
+        g.items.push({ x: 0.22 + Math.random() * 0.62, y: 1.08, r: (0.05 + Math.random() * 0.035) * g.sizeK, vy: (0.12 + Math.random() * 0.08) * speed, ph: Math.random() * 6, gold, color: BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)] });
       }
       for (const b of g.items) { b.y -= b.vy * dt / 1000; b.ph += dt / 600; }
+      const before = g.items.length;
       g.items = g.items.filter(b => b.y > -0.15);
+      g.escaped += before - g.items.length;
       if (g.t >= PLAY_MS) this._finish();
     } else if (g.id === "memory") {
       for (const c of g.cards) { if (!c.open && !c.matched) c.flip.target = 0; c.flip.update(dt); }

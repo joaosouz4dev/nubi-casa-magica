@@ -166,7 +166,7 @@ export function boot() {
 
   // UI: álbum, responsáveis, mochila, navegação, pausa, som rápido
   const album = new Album(bus, save, progress);
-  new ParentGate(bus, audio, save);
+  const parentGate = new ParentGate(bus, audio, save);
   const bag = new Bag(bus, audio);
   guide.bag = bag;
   const progressUI = new ProgressUI({ bus, progress, nubi, audio, vp });
@@ -242,7 +242,7 @@ export function boot() {
     get garden() { return scenes.rooms.get("garden"); },
     get items() { return scenes.rooms.get("kitchen").items; },  // compat Etapa 1/2
     get interactions() { return scenes.rooms.get("kitchen"); },
-    nubi, bus, vp, save, effects, album, bag, voice, quests, guide, progress, progressUI, scenes, go: (id) => scenes.go(id), back: () => scenes.back()
+    nubi, bus, vp, save, effects, album, bag, voice, parentGate, quests, guide, progress, progressUI, scenes, go: (id) => scenes.go(id), back: () => scenes.back()
   };
 }
 

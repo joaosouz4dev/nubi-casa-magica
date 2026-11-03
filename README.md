@@ -150,6 +150,16 @@ novo por 2,5s), cada pedido 2, cada capítulo 5, cada missão do dia 5.
     inclua o id em `RECORDED` (`src/data/voice_lines.js`); as que faltarem
     continuam com a voz sintetizada.
 
+**Dificuldade que acompanha a criança:** cada minijogo tem degraus
+(Memória de 2 a 6 pares, Música de 3 a 7 notas, Formas de 2 a 5, Cores de 2
+a 5 misturas, Pega-frutas e Estoura-bolhas no ritmo e no tamanho). Começa no
+degrau de antes (Explorar), sobe depois de 2 partidas seguidas com 85% de
+acerto ou mais e desce depois de 2 abaixo de 60%; sair no meio não conta. O
+modo dos responsáveis só define até onde sobe. Nada disso aparece para a
+criança; o relatório dos responsáveis mostra degrau, acerto médio e partidas
+por minijogo. Na Música, 5 notas erradas encerram a partida em festa (a
+criança não fica presa).
+
 **Capítulos sem pressão:** além das estrelinhas, nada de porcentagem, sequência diária ou
 recompensa aleatória. Cada capítulo concluído dá um adesivo (álbum + varal) e
 um **presente fixo** para o guarda-roupa (óculos de estrela, coroa de ouro,
@@ -195,7 +205,7 @@ um penteado ou esmalte novo, em `data/salon.js`; um capítulo, em
 ## Testes
 
 `play`, `stage2`, `mvp`, `visual`, `quests`, `features`, `growth`, `title`,
-`games`, `garden`, `voice` e `parent` (Playwright headless, interações reais de ponteiro). `games`
+`games`, `garden`, `voice`, `parent` e `skill` (Playwright headless, interações reais de ponteiro). `games`
 joga os 6 minijogos de verdade (arrastar, estourar, virar cartas, tocar
 sininhos, encaixar formas, misturar cores), o voltar no meio da partida, a
 surpresa do mapa, o baú e o presente do dia. `garden` rega e colhe no jardim.
