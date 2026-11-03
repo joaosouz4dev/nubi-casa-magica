@@ -1,9 +1,10 @@
 // Ambiente do APK: o WebView do Android injeta um window.Capacitor (ponte
 // nativa do Capacitor 6) SEM registerPlugin (que é do @capacitor/core, que o
 // jogo não carrega) e sem speechSynthesis. O jogo tem de abrir normalmente,
-// falar pelo plugin TextToSpeech via Capacitor.nativePromise e não pedir
-// tela cheia ao navegador (no APK quem cuida é o Android).
-// Regressão: Capacitor.registerPlugin travava o boot (tela vazia no celular).
+// sem voz sintetizada (só gravações) e sem pedir tela cheia ao navegador
+// (no APK quem cuida é o Android).
+// Regressões: Capacitor.registerPlugin travava o boot (tela vazia no
+// celular); o HUD aparecia sozinho enquanto o jogo carregava.
 const { chromium } = require('playwright');
 const URL = 'http://127.0.0.1:8742/index.html';
 
@@ -36,11 +37,12 @@ const URL = 'http://127.0.0.1:8742/index.html';
   R.boots = await ev(() => !!window.__nubi && !!window.__nubi.room && !document.getElementById('bootError'));
   R.titleShown = await ev(() => !!document.getElementById('title'));
   R.hudReady = await ev(() => document.getElementById('btnBack').classList.contains('off') && !!document.querySelector('#starIco canvas'));
-  R.nativeVoice = await ev(() => window.__nubi && window.__nubi.voice.backend === 'native');
+  R.noSynthVoice = await ev(() => window.__nubi && window.__nubi.voice.backend !== 'native');
+  R.bootClassGone = await ev(() => !document.body.classList.contains('booting'));
 
   await page.click('#btnPlay', { force: true }); await wait(1500);
   await page.mouse.click(540, 160); await wait(2000);   // acorda: "Oi!"
-  R.speaksNative = await ev(() => window.__ttsCalls.some(c => c.startsWith('TextToSpeech.speak:')));
+  R.noTTSCalls = await ev(() => window.__ttsCalls.length === 0);
   R.noBrowserFullscreen = await ev(() => window.__fsAsked === 0);
 
   await browser.close();

@@ -200,6 +200,8 @@ export function boot() {
   // tela inicial com Play: o jogo já roda por trás; ao tocar em Play a
   // contagem de inatividade do Guia recomeça (a ajuda não "pula" na criança)
   window.__titleDone = false;
+  // a tela inicial já está montada: pode mostrar o HUD e o jogo (ver body.booting)
+  queueMicrotask(() => document.body.classList.remove("booting"));
   showTitle({ audio, onStart: () => {
     window.__titleDone = true;
     if (guide._activity) guide._activity();

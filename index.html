@@ -43,6 +43,11 @@
     /* palco girado (retrato no navegador): o recorte não está onde o palco pensa */
     body.rot { --safe-l: 0px; --safe-r: 0px; --safe-t: 0px; --safe-b: 0px; }
     #game { display: block; width: calc(100 * var(--vw)); height: calc(100 * var(--vh)); }
+    /* abrindo: enquanto o JavaScript carrega, só o fundo da tela inicial.
+       Antes o HUD aparecia sozinho sobre um fundo vazio (parecia uma tela
+       de abertura quebrada). O main.js tira "booting" com a tela inicial pronta. */
+    body.booting .corner, body.booting #starPill, body.booting #game { visibility: hidden; }
+    body.booting #stage { background: linear-gradient(180deg, #ffe2b0 0%, #f6dcff 55%, #cbb6f5 100%); }
 
     /* Botões "de brinquedo": volume, contorno macio, resposta ao toque */
     .toy {
@@ -453,7 +458,7 @@
     @media (prefers-reduced-motion: reduce) { #title::before, #title::after, #title .logo { animation: none; } }
   </style>
 </head>
-<body>
+<body class="booting">
   <div id="stage">
   <canvas id="game"></canvas>
 
@@ -655,6 +660,7 @@
     catch (e) {
       // tela vazia não ajuda ninguém: mostra o erro (para quem for consertar) e um jeito de tentar de novo
       console.error(e);
+      document.body.classList.remove("booting");
       const box = document.createElement("div");
       box.id = "bootError";
       box.style.cssText = "position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:#efe3ff;font:18px Fredoka,system-ui,sans-serif;color:#4a3f5c;text-align:center;padding:24px";
