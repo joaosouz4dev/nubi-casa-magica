@@ -227,7 +227,7 @@ export class Guide {
     let x = left ? n.px() - r * 1.3 : right;
     x = clamp(x, br + 8, limit);
     const hatUp = n.accessories && n.accessories.hat ? r * 0.35 : 0;
-    const y = Math.max(br + 10, n.py() - n.hopY - r * 1.45 - hatUp);
+    const y = Math.max(this.vp.hudBottom() + br * 1.05, n.py() - n.hopY - r * 1.45 - hatUp);   // abaixo dos botões do topo
     return { x, y, r: br, left };
   }
 
