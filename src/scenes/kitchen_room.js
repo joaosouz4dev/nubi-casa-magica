@@ -487,11 +487,13 @@ export class KitchenRoom {
     const u = 1 - this.truckT / 3200;
     const tr = art("cozinha/cozinha_caminhao");
     if (tr && this.scene.hasArt()) {
-      // caminhão em feltro passando atrás do vidro da janela
-      const g = this.scene.glass(), tw = g.w * 0.75, th = tw * (tr.naturalHeight / tr.naturalWidth);
-      const tx = g.x - tw + u * (g.w + tw * 2), ty = g.y + g.h * 0.92 - th;
+      // caminhão em feltro passando lá fora, na rua atrás das colinas: anda de
+      // frente (a cabine da arte fica à esquerda, então vai da direita para a
+      // esquerda) e só aparece pelos vidros, atrás do caixilho e dos vasinhos
+      const st = this.scene.street(), th = st.h, tw = th * (tr.naturalWidth / tr.naturalHeight);
+      const tx = st.x1 - u * (st.x1 - st.x0 + tw), ty = st.y - th;
       ctx.save();
-      ctx.beginPath(); ctx.rect(g.x, g.y, g.w, g.h); ctx.clip();
+      this.scene.outsideClip(ctx);
       ctx.drawImage(tr, tx, ty + (Motion.reduce ? 0 : Math.sin(u * 40) * th * 0.02), tw, th);
       ctx.restore();
       return;

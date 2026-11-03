@@ -27,6 +27,24 @@ export class KitchenScene {
     const a = this.windowArt();
     return { x: a.x + a.w * 0.2, y: a.y + a.h * 0.13, w: a.w * 0.6, h: a.h * 0.7 };
   }
+  /* Recorte do "lá fora" na arte da janela: os dois vidros de baixo, menos
+     os vasinhos do peitoril (que ficam na frente de quem passa na rua). */
+  outsideClip(ctx) {
+    const a = this.windowArt(), X = (u) => a.x + a.w * u, Y = (v) => a.y + a.h * v;
+    ctx.beginPath();
+    ctx.rect(X(0.224), Y(0.502), a.w * (0.492 - 0.224), a.h * (0.82 - 0.502));
+    ctx.rect(X(0.535), Y(0.502), a.w * (0.777 - 0.535), a.h * (0.82 - 0.502));
+    ctx.clip();
+    ctx.beginPath();
+    ctx.rect(a.x, a.y, a.w, a.h);
+    for (const [u, v, rx, ry] of [[0.36, 0.74, 0.12, 0.115], [0.645, 0.73, 0.115, 0.13]]) {   // planta azul, flor rosa
+      ctx.moveTo(X(u) + a.w * rx, Y(v));
+      ctx.ellipse(X(u), Y(v), a.w * rx, a.h * ry, 0, 0, Math.PI * 2);
+    }
+    ctx.clip("evenodd");
+  }
+  /* Rua lá fora: linha das colinas, onde passa o caminhão (base em y). */
+  street() { const a = this.windowArt(); return { x0: a.x + a.w * 0.224, x1: a.x + a.w * 0.777, y: a.y + a.h * 0.685, h: a.h * 0.16 }; }
   /* Mesa com o prato: os alimentos (SLOT_X 0.12..0.48, SLOT_Y 0.8) ficam no
      tampo, e o prato no meio, onde era o prato antigo. */
   tableArt() {
