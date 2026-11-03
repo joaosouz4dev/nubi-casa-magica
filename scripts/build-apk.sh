@@ -25,6 +25,10 @@ fi
 
 echo "=== copiando o jogo ==="
 cd "$APP"
+# voz do bichinho no APK: o WebView do Android não tem speechSynthesis, então
+# a fala usa o TTS do aparelho por este plugin (src/systems/voice.js)
+TTS_PLUGIN="@capacitor-community/text-to-speech@4.1.1"
+grep -q '"@capacitor-community/text-to-speech"' package.json || npm install --no-audit --no-fund "$TTS_PLUGIN"
 # nome e ícone sempre sincronizados com o repositório (também em projetos já criados)
 printf '{ "appId": "%s", "appName": "%s", "webDir": "www" }\n' "$APP_ID" "$APP_NAME" > capacitor.config.json
 STRINGS=android/app/src/main/res/values/strings.xml
@@ -41,7 +45,7 @@ sed -i -E 's#(android:name="\.MainActivity")#\1 android:screenOrientation="senso
 cp "$SRC/android-src/MainActivity.java" "android/app/src/main/java/${APP_ID//.//}/MainActivity.java"
 rm -rf www && mkdir -p www
 cp -r "$SRC/index.html" "$SRC/manifest.webmanifest" "$SRC/sw.js" "$SRC/src" "$SRC/assets" www/
-npx cap copy android
+npx cap sync android   # sync (não só copy): registra os plugins nativos
 
 echo "=== compilando ==="
 cd android

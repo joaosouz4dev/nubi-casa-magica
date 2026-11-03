@@ -7,6 +7,8 @@ import { keepFullscreen } from "./core/fullscreen.js";
 import { Input } from "./core/input.js";
 import { SceneManager } from "./core/scene_manager.js";
 import { Audio } from "./systems/audio.js";
+import { Voice } from "./systems/voice.js";
+import { ROOM_NAMES } from "./data/voice_lines.js";
 import { showTitle } from "./ui/title.js";
 import { Save } from "./systems/save.js";
 import { Effects } from "./systems/effects.js";
@@ -48,6 +50,10 @@ export function boot() {
   bus.on("save:accessories", (acc) => save.setAccessories({ ...acc }));
   bus.on("save:cosmetics", (c) => save.setCosmetics(c));
 
+  // voz: o bichinho fala os balões em voz alta (quem ainda não lê entende)
+  const voice = new Voice({ audio, save });
+  nubi.onSay = (text) => voice.say(text);
+
   const effects = new Effects(vp, bus, save);
   const scenes = new SceneManager(bus, vp);
   scenes.register("kitchen", new KitchenRoom({ vp, bus, nubi, save }));
@@ -67,6 +73,7 @@ export function boot() {
   // pedidos/capítulos + guia (direcionamento e celebração)
   const quests = new Quests(bus, save);
   const guide = new Guide({ vp, bus, nubi, scenes, quests, audio });
+  guide.voice = voice;
   scenes.rooms.get("bedroom").decor = (ctx, w, h) => guide.drawGarland(ctx, w, h);
   // presentes fixos por capítulo: aparecem no guarda-roupa e nunca se perdem
   const bedroom = scenes.rooms.get("bedroom");
@@ -135,7 +142,7 @@ export function boot() {
     bus.emit("fx:burst", { x: nubi.px(), y: nubi.py() - nubi.radius(), color: "#cdb8f0", small: true });
   });
   // música de fundo diferente por cômodo + "fuuu" curtinho na troca
-  bus.on("room:changed", (id) => { audio.setTheme(id); if (booted) audio.whoosh(); });
+  bus.on("room:changed", (id) => { audio.setTheme(id); if (booted) { audio.whoosh(); voice.say(ROOM_NAMES[id]); } });
   // ganhar estrelinhas faz o bichinho dar um "boing" de alegria (só visual)
   bus.on("stars:changed", (e) => { if (e && e.gained > 0 && nubi.sq) nubi.sq.kick(0.9); });
   bus.on("pointer:down", startAudio);
@@ -165,7 +172,7 @@ export function boot() {
   const progressUI = new ProgressUI({ bus, progress, nubi, audio, vp });
   const pause = wirePause(bus, scenes);
   wireBack(bus, scenes, pause);
-  wireQuickSound(audio);
+  wireQuickSound(audio, voice);
 
   // movimento reduzido (acessibilidade): vale para TODAS as animações
   Motion.reduce = !!save.state.reduceMotion;
@@ -181,7 +188,7 @@ export function boot() {
 
   // segundo plano: pausa áudio e salva (requisito técnico)
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) { if (audio.ctx) audio.ctx.suspend(); save.persist(); pause.auto(); }
+    if (document.hidden) { if (audio.ctx) audio.ctx.suspend(); save.persist(); pause.auto(); voice.stop(); }
     else if (audio.ctx) audio.ctx.resume();
   });
 
@@ -235,7 +242,7 @@ export function boot() {
     get garden() { return scenes.rooms.get("garden"); },
     get items() { return scenes.rooms.get("kitchen").items; },  // compat Etapa 1/2
     get interactions() { return scenes.rooms.get("kitchen"); },
-    nubi, bus, vp, save, effects, album, bag, quests, guide, progress, progressUI, scenes, go: (id) => scenes.go(id), back: () => scenes.back()
+    nubi, bus, vp, save, effects, album, bag, voice, quests, guide, progress, progressUI, scenes, go: (id) => scenes.go(id), back: () => scenes.back()
   };
 }
 
@@ -322,11 +329,12 @@ function replay(kind, id, { nubi, bus, audio }) {
   }
 }
 
-function wireQuickSound(audio) {
+function wireQuickSound(audio, voice) {
   const sound = document.getElementById("btnSound");
   if (sound) sound.addEventListener("click", () => {
     const on = !audio.enabled.sfx;
     audio.enabled.sfx = on; audio.enabled.voice = on; audio.enabled.music = on;
+    if (!on) voice.stop();
     sound.classList.toggle("off", !on);
     sound.setAttribute("aria-pressed", String(!on));
   });

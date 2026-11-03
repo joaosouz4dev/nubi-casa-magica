@@ -129,6 +129,20 @@ novo por 2,5s), cada pedido 2, cada capítulo 5, cada missão do dia 5.
   **Surpresa:** balão com presente no mapa em metade das visitas (+3).
 - Som: timbres em camadas com eco leve e uma musiquinha de fundo diferente por
   cômodo; cada canal pode ser desligado na área dos responsáveis.
+- **Voz (sem leitura obrigatória):** o bichinho fala em voz alta os balões
+  (reações e elogios), o pedido quando o balão de pensamento aparece (e de
+  novo na ajuda por inatividade), o nome do cômodo ao entrar e "Vamos para
+  o banheiro?" quando o pedido é em outro cômodo. Tocar no balão repete o
+  pedido. Pedidos ficam em silêncio nos minijogos, a música abaixa enquanto
+  ele fala e cada bichinho tem um tom. A voz vem de uma gravação em
+  `assets/voice/<id>.mp3`, se existir; senão do aparelho (APK, plugin
+  `@capacitor-community/text-to-speech`) ou do navegador (pt-BR, preferindo
+  voz que funciona sem internet). Desligar "falas" na área dos responsáveis
+  (ou o botão de som) silencia.
+  - **Gravar a voz:** `node scripts/voice-lines.mjs > falas.csv` lista as
+    ~210 falas (`id;texto`). Grave cada uma em `assets/voice/<id>.mp3` e
+    inclua o id em `RECORDED` (`src/data/voice_lines.js`); as que faltarem
+    continuam com a voz sintetizada.
 
 **Capítulos sem pressão:** além das estrelinhas, nada de porcentagem, sequência diária ou
 recompensa aleatória. Cada capítulo concluído dá um adesivo (álbum + varal) e
@@ -158,7 +172,7 @@ src/
   entities/food_item.js    alimento arrastável (arte em food_art.js)
   scenes/*_room.js         mapa, cozinha, banheiro, jardim, quarto, dentista,
                            salão, quarto de brinquedos (games_room.js)
-  systems/                 efeitos, áudio, save, pedidos/capítulos (quests),
+  systems/                 efeitos, áudio, voz, save, pedidos/capítulos (quests),
                            estrelinhas/prêmios/missões (progress)
   data/                    alimentos, capítulos, bichinhos, guarda-roupa, salão,
                            prêmios
@@ -175,7 +189,7 @@ um penteado ou esmalte novo, em `data/salon.js`; um capítulo, em
 ## Testes
 
 `play`, `stage2`, `mvp`, `visual`, `quests`, `features`, `growth`, `title`,
-`games` e `garden` (Playwright headless, interações reais de ponteiro). `games`
+`games`, `garden` e `voice` (Playwright headless, interações reais de ponteiro). `games`
 joga os 6 minijogos de verdade (arrastar, estourar, virar cartas, tocar
 sininhos, encaixar formas, misturar cores), o voltar no meio da partida, a
 surpresa do mapa, o baú e o presente do dia. `garden` rega e colhe no jardim.
@@ -189,5 +203,6 @@ foram medidos no Chromium headless de um PC.
 
 ## Arte
 
-Toda a arte é procedural (desenhada em código) e as vozes são tons
-sintetizados: é arte de protótipo caprichada, não arte final.
+Toda a arte é procedural (desenhada em código) e a voz é sintetizada (do
+aparelho ou do navegador) até haver gravações: é arte de protótipo
+caprichada, não arte final.

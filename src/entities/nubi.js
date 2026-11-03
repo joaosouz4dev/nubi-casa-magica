@@ -121,7 +121,8 @@ export class Nubi {
   setState(s) { this.state = s; this.stateT = 0; }
   look(pointDesign) { this.lookAt = pointDesign; }
   stopLook() { this.lookAt = null; }
-  say(text) { this.sayText = text; this.sayT = 1700; this.sayK = 0; }
+  // onSay: quem quiser também fala o balão em voz alta (systems/voice.js)
+  say(text) { this.sayText = text; this.sayT = 1700; this.sayK = 0; if (this.onSay) this.onSay(text); }
 
   eat(onChewed) {
     this.setState("chewing");
