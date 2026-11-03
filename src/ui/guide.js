@@ -9,7 +9,7 @@
      no varal do quarto (meta de longo prazo visível, sem contagem).
    Nada aqui bloqueia a brincadeira nem pune a criança por ignorar um pedido. */
 import { HINT_TIMING, MODE_PATIENCE, PRAISE, CHAPTER_PRAISE } from "../data/chapters.js";
-import { drawIcon, drawSticker } from "./icons.js";
+import { drawIcon, drawSticker, drawWearArt } from "./icons.js";
 import { HandDemo } from "./hand_demo.js";
 import { Ease, clamp, damp, Motion, roundRect } from "../core/anim.js";
 import { giftFor } from "../data/wardrobe.js";
@@ -302,7 +302,7 @@ export class Guide {
       const rise = Ease.outBack(open, 1.6);
       const y = cy - s * 0.2 - rise * s * 0.9;
       const bob = Motion.reduce ? 0 : Math.sin(t * 0.006) * s * 0.05;
-      wearIcon(ctx, G.def, cx, y + bob, s * 0.75 * rise, t);
+      if (!drawWearArt(ctx, G.def, cx, y + bob, s * 0.75 * rise)) wearIcon(ctx, G.def, cx, y + bob, s * 0.75 * rise, t);
       this._spark(ctx, cx + s * 0.7, y - s * 0.4, s * 0.12 * (0.6 + 0.4 * Math.sin(t * 0.01)), "#fff");
     }
     ctx.restore();

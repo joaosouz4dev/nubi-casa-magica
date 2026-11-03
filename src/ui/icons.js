@@ -45,9 +45,35 @@ const ICON_ART = {
   "wear:cap": "acessorios/acessorio_bone", "wear:sunglasses": "acessorios/acessorio_oculos",
   "wear:pajama": "roupas/roupa_pijama", "wear:shirt": "roupas/roupa_colete", "wear:tutu": "roupas/roupa_vestido",
   "decor:flags": "enfeites/enfeite_bandeirinhas", "decor:flowers": "enfeites/enfeite_flores",
-  "decor:balloons": "enfeites/enfeite_baloes", "decor:rainbow": "enfeites/enfeite_arcoiris"
+  "decor:balloons": "enfeites/enfeite_baloes", "decor:rainbow": "enfeites/enfeite_arcoiris",
+  // HUD e prêmios
+  gift: "hud/hud_presente", trophy: "hud/hud_trofeu", chest: "hud/hud_bau", sun: "hud/hud_sol", paw: "hud/hud_patinha",
+  looks: "hud/hud_cabide", tooth: "hud/hud_dente", "teeth:all": "hud/hud_dente", "room:dentist": "hud/hud_dente",
+  wipe: "hud/hud_lencinho", note: "hud/hud_nota", teddy: "hud/hud_ursinho", "room:toys": "hud/hud_ursinho",
+  blocks: "hud/hud_blocos", mission: "hud/hud_missoes",
+  // roupas: sem shape (chapéu, capa, botas) caem em drawIcon(id); com shape, em "wear:<id>"
+  hat: "acessorios/acessorio_chapeu_mago", cape: "roupas/roupa_capa", boots: "roupas/calcado_botas",
+  "wear:crown": "acessorios/acessorio_coroa", "wear:goldcrown": "acessorios/acessorio_coroa_ouro",
+  "wear:helmet": "acessorios/acessorio_capacete", "wear:pirate": "acessorios/acessorio_pirata",
+  "wear:unicorn": "acessorios/acessorio_unicornio", "wear:heromask": "acessorios/acessorio_mascara",
+  "wear:eyepatch": "acessorios/acessorio_tapaolho", "wear:starglasses": "acessorios/acessorio_oculos_estrela",
+  "wear:bowtie": "acessorios/acessorio_gravata", "wear:scarf": "acessorios/acessorio_cachecol",
+  "wear:flowers": "acessorios/acessorio_colar_flores", "wear:medal": "acessorios/acessorio_medalha",
+  "wear:spacesuit": "roupas/roupa_astronauta", "wear:rainbowcape": "roupas/roupa_capa_arcoiris", "wear:wings": "roupas/roupa_asas",
+  "wear:sparkleboots": "roupas/calcado_botas_brilho", "wear:sneakers": "roupas/calcado_tenis",
+  "wear:slippers": "roupas/calcado_pantufas", "wear:ballet": "roupas/calcado_sapatilhas",
+  // salão (maquiagem e pinturas pequenas ficam no desenho em código)
+  "hair:ponytail": "salao/salao_penteado_rabo", "hair:braids": "salao/salao_penteado_trancas", "hair:mohawk": "salao/salao_penteado_moicano",
+  "acc:flower": "salao/salao_enfeite_flor", "acc:starclip": "salao/salao_enfeite_estrela", "acc:headband": "salao/salao_enfeite_tiara",
+  "paint:mustache": "salao/salao_pintura_bigode", "paint:hero": "salao/salao_pintura_heroi"
 };
 const ICON_BOX = 1.9;   // lado da caixa onde a arte cabe, em r
+/* Peças compridas e baixinhas somem na caixa quadrada: ganham uma caixa
+   maior (ainda dentro do círculo dos botões, que tem uns 2.4r). */
+const ICON_BOX_WIDE = {
+  "wear:bowtie": 2.15, "wear:eyepatch": 2.3, "wear:flowers": 2.3, "acc:headband": 2.15, "paint:mustache": 2.3, "paint:hero": 2.15,
+  "wear:sneakers": 2.2, "wear:heromask": 2.2, boots: 2.2, "wear:sparkleboots": 2.2, "wear:slippers": 2.2, "wear:ballet": 2.2
+};
 
 /* Esmalte em feltro na cor pedida: o vidro (parte de baixo) ganha a cor e
    mantém o sombreado; a tampa fica como está. */
@@ -74,9 +100,26 @@ function drawIconArt(ctx, key, x, y, r) {
   else if (ICON_ART[key]) im = art(ICON_ART[key]);
   if (!im) return false;
   const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
-  const k = (r * ICON_BOX) / Math.max(iw, ih);
+  const k = (r * (ICON_BOX_WIDE[key] || ICON_BOX)) / Math.max(iw, ih);
   ctx.drawImage(im, x - (iw * k) / 2, y - (ih * k) / 2, iw * k, ih * k);
   return true;
+}
+
+/* Tem arte em feltro carregada para esta chave? ("wear:<id>" de peça sem
+   shape usa a chave do id, como no drawIcon.) */
+export function hasIconArt(key) {
+  if (key.startsWith("wear:") && !ICON_ART[key]) {
+    const def = ITEMS[key.slice(5)];
+    if (def && !def.shape) key = def.id;
+  }
+  if (key.startsWith("polish:")) return !!art("salao/salao_esmalte_rosa");
+  return !!(ICON_ART[key] && art(ICON_ART[key]));
+}
+
+/* Peça do guarda-roupa em feltro (cabide, look, presente que sai da caixa).
+   s é o tamanho que o wearIcon usaria; devolve false sem arte. */
+export function drawWearArt(ctx, def, x, y, s) {
+  return drawIconArt(ctx, def.shape ? "wear:" + def.id : def.id, x, y, s / 0.75);
 }
 
 export function drawIcon(ctx, key, x, y, r) {

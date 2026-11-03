@@ -9,7 +9,7 @@ import { Spring, Spring2, damp, clamp, Ease, Motion, CachedLayer, roundRect, sof
 import { touchNubi } from "./nubi_touch.js";
 import { ITEMS, PAGES, LOOKS, GIFTS } from "../data/wardrobe.js";
 import { wearIcon } from "../entities/wear.js";
-import { drawIcon } from "../ui/icons.js";
+import { drawIcon, drawWearArt } from "../ui/icons.js";
 import { atmosphere, frame, artStar, rug } from "../ui/scenery.js";
 import { art, drawArt } from "../core/art.js";
 
@@ -514,6 +514,7 @@ export class BedroomRoom {
       ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r * 1.25, 0, Math.PI * 2); ctx.fill();
     }
     if (wd.kind === "look") this._drawLookIcon(ctx, r, wd.look);
+    else if (drawWearArt(ctx, wd.def, 0, 0, r)) { /* peça em feltro */ }
     else if (wd.def.shape) wearIcon(ctx, wd.def, 0, 0, r, this.t);
     else this._drawAccessoryIcon(ctx, 0, 0, r, wd.def);
     // peça vestida: selinho de "ok" (tocar de novo tira)
@@ -534,6 +535,7 @@ export class BedroomRoom {
     const pos = [[-0.38, -0.3], [0.38, -0.3], [0, 0.38]];
     defs.slice(0, 3).forEach((d, i) => {
       const [x, y] = pos[i];
+      if (drawWearArt(ctx, d, x * r, y * r, r * 0.48)) return;
       if (d.shape) wearIcon(ctx, d, x * r, y * r, r * 0.48, this.t);
       else this._drawAccessoryIcon(ctx, x * r, y * r, r * 0.5, d);
     });

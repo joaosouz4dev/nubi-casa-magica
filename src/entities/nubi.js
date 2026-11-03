@@ -21,15 +21,50 @@ import {
 } from "./wear.js";
 import { PETS } from "../data/pets.js";
 import { petSprites } from "./pet_sprites.js";
+import { art } from "../core/art.js";
 
 /* Peças em feltro (Fase 5) desenhadas sobre a Nubi parada: id do item ->
    [arte, segue a cabeça]. As outras peças continuam desenhadas em código. */
 const FELT = {
-  cap: ["acessorios/acessorio_bone", true], sunglasses: ["acessorios/acessorio_oculos", true],
+  // cabeça e rosto (seguem os olhos da pose)
+  hat: ["acessorios/acessorio_chapeu_mago", true], cap: ["acessorios/acessorio_bone", true],
+  crown: ["acessorios/acessorio_coroa", true], goldcrown: ["acessorios/acessorio_coroa_ouro", true],
+  helmet: ["acessorios/acessorio_capacete", true], pirate: ["acessorios/acessorio_pirata", true],
+  unicorn: ["acessorios/acessorio_unicornio", true],
+  sunglasses: ["acessorios/acessorio_oculos", true], heromask: ["acessorios/acessorio_mascara", true],
+  eyepatch: ["acessorios/acessorio_tapaolho", true], starglasses: ["acessorios/acessorio_oculos_estrela", true],
+  // pescoço
+  bowtie: ["acessorios/acessorio_gravata", true], scarf: ["acessorios/acessorio_cachecol", true],
+  flowers: ["acessorios/acessorio_colar_flores", true], medal: ["acessorios/acessorio_medalha", true],
+  // corpo e costas (acompanham o corpo)
   pajama: ["roupas/roupa_pijama", false], shirt: ["roupas/roupa_colete", false], tutu: ["roupas/roupa_vestido", false],
+  spacesuit: ["roupas/roupa_astronauta", false],
+  cape: ["roupas/roupa_capa", false], rainbowcape: ["roupas/roupa_capa_arcoiris", false], wings: ["roupas/roupa_asas", false],
+  // pés (ficam no chão, em qualquer pose)
+  boots: ["roupas/calcado_botas", "fixed"], sparkleboots: ["roupas/calcado_botas_brilho", "fixed"],
+  sneakers: ["roupas/calcado_tenis", "fixed"], slippers: ["roupas/calcado_pantufas", "fixed"], ballet: ["roupas/calcado_sapatilhas", "fixed"],
+  // salão
   "hair:curls": ["salao/salao_penteado_cacheado", true], "hair:quiff": ["salao/salao_penteado_curto", true],
-  "acc:bow": ["acessorios/acessorio_laco", true]
+  "hair:ponytail": ["salao/salao_penteado_rabo", true], "hair:braids": ["salao/salao_penteado_trancas", true],
+  "hair:mohawk": ["salao/salao_penteado_moicano", true],
+  "acc:bow": ["acessorios/acessorio_laco", true], "acc:flower": ["salao/salao_enfeite_flor", true],
+  "acc:starclip": ["salao/salao_enfeite_estrela", true], "acc:headband": ["salao/salao_enfeite_tiara", true],
+  "makeup:blush": ["salao/salao_maquiagem_blush", true], "makeup:shadow": ["salao/salao_maquiagem_sombra", true],
+  "makeup:lips": ["salao/salao_maquiagem_batom", true], "makeup:glitter": ["salao/salao_maquiagem_glitter", true],
+  "paint:mustache": ["salao/salao_pintura_bigode", true], "paint:hero": ["salao/salao_pintura_heroi", true],
+  "paint:stars": ["salao/salao_pintura_estrelas", true], "paint:freckles": ["salao/salao_pintura_sardas", true],
+  "paint:beard": ["salao/salao_pintura_barba", true]
 };
+/* Separa a maquiagem/pintura em feltro (desenhada como peça) da que segue em código. */
+function splitFelt(group, shown) {
+  const code = {}, felt = [];
+  for (const [k, v] of Object.entries(shown || {})) {
+    if (!(v > 0.01)) continue;
+    const f = FELT[group + ":" + k];
+    if (f) felt.push([f[0], v]); else code[k] = v;
+  }
+  return { code, felt };
+}
 const HAIR_DEFAULT = "#8a5a36";
 
 // Nubi parada por tanto tempo (sem falar, comer ou brincar) senta para descansar
@@ -576,7 +611,11 @@ export class Nubi {
     const tuftSquash = clamp((this.hopY - this.tuftLag.x) / r, -0.5, 0.5);
     // capa / asas: atrás do corpo
     const cape = this.accShown.cape;
-    if (cape) {
+    const capeFelt = cape && FELT[cape.def.id];
+    if (capeFelt) {
+      const k = clamp(this._accK(cape));
+      ctx.save(); ctx.globalAlpha = k; S.piece(ctx, r, pose, capeFelt[0], false, 0.85 + 0.15 * k); ctx.restore();
+    } else if (cape) {
       ctx.save(); S.bodyT(ctx, r);
       if (cape.def.shape === "wings") { const k = this._accK(cape); ctx.scale(k, k); paintWings(ctx, cape.def, r, this.t); }
       else this._capeBack(ctx, r, cape, outline, ow);
@@ -628,16 +667,22 @@ export class Nubi {
       paintHair(ctx, this.cosmetics.hair || this.cosShown.hairStyle, rgbToHex(this.hairColorShown), r, this.t);
       ctx.restore();
     }
-    const mk = this.cosShown.makeup, pt = this.cosShown.paint;
-    paintMakeupUnder(ctx, mk, pt, r, this.t, MAKEUP_COLORS);
-    paintMakeupOver(ctx, mk, {}, r, this.t, MAKEUP_COLORS);
-    paintMakeupOver(ctx, {}, pt, r, this.t, MAKEUP_COLORS);
+    const mk = splitFelt("makeup", this.cosShown.makeup), pt = splitFelt("paint", this.cosShown.paint);
+    paintMakeupUnder(ctx, mk.code, pt.code, r, this.t, MAKEUP_COLORS);
+    paintMakeupOver(ctx, mk.code, {}, r, this.t, MAKEUP_COLORS);
+    paintMakeupOver(ctx, {}, pt.code, r, this.t, MAKEUP_COLORS);
     const faceFelt = this.accShown.face && FELT[this.accShown.face.def.id];
     if (!faceFelt) this._slot(ctx, r, "face", paintFace);
     ctx.restore();
+    // maquiagem e pintura em feltro (aparecem aos poucos)
+    for (const [name, v] of [...mk.felt, ...pt.felt]) {
+      ctx.save(); ctx.globalAlpha = clamp(v); S.piece(ctx, r, pose, name, true); ctx.restore();
+    }
     if (faceFelt) S.piece(ctx, r, pose, faceFelt[0], true, this._accK(this.accShown.face));
     // pescoço
-    ctx.save(); S.neckT(ctx, r, pose); this._slot(ctx, r, "neck", paintNeck); ctx.restore();
+    const neckFelt = this.accShown.neck && FELT[this.accShown.neck.def.id];
+    if (neckFelt) S.piece(ctx, r, pose, neckFelt[0], true, this._accK(this.accShown.neck));
+    else { ctx.save(); S.neckT(ctx, r, pose); this._slot(ctx, r, "neck", paintNeck); ctx.restore(); }
     // molhado e espuma
     if (this.wetShown > 0.02 || this.foamShown > 0.02) {
       ctx.save(); S.bodyT(ctx, r);
@@ -653,12 +698,13 @@ export class Nubi {
       { x: -r * 0.46, y: r * 0.93 - step, color: cs.colorL, k: cs.nailsL },
       { x: r * 0.46, y: r * 0.93 + step, color: cs.colorR, k: cs.nailsR }
     ], r);
-    const feet = this.accShown.boots;
-    if (feet) {
+    const feet = this.accShown.boots, feetFelt = feet && FELT[feet.def.id];
+    if (feet && !feetFelt) {
       if (feet.def.shape) { const k = this._accK(feet); ctx.save(); ctx.translate(0, r * ANCHORS.boots[1]); ctx.scale(k, k); paintFeet(ctx, feet.def, r, this.t, step); ctx.restore(); }
       else this._boots(ctx, r, feet, outline, ow);
     }
     ctx.restore();
+    if (feetFelt) S.piece(ctx, r, pose, feetFelt[0], feetFelt[1], this._accK(feet));
     // enfeite de cabelo e chapéu
     const accFelt = this.cosmetics.hairAcc && FELT["acc:" + this.cosmetics.hairAcc];
     if (accFelt) S.piece(ctx, r, pose, accFelt[0], true);
@@ -832,6 +878,17 @@ export class Nubi {
     const reduce = Motion.reduce;
     ctx.save();
     ctx.globalAlpha = clamp(k * 1.2);
+    // ninho em feltro: almofada de nuvem que "respira" de leve
+    const im = art("nubi/nubi_ninho");
+    if (im) {
+      const w = r * 3.1 * (0.8 + 0.2 * k), h = w * (im.naturalHeight / im.naturalWidth);
+      const breath = reduce ? 0 : Math.sin(this.t * 0.002) * 0.015;
+      const y = cy + r * 1.0 + (1 - k) * r * 0.4;
+      ctx.translate(cx, y); ctx.scale(1 + breath, 1 - breath);
+      ctx.drawImage(im, -w / 2, -h / 2, w, h);
+      ctx.restore();
+      return;
+    }
     const puffs = [[-1.05, 0.75, 0.42], [-0.55, 0.95, 0.5], [0, 1.02, 0.55], [0.55, 0.95, 0.5], [1.05, 0.75, 0.42], [-0.8, 0.5, 0.32], [0.8, 0.5, 0.32]];
     for (const [px, py, pr] of puffs) {
       const wob = reduce ? 0 : Math.sin(this.t * 0.002 + px * 3) * r * 0.02;

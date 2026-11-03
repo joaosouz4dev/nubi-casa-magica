@@ -94,6 +94,7 @@
     /* pausa: continuar (grande, verde) e sair */
     .pauseRow { display: flex; gap: calc(var(--btn) * .8); align-items: center; }
     #btnResume { width: calc(var(--btn) * 2.4); height: calc(var(--btn) * 2.4); background: linear-gradient(180deg, #8be08f 0%, #4fbf5a 100%); box-shadow: 0 6px 0 #2a6f36, 0 10px 22px rgba(30,90,40,.3); }
+    #btnResume img.felt { width: 60%; height: 60%; margin-left: 8%; filter: saturate(.35) brightness(1.32) drop-shadow(0 0 2px #2a6f36) drop-shadow(0 3px 0 rgba(0,0,0,.18)); }
     #btnQuit { width: calc(var(--btn) * 1.6); height: calc(var(--btn) * 1.6); background: linear-gradient(180deg, #fff7c2 0%, #ffe680 100%); box-shadow: 0 4px 0 #e0a21c, 0 6px 14px rgba(160,100,10,.2); }
     #btnBack { background: linear-gradient(180deg, #fff7c2 0%, #ffe680 100%); box-shadow: 0 4px 0 #e0a21c, 0 6px 14px rgba(160,100,10,.2); transition: transform .25s cubic-bezier(.34,1.56,.64,1), opacity .2s; }
     #btnBack.off { opacity: 0; transform: scale(.4); pointer-events: none; }
@@ -199,10 +200,9 @@
     body.reduce-motion #dailyGift, body.reduce-motion .chestRow.ready { animation: none; }
     .corner button { position: fixed; width: var(--btn); height: var(--btn); }
     .corner #btnHome, .corner #btnBag, .corner #btnPause { width: var(--btn-main); height: var(--btn-main); }
-    #btnSound .slash { opacity: 0; transition: opacity .2s; }
-    #btnSound.off .slash { opacity: 1; }
-    #btnSound.off .waves { opacity: .2; }
-    #btnSound .waves { transition: opacity .2s; }
+    /* som: duas artes, a classe .off (src/main.js) escolhe qual aparece */
+    #btnSound img.mute, #btnSound.off img.on { display: none; }
+    #btnSound.off img.mute { display: block; }
     /* anel de progresso ao segurar o botão dos responsáveis */
     #btnParent::after {
       content: ""; position: absolute; inset: -4px; border-radius: 50%;
@@ -325,7 +325,9 @@
       animation: tPop .6s .55s cubic-bezier(.3,1.6,.5,1) both, tBeat 1.4s 1.3s ease-in-out infinite;
       cursor: pointer;
     }
-    #btnPlay svg { width: 62%; height: 62%; margin-left: 8%; filter: drop-shadow(0 3px 0 rgba(0,0,0,.2)); }
+    /* o triângulo em feltro é verde como o botão: clareia e contorna para destacar */
+    #btnPlay img.felt { position: relative; z-index: 1; width: 62%; height: 62%; margin-left: 8%;
+      filter: saturate(.35) brightness(1.32) drop-shadow(0 0 calc(.35 * var(--vh)) #2a6f36) drop-shadow(0 calc(.6 * var(--vh)) 0 rgba(0,0,0,.2)); }
     #btnPlay:active { transform: translateY(calc(1 * var(--vh))) scale(.94); box-shadow: 0 calc(.4 * var(--vh)) 0 #2a6f36; }
     #btnPlay .ring { position: absolute; inset: -10%; border-radius: 50%; border: calc(.8 * var(--vh)) solid #fff; opacity: 0; animation: tRing 1.8s 1.3s ease-out infinite; pointer-events: none; }
     #btnPlay .ring.r2 { animation-delay: 2.2s; }
@@ -467,17 +469,10 @@
     <img class="felt" src="assets/hud/hud_voltar.webp" alt="" draggable="false">
   </button></div>
   <div class="corner"><button class="toy" id="btnBag" aria-label="Mochila (álbum, prêmios, missões, bichinhos)">
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M17 15v-3a7 7 0 0 1 14 0v3" fill="none" stroke="#a8325c" stroke-width="3.5" stroke-linecap="round"/>
-      <rect x="8" y="14" width="32" height="28" rx="9" fill="#ff8fb8" stroke="#a8325c" stroke-width="3"/>
-      <rect x="14" y="27" width="20" height="11" rx="4" fill="#ffd0e3" stroke="#a8325c" stroke-width="2.5"/>
-      <path d="M24 18.5l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z" fill="#ffd54a" stroke="#b8860b" stroke-width="1.2" stroke-linejoin="round"/>
-    </svg>
+    <img class="felt" src="assets/hud/hud_mochila.webp" alt="" draggable="false">
   </button></div>
   <div class="corner"><button class="toy" id="btnPause" aria-label="Pausar">
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <rect x="14" y="12" width="7" height="24" rx="3" fill="#7a4fd6"/><rect x="27" y="12" width="7" height="24" rx="3" fill="#7a4fd6"/>
-    </svg>
+    <img class="felt" src="assets/hud/hud_pausa.webp" alt="" draggable="false">
   </button></div>
 
   <!-- Pote de estrelinhas (enche até o próximo presente), o desenho do
@@ -517,31 +512,17 @@
       <button class="close" id="bagClose" aria-label="Fechar">✕</button>
       <div class="bagGrid">
         <button class="toy" id="btnMissions" aria-label="Missões do dia">
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <rect x="11" y="8" width="26" height="34" rx="4" fill="#fff" stroke="#7fa3b8" stroke-width="3"/>
-      <rect x="18" y="5" width="12" height="6" rx="2" fill="#ffd54a" stroke="#a8791a" stroke-width="2"/>
-      <path d="M16 19l3 3 5-6M16 30l3 3 5-6" fill="none" stroke="#62c370" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <rect x="27" y="18" width="6" height="4" rx="2" fill="#e3d6fb"/><rect x="27" y="29" width="6" height="4" rx="2" fill="#e3d6fb"/>
-    </svg>
+    <img class="felt" src="assets/hud/hud_missoes.webp" alt="" draggable="false">
   </button>
         <button class="toy" id="btnShop" aria-label="Lojinha de prêmios">
     <img class="felt" src="assets/hud/hud_moeda.webp" alt="" draggable="false">
   </button>
         <button class="toy" id="btnAlbum" aria-label="Álbum de descobertas">
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M6 11c7-3 13-2 18 2v26c-5-4-11-5-18-2z" fill="#ff9bc4" stroke="#b3406f" stroke-width="3" stroke-linejoin="round"/>
-      <path d="M42 11c-7-3-13-2-18 2v26c5-4 11-5 18-2z" fill="#9fd3ff" stroke="#3c7fb0" stroke-width="3" stroke-linejoin="round"/>
-      <path d="M33 19l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7-3.2 1.7.6-3.6-2.6-2.5 3.6-.5z" fill="#ffd54a"/>
-    </svg>
+    <img class="felt" src="assets/hud/hud_album.webp" alt="" draggable="false">
   </button>
         <button class="toy" id="btnSound" aria-label="Som">
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M8 19h7l10-8v26l-10-8H8z" fill="#ffd54a" stroke="#a8791a" stroke-width="3" stroke-linejoin="round"/>
-      <g class="waves" fill="none" stroke="#8a3bff" stroke-width="3.5" stroke-linecap="round">
-        <path d="M31 18a8 8 0 0 1 0 12"/><path d="M36 13a15 15 0 0 1 0 22"/>
-      </g>
-      <path class="slash" d="M30 16l12 16" stroke="#e5484d" stroke-width="4" stroke-linecap="round"/>
-    </svg>
+    <img class="felt on" src="assets/hud/hud_som.webp" alt="" draggable="false">
+    <img class="felt mute" src="assets/hud/hud_som_mudo.webp" alt="" draggable="false">
   </button>
       </div>
       <button class="toy" id="btnParent" aria-label="Área dos responsáveis (segure)">
@@ -554,10 +535,10 @@
   <div class="overlay" id="pause">
     <div class="pauseRow">
       <button class="toy" id="btnResume" aria-label="Continuar">
-        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M17 11 L38 24 L17 37 Z" fill="#fff" stroke="#2a6f36" stroke-width="3.5" stroke-linejoin="round"/></svg>
+        <img class="felt" src="assets/hud/hud_play.webp" alt="" draggable="false">
       </button>
       <button class="toy" id="btnQuit" aria-label="Sair do jogo">
-        <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M36 24H13M23 13L12 24l11 11" fill="none" stroke="#8a5a0a" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <img class="felt" src="assets/hud/hud_sair.webp" alt="" draggable="false">
       </button>
     </div>
   </div>

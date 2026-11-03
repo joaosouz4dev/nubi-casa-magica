@@ -1,5 +1,7 @@
 # Arte em feltro que ainda falta gerar
 
+> **Atualização:** as Fases 6, 7, 8 e 9 abaixo já foram entregues e estão no jogo. O arquivo fica como registro dos pedidos e do jeito de pedir (para novas peças, siga o mesmo formato). O que segue em código de propósito está no fim.
+
 As Fases 1 a 5 de `assets/ARTE.md` já estão no jogo. Esta lista traz **tudo que ainda é desenhado em código**, em ordem de prioridade: o que aparece mais vem primeiro.
 
 Pode gerar em levas, uma seção por vez. Para entregar, junte as imagens numa pasta `assets/<grupo>/` com os nomes da tabela e me passe o caminho.
