@@ -15,6 +15,7 @@ import { Ease, clamp, damp, Motion, roundRect } from "../core/anim.js";
 import { giftFor } from "../data/wardrobe.js";
 import { wearIcon } from "../entities/wear.js";
 import { wishLine } from "../data/voice_lines.js";
+import { FELT, feltDot, feltRing } from "./felt.js";
 
 const NUBI_ACTS = { wake: "head", pet: "head", tummy: "belly" };
 
@@ -227,7 +228,7 @@ export class Guide {
     let x = left ? n.px() - r * 1.3 : right;
     x = clamp(x, br + 8, limit);
     const hatUp = n.accessories && n.accessories.hat ? r * 0.35 : 0;
-    const y = Math.max(br + 10, n.py() - n.hopY - r * 1.45 - hatUp);
+    const y = Math.max(this.vp.hudBottom() + br * 1.05, n.py() - n.hopY - r * 1.45 - hatUp);   // abaixo dos botões do topo
     return { x, y, r: br, left };
   }
 
@@ -332,14 +333,11 @@ export class Guide {
     ctx.restore();
   }
 
+  /* "Pode soltar aqui": fita de feltro amarelinha costurada, respirando. */
   _destGlow(ctx, d) {
-    const pulse = Motion.reduce ? 0.5 : (Math.sin(this.t * 0.008) + 1) / 2;
-    ctx.save();
-    ctx.globalAlpha = 0.55 + pulse * 0.3;
-    ctx.strokeStyle = "#ffd54a"; ctx.lineWidth = Math.max(3, d.r * 0.06);
-    ctx.setLineDash([d.r * 0.18, d.r * 0.12]);
-    ctx.lineDashOffset = Motion.reduce ? 0 : -this.t * 0.03;
-    ctx.beginPath(); ctx.arc(d.x, d.y, d.r * (1 + pulse * 0.05), 0, Math.PI * 2); ctx.stroke();
+    ctx.save(); ctx.translate(d.x, d.y);
+    ctx.globalAlpha = 0.85;
+    feltRing(ctx, d.r, this.t, "#f2c45a");
     ctx.restore();
   }
 
@@ -427,11 +425,16 @@ export class Guide {
     const x0 = w * 0.16, x1 = w * 0.385, y0 = h * 0.2, sag = h * 0.045;
     const at = (u) => ({ x: x0 + (x1 - x0) * u, y: y0 + Math.sin(u * Math.PI) * sag });
     ctx.save();
-    ctx.strokeStyle = "#a98bd6"; ctx.lineWidth = Math.max(2, this.vp.s(0.006));
+    // cordão de lã: fio rosado grosso com um fio claro torcido por cima
+    const lw = Math.max(3, this.vp.s(0.009));
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#d79ab4"; ctx.lineWidth = lw;
     ctx.beginPath(); ctx.moveTo(x0, y0); ctx.quadraticCurveTo((x0 + x1) / 2, y0 + sag * 2, x1, y0); ctx.stroke();
-    // pinos nas pontas
-    ctx.fillStyle = "#8a3bff";
-    for (const x of [x0, x1]) { ctx.beginPath(); ctx.arc(x, y0, this.vp.s(0.008), 0, Math.PI * 2); ctx.fill(); }
+    ctx.strokeStyle = "rgba(255,240,246,.75)"; ctx.lineWidth = lw * 0.3; ctx.setLineDash([lw * 0.9, lw * 0.9]);
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.quadraticCurveTo((x0 + x1) / 2, y0 + sag * 2, x1, y0); ctx.stroke();
+    ctx.setLineDash([]);
+    // botõezinhos de feltro segurando nas pontas
+    for (const x of [x0, x1]) feltDot(ctx, x, y0, this.vp.s(0.014), FELT.pink, { lift: 0.6, stitch: false });
     const party = this.quests.state.finaleDone;
     if (party) {
       const cols = ["#ff6b9d", "#ffd54a", "#5bc0eb", "#9be564"];

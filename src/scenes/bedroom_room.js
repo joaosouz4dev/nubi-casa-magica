@@ -12,6 +12,7 @@ import { wearIcon } from "../entities/wear.js";
 import { drawIcon, drawWearArt } from "../ui/icons.js";
 import { atmosphere, frame, artStar, rug } from "../ui/scenery.js";
 import { art, drawArt } from "../core/art.js";
+import { feltCard, FELT, feltPiece, feltDot, feltCheck, feltPageBtn } from "../ui/felt.js";
 
 /* Cenário cobrindo a tela; ax diz qual parte da largura fica quando sobra
    largura (0 = esquerda, 1 = direita). Em 4:3 puxa para a direita para a
@@ -360,7 +361,8 @@ export class BedroomRoom {
     // indicação suave quando uma peça está sobre o Nubi
     if (heldW && this.dragPoint && this.overNubi(this.dragPoint.x, this.dragPoint.y)) {
       const p = (Math.sin(this.t * 0.01) + 1) * 0.5;
-      ctx.fillStyle = `rgba(255,255,255,${0.18 + p * 0.12})`;
+      // pode soltar: almofadinha creme bem clarinha (o aro quem desenha é a dica de destino)
+      ctx.fillStyle = `rgba(255,244,220,${0.2 + p * 0.12})`;
       ctx.beginPath(); ctx.arc(this.nubi.px(), this.nubi.py(), this.nubi.radius() * (1.35 + p * 0.06), 0, Math.PI * 2); ctx.fill();
     }
 
@@ -508,10 +510,11 @@ export class BedroomRoom {
     const k = pop * (1 + lift / r * 0.35);
     ctx.scale(k, k);
     if (wd.gift) {
+      // presente novo: plaquinha redonda de feltro amarelo atrás, respirando
       const gp = Motion.reduce ? 0.5 : (Math.sin(this.t * 0.005) + 1) / 2;
-      const g = ctx.createRadialGradient(0, 0, r * 0.2, 0, 0, r * 1.25);
-      g.addColorStop(0, `rgba(255,230,120,${0.35 + gp * 0.25})`); g.addColorStop(1, "rgba(255,230,120,0)");
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, r * 1.25, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.scale(1 + gp * 0.05, 1 + gp * 0.05);
+      feltDot(ctx, 0, 0, r * 1.08, FELT.yellow, { lift: 0.5 });
+      ctx.restore();
     }
     if (wd.kind === "look") this._drawLookIcon(ctx, r, wd.look);
     else if (drawWearArt(ctx, wd.def, 0, 0, r)) { /* peça em feltro */ }
@@ -519,9 +522,7 @@ export class BedroomRoom {
     else this._drawAccessoryIcon(ctx, 0, 0, r, wd.def);
     // peça vestida: selinho de "ok" (tocar de novo tira)
     if (wd.kind === "item" && this.isWorn(wd.def)) {
-      ctx.fillStyle = "#62c370"; ctx.beginPath(); ctx.arc(r * 0.75, -r * 0.7, r * 0.22, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(2, r * 0.07); ctx.lineCap = "round";
-      ctx.beginPath(); ctx.moveTo(r * 0.65, -r * 0.7); ctx.lineTo(r * 0.73, -r * 0.61); ctx.lineTo(r * 0.87, -r * 0.8); ctx.stroke();
+      feltCheck(ctx, r * 0.75, -r * 0.7, r * 0.24);
     }
     ctx.restore();
   }
@@ -529,8 +530,12 @@ export class BedroomRoom {
   /* Cartão de look: moldura dourada com as peças sobrepostas. */
   _drawLookIcon(ctx, r, look) {
     ctx.save();
-    ctx.fillStyle = "#fff7d6"; ctx.strokeStyle = "#e0a21c"; ctx.lineWidth = Math.max(2, r * 0.08);
-    roundRect(ctx, -r * 1.0, -r * 0.95, r * 2.0, r * 1.9, r * 0.35); ctx.fill(); ctx.stroke();
+    // cartão de feltro: moldura amarela e miolo creme costurados
+    feltPiece(ctx, "lookcard", -r * 1.0, -r * 0.95, r * 2.0, r * 1.9, (c, x, y, w, h) => {
+      const k = r * 0.12;
+      feltCard(c, x, y, w, h, r * 0.35, FELT.yellow, { stitch: false, lift: 0.8 });
+      feltCard(c, x + k, y + k, w - k * 2, h - k * 2, r * 0.26, FELT.cream, { shadow: false, lift: 0.3 });
+    });
     const defs = look.items.map(id => ITEMS[id]);
     const pos = [[-0.38, -0.3], [0.38, -0.3], [0, 0.38]];
     defs.slice(0, 3).forEach((d, i) => {
@@ -539,10 +544,11 @@ export class BedroomRoom {
       if (d.shape) wearIcon(ctx, d, x * r, y * r, r * 0.48, this.t);
       else this._drawAccessoryIcon(ctx, x * r, y * r, r * 0.5, d);
     });
-    ctx.fillStyle = "#ffd54a";
+    // estrelinha de feltro (amarelo macio com borda quente)
+    ctx.fillStyle = "#ffd77a"; ctx.strokeStyle = "#c79a4a"; ctx.lineWidth = Math.max(1.2, r * 0.035); ctx.lineJoin = "round";
     ctx.beginPath();
     for (let i = 0; i < 5; i++) { const a = (Math.PI * 2 * i) / 5 - Math.PI / 2; ctx.lineTo(r * 0.78 + Math.cos(a) * r * 0.2, -r * 0.75 + Math.sin(a) * r * 0.2); ctx.lineTo(r * 0.78 + Math.cos(a + 0.63) * r * 0.09, -r * 0.75 + Math.sin(a + 0.63) * r * 0.09); }
-    ctx.closePath(); ctx.fill();
+    ctx.closePath(); ctx.fill(); ctx.stroke();
     ctx.restore();
   }
 
@@ -554,16 +560,13 @@ export class BedroomRoom {
     const s = 1 + this.pageBtn.x * 0.03;
     ctx.save(); ctx.translate(b.x, b.y); ctx.scale(s, s);
     if (this.newGift) {
+      // presente novo: aro de feltro amarelo que respira atrás do botão
       const gp = Motion.reduce ? 0.5 : (Math.sin(this.t * 0.008) + 1) / 2;
-      ctx.fillStyle = `rgba(255,214,90,${0.35 + gp * 0.35})`; ctx.beginPath(); ctx.arc(0, 0, b.r * 1.45, 0, Math.PI * 2); ctx.fill();
+      ctx.save(); ctx.scale(1 + gp * 0.08, 1 + gp * 0.08);
+      feltDot(ctx, 0, 0, b.r * 1.3, FELT.yellow, { lift: 0.5, stitch: false });
+      ctx.restore();
     }
-    ctx.shadowColor = "rgba(70,40,110,.25)"; ctx.shadowBlur = b.r * 0.3; ctx.shadowOffsetY = b.r * 0.12;
-    ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowColor = "transparent";
-    ctx.strokeStyle = "#cdb8f0"; ctx.lineWidth = Math.max(2, b.r * 0.1); ctx.stroke();
-    drawIcon(ctx, this.newGift ? "gift" : next.icon, -b.r * 0.12, -b.r * 0.08, b.r * 0.5);
-    ctx.strokeStyle = "#8a3bff"; ctx.lineWidth = Math.max(2.5, b.r * 0.13); ctx.lineCap = "round"; ctx.lineJoin = "round";
-    ctx.beginPath(); ctx.moveTo(b.r * 0.42, b.r * 0.25); ctx.lineTo(b.r * 0.62, b.r * 0.45); ctx.lineTo(b.r * 0.82, b.r * 0.25); ctx.stroke();
+    feltPageBtn(ctx, b.r, this.newGift ? "gift" : next.icon, FELT.lilac);
     ctx.restore();
   }
 

@@ -10,7 +10,8 @@ import { drawIcon } from "../ui/icons.js";
 import { drawScrapSprite, scrapReady } from "../entities/food_sprites.js";
 import { art, drawArt } from "../core/art.js";
 import { touchNubi } from "./nubi_touch.js";
-import { Spring, Spring2, clamp, Ease, Motion, softShadow, roundRect, darken } from "../core/anim.js";
+import { Spring, Spring2, clamp, Ease, Motion, softShadow, roundRect, lighten, darken } from "../core/anim.js";
+import { feltCard, FELT, feltPiece, feltDot, feltRing } from "../ui/felt.js";
 
 // rotina de limpeza: cascas caem no chão depois de comer; vão para a lixeira;
 // lixeira cheia -> o saquinho é levado até a janela, e o caminhão passa.
@@ -317,25 +318,22 @@ export class KitchenRoom {
   _tabs(ctx) {
     const v = this.tabs();
     if (v.length < 2) return;
-    // trilho de madeira atrás das abas
+    // faixa de feltro creme costurada atrás das abas
     const a = this.tabPos(0), b = this.tabPos(v.length - 1);
-    ctx.save();
-    ctx.fillStyle = "rgba(255,255,255,.45)";
-    roundRect(ctx, a.x - a.r * 1.35, a.y - a.r * 1.3, b.x - a.x + a.r * 2.7, a.r * 2.6, a.r * 1.3); ctx.fill();
+    const sx = a.x - a.r * 1.35, sy = a.y - a.r * 1.3, sw = b.x - a.x + a.r * 2.7, sh = a.r * 2.6;
+    feltPiece(ctx, "tabstrip", sx, sy, sw, sh, (c, x, y, w, h) => feltCard(c, x, y, w, h, h / 2, FELT.cream, { lift: 0.6 }));
     v.forEach((t, i) => {
       const p = this.tabPos(i), k = FOOD_TABS.indexOf(t);
       const on = i === this.tabIdx;
       const s = 1 + this.tabSprings[k].x * 0.025 + (on ? 0.12 : 0);
       ctx.save(); ctx.translate(p.x, p.y - (on ? p.r * 0.12 : 0)); ctx.scale(s, s);
-      ctx.shadowColor = "rgba(90,50,20,.25)"; ctx.shadowBlur = p.r * 0.4; ctx.shadowOffsetY = p.r * 0.15;
-      ctx.fillStyle = on ? t.color : "#ffffff";
-      ctx.beginPath(); ctx.arc(0, 0, p.r, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowColor = "transparent";
-      ctx.strokeStyle = on ? darken(t.color, 0.35) : "#e6cfae"; ctx.lineWidth = Math.max(2, p.r * (on ? 0.14 : 0.09)); ctx.stroke();
+      // aba ativa: anel de feltro mais escuro por baixo e o disco na cor da aba;
+      // as outras: disco creme clarinho, mais baixinho (apertado na faixa)
+      if (on) feltDot(ctx, 0, 0, p.r * 1.14, darken(t.color, 0.22), { lift: 0.5, stitch: false });
+      feltDot(ctx, 0, 0, p.r, on ? lighten(t.color, 0.12) : "#fffaf0", { lift: on ? 1 : 0.55 });
       drawIcon(ctx, t.icon, 0, 0, p.r * 0.72);
       ctx.restore();
     });
-    ctx.restore();
   }
 
   // ---------------- desenho da rotina de limpeza ----------------
@@ -349,8 +347,7 @@ export class KitchenRoom {
     if (!p.held) softShadow(ctx, q.x, q.y + r * 0.6, r * 0.9, r * 0.2, 0.18);
     ctx.save(); ctx.translate(q.x, q.y);
     if (this.selPeel === p) {
-      ctx.strokeStyle = "rgba(80,80,140,.7)"; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -this.t * 0.03;
-      ctx.beginPath(); ctx.arc(0, 0, r * 1.6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      feltRing(ctx, r * 1.6, this.t);
     }
     ctx.lineJoin = "round"; ctx.lineCap = "round";
     const ow = Math.max(1.5, r * 0.09);
@@ -384,8 +381,7 @@ export class KitchenRoom {
     if (!p.held) softShadow(ctx, q.x, q.y + r * 0.6, r * 0.9, r * 0.2, 0.18);
     ctx.save(); ctx.translate(q.x, q.y);
     if (this.selPeel === p) {
-      ctx.strokeStyle = "rgba(80,80,140,.7)"; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -this.t * 0.03;
-      ctx.beginPath(); ctx.arc(0, 0, r * 1.6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      feltRing(ctx, r * 1.6, this.t);
     }
     drawScrapSprite(ctx, p.food, r);
     ctx.restore();
@@ -400,8 +396,7 @@ export class KitchenRoom {
     if (!p.held) softShadow(ctx, q.x, q.y + r * 0.6, r * 0.9, r * 0.2, 0.18);
     ctx.save(); ctx.translate(q.x, q.y);
     if (this.selPeel === p) {
-      ctx.strokeStyle = "rgba(80,80,140,.7)"; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -this.t * 0.03;
-      ctx.beginPath(); ctx.arc(0, 0, r * 1.6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      feltRing(ctx, r * 1.6, this.t);
     }
     ctx.lineJoin = "round"; const ow = Math.max(1.5, r * 0.09);
     if (!color) {
@@ -467,8 +462,7 @@ export class KitchenRoom {
     const pulse = this.bagPos || Motion.reduce ? 0 : Math.sin(this.t * 0.005) * 0.04;
     ctx.scale(1 + pulse, 1 - pulse);
     if (this.selBag) {
-      ctx.strokeStyle = "rgba(80,80,140,.7)"; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -this.t * 0.03;
-      ctx.beginPath(); ctx.arc(0, 0, r * 1.5, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      feltRing(ctx, r * 1.5, this.t);
     }
     if (drawArt(ctx, "cozinha/cozinha_saquinho", -r * 0.95, -r * 1.25, r * 1.9)) { ctx.restore(); return; }
     ctx.beginPath(); ctx.moveTo(-r * 0.15, -r * 0.55); ctx.quadraticCurveTo(-r * 0.8, -r * 0.2, -r * 0.65, r * 0.55); ctx.quadraticCurveTo(0, r * 0.9, r * 0.65, r * 0.55);
@@ -487,11 +481,13 @@ export class KitchenRoom {
     const u = 1 - this.truckT / 3200;
     const tr = art("cozinha/cozinha_caminhao");
     if (tr && this.scene.hasArt()) {
-      // caminhão em feltro passando atrás do vidro da janela
-      const g = this.scene.glass(), tw = g.w * 0.75, th = tw * (tr.naturalHeight / tr.naturalWidth);
-      const tx = g.x - tw + u * (g.w + tw * 2), ty = g.y + g.h * 0.92 - th;
+      // caminhão em feltro passando lá fora, na rua atrás das colinas: anda de
+      // frente (a cabine da arte fica à esquerda, então vai da direita para a
+      // esquerda) e só aparece pelos vidros, atrás do caixilho e dos vasinhos
+      const st = this.scene.street(), th = st.h, tw = th * (tr.naturalWidth / tr.naturalHeight);
+      const tx = st.x1 - u * (st.x1 - st.x0 + tw), ty = st.y - th;
       ctx.save();
-      ctx.beginPath(); ctx.rect(g.x, g.y, g.w, g.h); ctx.clip();
+      this.scene.outsideClip(ctx);
       ctx.drawImage(tr, tx, ty + (Motion.reduce ? 0 : Math.sin(u * 40) * th * 0.02), tw, th);
       ctx.restore();
       return;

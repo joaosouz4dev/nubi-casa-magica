@@ -66,6 +66,7 @@ function splitFelt(group, shown) {
   return { code, felt };
 }
 const HAIR_DEFAULT = "#8a5a36";
+const HEAD_TOP = 1.9;   // do centro do corpo até a ponta das orelhas, em raios
 
 // Nubi parada por tanto tempo (sem falar, comer ou brincar) senta para descansar
 const REST_MS = 15000;
@@ -258,7 +259,14 @@ export class Nubi {
 
   // ---- centro em pixels (estável: sem pulo) ----
   px() { return this.vp.dx(this.pos.x); }
-  py() { return this.vp.dy(this.pos.y); }
+  /* Altura do centro do corpo. A ponta das orelhas (HEAD_TOP raios acima)
+     nunca fica embaixo da faixa dos botões do topo (pote de estrelinhas,
+     casa, mochila): em tela baixa, a Nubi desce só o necessário. */
+  py() {
+    const y = this.vp.dy(this.pos.y);
+    const minY = this.vp.hudBottom() + HEAD_TOP * this.radius();
+    return Math.max(y, minY);
+  }
 
   update(dt) {
     this.t += dt;
@@ -1202,7 +1210,7 @@ export class Nubi {
     const w = ctx.measureText(this.sayText).width + pad * 2;
     const h = r * 0.66;
     const float = Motion.reduce ? 0 : Math.sin(this.t * 0.004) * r * 0.03;
-    const minY = h * 0.5 + r * 0.12;
+    const minY = this.vp.hudBottom() + h * 0.5 + r * 0.05;   // abaixo dos botões do topo
     const side = y < minY;                 // sem espaço em cima: vai para o lado
     if (side) { x += r * 1.35 + w * 0.35; y = Math.max(y + r * 0.9, minY); }
     ctx.translate(x, y + float + h * 0.5);

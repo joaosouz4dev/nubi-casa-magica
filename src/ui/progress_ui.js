@@ -32,16 +32,13 @@ export class ProgressUI {
     this.nextEl = document.getElementById("nextPrize");
     this.love = document.getElementById("loveMeter");
     this.loveFill = document.getElementById("loveFill");
+    this.bagStar = document.getElementById("bagStar");          // estrelinha no canto da mochila
+    this.bagStarFill = document.getElementById("bagStarFill");
     this.giftEl = null;            // presente no cômodo (esperando os 3 toques)
     this.shopEl = document.getElementById("shop");
     this.shopGrid = document.getElementById("shopGrid");
     this.missEl = document.getElementById("missions");
     this.missList = document.getElementById("missionList");
-    const starIco = document.getElementById("starIco");
-    if (starIco) {
-      starIco.appendChild(iconCanvas(30, "star"));
-      artReady().then(() => starIco.replaceChildren(iconCanvas(30, "star")));   // estrela em feltro
-    }
     // o desenho do próximo presente nasce no boot: refaz com a arte em feltro
     artReady().then(() => {
       const icon = this.nextEl && this.nextEl.dataset.icon;
@@ -73,7 +70,9 @@ export class ProgressUI {
   // ---------------- pote + próximo presente ----------------
   _renderJar(full) {
     const j = this.progress.jar();
-    if (this.jarFill) this.jarFill.style.height = Math.round((full ? 1 : j.frac) * 100) + "%";
+    const pct = Math.round((full ? 1 : j.frac) * 100) + "%";
+    if (this.jarFill) this.jarFill.style.height = pct;
+    if (this.bagStarFill) this.bagStarFill.style.height = pct;
     if (this.nextEl) {
       const g = this.progress.nextGift();
       const icon = g ? (g.kind === "prize" ? g.prize.icon : "gift") : (j.prize ? j.prize.icon : "gift");
@@ -97,12 +96,18 @@ export class ProgressUI {
     const fly = Math.min(4, gained);
     // pote escondido (minijogo): sem voo. Espera um instante porque o aviso
     // de "pote cheio" (level:up) chega logo depois deste
-    if (!this.pill || !this.pill.getClientRects().length) { setTimeout(() => this._landed(), 0); return; }
+    if (!this._flyTarget()) { setTimeout(() => this._landed(), 0); return; }
     for (let i = 0; i < fly; i++) setTimeout(() => this._flyStar(from, i === fly - 1), i * 90);
+  }
+  /* Para onde as estrelinhas voam: o pote (mochila aberta) ou a estrelinha
+     no canto da mochila. null = nada à vista (minijogo). */
+  _flyTarget() {
+    for (const el of [this.jarEl, this.bagStar]) if (el && el.getClientRects().length && el.getBoundingClientRect().width > 0) return el;
+    return null;
   }
   _flyStar(from, last) {
     // coordenadas no palco (#stage): o canvas ocupa o palco a partir de (0,0)
-    const box = this.jarEl || this.pill;
+    const box = this._flyTarget();
     const tgt = box ? this.vp.rectToStage(box.getBoundingClientRect()) : { left: this.vp.w / 2, top: 10, width: 40, height: 40 };
     const el = document.createElement("div");
     el.className = "flyStar";
@@ -119,7 +124,7 @@ export class ProgressUI {
     ], { duration: reduce ? 200 : 750, easing: "cubic-bezier(.45,.05,.4,1)" });
     anim.onfinish = () => {
       el.remove();
-      bump(this.pill);
+      bump(box === this.bagStar ? this.bagStar : this.pill);
       this.audio.coin(this._coinStep = ((this._coinStep || 0) + 1) % 8);
       if (last) this._landed();
     };
@@ -129,7 +134,7 @@ export class ProgressUI {
     if (!this._jarFull) { this._renderJar(); return; }
     this._jarFull = false;
     this._renderJar(true);
-    bump(this.jarEl, "full");
+    bump(this.jarEl, "full"); bump(this.bagStar, "full");
     this.audio.chime(5);
     setTimeout(() => { this._renderJar(); this._spawnGift(); }, 650);
   }
@@ -210,9 +215,22 @@ export class ProgressUI {
     const b = document.getElementById("btnShop");
     if (b) b.classList.toggle("ready", this.progress.readyCount() > 0 && !this.giftEl);
   }
+  /* Pontinho das missões: baú pronto, ou missões do dia que a criança ainda
+     não viu. Abrir as missões conta como "vi" (antes ficava aceso enquanto
+     houvesse missão por fazer, ou seja, quase sempre). */
+  _missionKey() { return new Date().toDateString() + "|" + this.progress.missions().map(m => m.id).join(","); }
   _missionBadge() {
     const b = document.getElementById("btnMissions");
-    if (b) b.classList.toggle("ready", this.progress.missions().some(m => !m.done) || this.progress.chestReady());
+    if (!b) return;
+    let seen = "";
+    try { seen = localStorage.getItem("nubi.missionsSeen") || ""; } catch (e) { seen = this._missionsSeen || ""; }
+    const fresh = this.progress.missions().some(m => !m.done) && seen !== this._missionKey();
+    b.classList.toggle("ready", fresh || this.progress.chestReady());
+  }
+  _missionsSeenNow() {
+    const k = this._missionKey();
+    try { localStorage.setItem("nubi.missionsSeen", k); } catch (e) { this._missionsSeen = k; }
+    this._missionBadge();
   }
 
   // ---------------- carinho ----------------
@@ -280,7 +298,7 @@ export class ProgressUI {
   }
 
   // ---------------- missões do dia ----------------
-  openMissions() { this.renderMissions(); this.missEl.classList.add("show"); }
+  openMissions() { this.renderMissions(); this.missEl.classList.add("show"); this._missionsSeenNow(); }
   renderMissions() {
     const ul = this.missList; if (!ul) return;
     ul.innerHTML = "";
