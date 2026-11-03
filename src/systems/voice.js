@@ -25,15 +25,29 @@ export class Voice {
     this._tok = 0;                 // cada fala tem um número: fim atrasado de uma fala antiga não encerra a nova
     this._web = typeof speechSynthesis !== "undefined" ? speechSynthesis : null;
     this._webVoice = null;
-    this._native = null;
-    const cap = window.Capacitor;
-    if (cap && cap.isNativePlatform && cap.isNativePlatform() && cap.isPluginAvailable && cap.isPluginAvailable("TextToSpeech")) {
-      this._native = cap.registerPlugin("TextToSpeech");
-    }
+    this._native = this._nativeTTS();
     if (this._web) {
-      this._pickVoice();
-      if (this._web.addEventListener) this._web.addEventListener("voiceschanged", () => this._pickVoice());
+      try {
+        this._pickVoice();
+        if (this._web.addEventListener) this._web.addEventListener("voiceschanged", () => this._pickVoice());
+      } catch (e) { this._web = null; }
     }
+  }
+
+  /* Voz do aparelho no APK. O jogo não carrega o @capacitor/core, então não
+     existe Capacitor.registerPlugin: chama o plugin pela ponte nativa que o
+     Android injeta (Capacitor.nativePromise). Qualquer falha = sem voz
+     nativa; nunca derruba o jogo. */
+  _nativeTTS() {
+    try {
+      const cap = window.Capacitor;
+      if (!cap || typeof cap.nativePromise !== "function" || !(cap.isNativePlatform && cap.isNativePlatform())) return null;
+      if (typeof cap.isPluginAvailable === "function" && !cap.isPluginAvailable("TextToSpeech")) return null;
+      return {
+        speak: (opts) => cap.nativePromise("TextToSpeech", "speak", opts),
+        stop: () => cap.nativePromise("TextToSpeech", "stop", {})
+      };
+    } catch (e) { return null; }
   }
 
   get enabled() { return !!(this.audio && this.audio.enabled.voice); }
@@ -64,8 +78,8 @@ export class Voice {
     this._pending = null;
     this._tok++;
     if (this._clip) { try { this._clip.pause(); } catch (e) { /* ok */ } this._clip = null; }
-    if (this._native) this._native.stop().catch(() => {});
-    if (this._web) this._web.cancel();
+    try { if (this._native) this._native.stop().catch(() => {}); } catch (e) { /* sem voz nativa */ }
+    try { if (this._web) this._web.cancel(); } catch (e) { /* sem voz do navegador */ }
     this._done();
   }
 
@@ -85,20 +99,22 @@ export class Voice {
     if (this.audio.duckMusic) this.audio.duckMusic(true);
     const tok = ++this._tok;
     const end = () => { if (tok === this._tok) this._done(); };
-    if (via === "clip") {
-      const a = new window.Audio("assets/voice/" + id + ".mp3");
-      a.volume = 0.95; a.onended = end; a.onerror = end;
-      this._clip = a;
-      a.play().catch(end);
-    } else if (via === "native") {
-      this._native.speak({ text, lang: "pt-BR", rate: 1.0, pitch, volume: 1.0, category: "ambient" }).then(end, end);
-    } else {
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = "pt-BR"; u.rate = 1.0; u.pitch = Math.min(2, pitch); u.volume = 1;
-      if (this._webVoice) u.voice = this._webVoice;
-      u.onend = end; u.onerror = end;
-      this._web.speak(u);
-    }
+    try {
+      if (via === "clip") {
+        const a = new window.Audio("assets/voice/" + id + ".mp3");
+        a.volume = 0.95; a.onended = end; a.onerror = end;
+        this._clip = a;
+        a.play().catch(end);
+      } else if (via === "native") {
+        this._native.speak({ text, lang: "pt-BR", rate: 1.0, pitch, volume: 1.0, category: "ambient" }).then(end, end);
+      } else {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "pt-BR"; u.rate = 1.0; u.pitch = Math.min(2, pitch); u.volume = 1;
+        if (this._webVoice) u.voice = this._webVoice;
+        u.onend = end; u.onerror = end;
+        this._web.speak(u);
+      }
+    } catch (e) { end(); return; }   // falhou ao falar: segue sem voz
     // garantia: algumas vozes não avisam o fim
     clearTimeout(this._guard);
     this._guard = setTimeout(end, 1200 + text.length * 90);
