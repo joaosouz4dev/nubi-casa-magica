@@ -5,7 +5,7 @@ Tudo no mesmo estilo da Nubi em feltro. As imagens chegam por fases: cada fase e
 ## Regras para todas as imagens
 
 1. **Anexe sempre uma imagem da Nubi em feltro** (por exemplo `assets/nubi/nubi_parada.webp`) como referência de estilo.
-2. **Fundo verde chapado `#00FF00`**, sem chão e **sem sombra no chão**. O jogo desenha as sombras. Exceção: os **fundos de cômodo** (Fases 4 e 5), que são a cena inteira.
+2. **Fundo verde chapado `#00FF00`**, sem chão e **sem sombra no chão**. O jogo desenha as sombras. Exceção: os **fundos de cômodo** (Fases 3 e 4), que são a cena inteira.
 3. **Um objeto por imagem**, centralizado, inteiro, sem cortar nenhuma borda.
 4. **Sem texto, sem personagens e sem objetos extras** além do pedido.
 5. **PNG.** Objetos e personagens: quadrado de 2048x2048 (no mínimo 1024). Fundos: 2560x1152 (formato 20:9).
@@ -21,34 +21,7 @@ E, para objetos e personagens, termine com:
 
 ---
 
-## Fase 2: Lili e Tito (os amigos da Nubi)
-
-Primeiro faça **uma imagem de cada um parado** e me mostre; depois as outras poses **partindo da imagem parada** (edição/inpainting), como foi com a Nubi.
-
-**Lili (coelhinha):**
-
-> A cute fantasy bunny named Lili, friend of Nubi, same proportions and felt style as Nubi: chubby pear-shaped body, big head, light pink body, warm cream face muzzle, cheeks, belly, paws and feet, two long upright ears with soft coral-pink inside, a small round cream pompom tail, big glossy dark brown eyes with white highlights, small eyelashes, thin arched eyebrows, small pink nose, soft pink blush.
-
-**Tito (ursinho):**
-
-> A cute fantasy bear cub named Tito, friend of Nubi, same proportions and felt style as Nubi: chubby pear-shaped body, big head, warm caramel-brown body, light cream face muzzle, belly, paws and feet, two small round ears with cream inside, a tiny round tail, big glossy dark brown eyes with white highlights, thin arched eyebrows, small dark brown nose, soft pink blush.
-
-**Poses** (os mesmos nomes da Nubi, trocando o prefixo para `lili_` ou `tito_`):
-
-| Arquivo | Pose |
-|---|---|
-| `lili_parada.png` / `tito_parada.png` | standing relaxed, arms resting at the sides of the belly, eyes open looking at the viewer, gentle closed-mouth smile |
-| `..._piscando.png` | same image as the standing one, change only the eyes: both eyes gently closed |
-| `..._falando.png` | same image as the standing one, change only the mouth: open happy smile with a small pink tongue |
-| `..._acenando.png` | waving with the right paw raised beside the head, eyes closed in happy arcs, open smile |
-| `..._comemorando.png` | both arms raised up high, small jump, excited open smile |
-| `..._comendo.png` | both paws near the mouth, cheeks puffed full, eyes closed with delight (no food drawn) |
-| `..._dormindo.png` | sleeping, sitting curled up, eyes closed, peaceful tiny smile |
-| `..._sentada.png` / `..._sentado.png` | sitting on the floor, paws on the belly, eyes open, sweet smile |
-
-Para o Tito, use `tito_sentada.png` mesmo (o nome é só da pose).
-
-## Fase 3: comidas
+## Fase 2: comidas
 
 Um alimento por imagem, de frente e levemente de cima, gordinho e brilhante de feltro. Nome do arquivo: `comida_<id>.png`.
 
@@ -77,7 +50,7 @@ Um alimento por imagem, de frente e levemente de cima, gordinho e brilhante de f
 
 Restos que vão para a lixeira (pequenos): `resto_bananapeel.png` (banana peel), `resto_pearcore.png` (pear core), `resto_stem.png` (strawberry green top), `resto_twig.png` (little twig with a leaf), `resto_wrapper.png` (crumpled colorful wrapper), `resto_stick.png` (wooden popsicle stick).
 
-## Fase 4: a cozinha (piloto dos cômodos)
+## Fase 3: a cozinha (piloto dos cômodos)
 
 Os cômodos são feitos em **duas partes**: um **fundo** (parede e chão, sem nada que a criança toque) e cada **móvel/objeto separado** (em fundo verde), que o jogo coloca no lugar certo. Assim funciona em qualquer tamanho de tela.
 
@@ -96,7 +69,7 @@ Os cômodos são feitos em **duas partes**: um **fundo** (parede e chão, sem na
 | `cozinha_saquinho.png` | a small tied trash bag |
 | `cozinha_caminhao.png` | a cute little garbage truck, side view |
 
-## Fase 5: os outros cômodos
+## Fase 4: os outros cômodos
 
 Mesmo esquema: fundo sem nada tocável + objetos separados. **Só depois que a cozinha estiver aprovada no jogo.**
 
@@ -130,9 +103,9 @@ Mesmo esquema: fundo sem nada tocável + objetos separados. **Só depois que a c
 - `fundo_mapa.png`: sunny sky, soft green hills, two round trees on the left, a stone path, little flowers along the bottom. EMPTY right two thirds (the house goes there).
 - `mapa_casa.png`: front of a cute two-story house with a red tiled roof and a small round attic window, cream walls with a big EMPTY wall area (the game draws the room windows on it). Wide (about 3:4.5 height:width).
 
-## Fase 6 (depois): enfeites, roupas e ícones
+## Fase 5 (depois): enfeites, roupas e ícones
 
-Enfeites da casa (bandeirinhas, flores, balões, arco-íris), as peças de roupa e acessórios, os itens do salão (penteados, esmaltes, maquiagem) e os ícones do HUD. Essas peças também precisam encaixar nas poses dos bichinhos, então vêm por último.
+Enfeites da casa (bandeirinhas, flores, balões, arco-íris), as peças de roupa e acessórios, os itens do salão (penteados, esmaltes, maquiagem) e os ícones do HUD. Essas peças também precisam encaixar nas poses da Nubi, então vêm por último.
 
 ---
 

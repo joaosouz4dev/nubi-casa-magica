@@ -1,8 +1,8 @@
-"""Prepara as imagens de um bichinho para o jogo (Nubi, Lili, Tito).
+"""Prepara as imagens da Nubi para o jogo.
 
     python scripts/pet-sprites.py <pasta com <prefixo>_*.png em fundo verde> <especie>
 
-    especie: nubi | bunny | bear   (prefixo dos arquivos: nubi_, lili_, tito_)
+    especie: nubi   (prefixo dos arquivos: nubi_)
 
 - recorta o fundo verde chapado (chroma key) e tira o reflexo verde das bordas;
 - usa o MESMO recorte em todas as poses (a caixa que cobre todas), para os
@@ -20,7 +20,7 @@ import sys
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PREFIX = {"nubi": "nubi", "bunny": "lili", "bear": "tito"}
+PREFIX = {"nubi": "nubi"}
 HEIGHT = 720          # altura final (px): nítido em tela 2x sem pesar
 
 
@@ -39,7 +39,7 @@ def key(im):
                 a = int(255 * (90 - green) / 65)
             else:
                 a = 255
-            if g > max(r, b):                # despill: os bichinhos não têm verde
+            if g > max(r, b):                # despill: a Nubi não tem verde
                 g = max(r, b)
             px[x, y] = (r, g, b, a)
     return im

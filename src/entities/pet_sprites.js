@@ -1,5 +1,5 @@
 /* ============================================================
-   BICHINHOS EM IMAGENS (sprites em feltro/clay 3D): Nubi, Lili e Tito.
+   NUBI EM IMAGENS (sprites em feltro/clay 3D).
    Cada bichinho tem as poses em assets/<especie>/<prefixo>_<pose>.webp e
    as medidas em assets/<especie>/sprites.json (scripts/pet-sprites.py):
    tamanho, centro dos pés e, por pose, o ponto entre os olhos e a meia
@@ -18,7 +18,7 @@ const FEET_Y = 1.12;       // linha dos pés do desenho antigo (r)
 // cabeça do desenho antigo: olhos em y=-0.14r, afastados 0.35r do centro
 const OLD_EYE_Y = -0.14, OLD_EYE_DX = 0.35;
 // cor do pelo (tufinhos da toalha) quando a imagem é usada
-const FUR = { nubi: "#cbabe5", bunny: "#ffd6e6", bear: "#c99266" };
+const FUR = { nubi: "#cbabe5" };
 
 class PetSprites {
   constructor(species) {
@@ -123,8 +123,7 @@ class PetSprites {
   }
 }
 
-// bichinhos que já têm imagens (acrescente "bunny" e "bear" quando as de
-// Lili e Tito chegarem; buscar o que não existe gera erro no console)
+// bichinhos que têm imagens (buscar o que não existe gera erro no console)
 export const WITH_SPRITES = ["nubi"];
 const SETS = {};
 /* Imagens do bichinho, ou null se ele ainda não tiver (ou não carregaram). */

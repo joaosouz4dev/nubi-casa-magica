@@ -108,7 +108,7 @@ fs.mkdirSync(OUT, { recursive: true });
   // ---- festa final ----
   for (const a of ['foam:tinted', 'equip:hat:fluffy', 'basket:cape']) { await ev((x) => window.__nubi.bus.emit('act', x), a); await wait(250); }
   // depois da festa, o mundo continua: começa a temporada 2 (novos amigos)
-  R.finale = await ev(() => { const q = window.__nubi.quests; const c = q.current(); return q.state.finaleDone && !!c.chapter && c.chapter.id === 'amigos'; });
+  R.finale = await ev(() => { const q = window.__nubi.quests; const c = q.current(); return q.state.finaleDone && !!c.chapter && c.chapter.id === 'looks'; });   // temporada 2 começa pelos looks
   await wait(900);
   await shot('q07-festa');
   await wait(2600);

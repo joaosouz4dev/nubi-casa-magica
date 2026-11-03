@@ -44,7 +44,7 @@ export const ITEMS = {
   rainbowcape: { id: "rainbowcape", slot: "cape",  shape: "rainbow",     color: "#ff6b6b", label: "capa arco-íris", gift: "desfile" },
   medal:       { id: "medal",       slot: "neck",  shape: "medal",       color: "#ffc93a", label: "medalha", gift: "bola" },
   unicorn:     { id: "unicorn",     slot: "hat",   shape: "unicorn",     color: "#fff4fb", label: "chifre de unicórnio", gift: "festa" },
-  wings:       { id: "wings",       slot: "cape",  shape: "wings",       color: "#bfe9ff", label: "asas de fada", gift: "amigos" }
+  wings:       { id: "wings",       slot: "cape",  shape: "wings",       color: "#bfe9ff", label: "asas de fada", gift: "premio" }   // só pela coleção de prêmios
 };
 
 /* Páginas do guarda-roupa (até 3 por página; um botão troca de página).

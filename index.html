@@ -196,13 +196,6 @@
     @keyframes giftHop { 0%,100% { transform: translateY(0) rotate(0); } 30% { transform: translateY(-14px) rotate(-8deg); } 60% { transform: translateY(0) rotate(6deg); } }
     @keyframes giftOpen { to { transform: scale(1.8); opacity: 0; } }
     body.reduce-motion #dailyGift, body.reduce-motion .chestRow.ready { animation: none; }
-    #btnPets.wish { animation: wish 1.3s ease-in-out infinite; box-shadow: 0 4px 0 #cdb8f0, 0 0 0 5px rgba(255,214,90,.7), 0 0 18px 6px rgba(255,214,90,.55); }
-    #petsGrid { display: flex; gap: 18px; justify-content: center; flex-wrap: wrap; margin-top: calc(2 * var(--vh)); }
-    .petCard { border: 3px solid #e3d6fb; border-radius: 26px; background: #faf6ff; padding: 8px 10px; cursor: pointer; font: inherit; color: #4a3f5c; transition: transform .15s; }
-    .petCard:active { transform: scale(.92); }
-    .petCard.active { border-color: #ffc93a; background: #fff7d6; }
-    .overlay.show .petCard { animation: cardIn .45s cubic-bezier(.34,1.56,.64,1) backwards; }
-    .petName { font-size: 18px; margin-top: 2px; }
     .corner button { position: fixed; width: var(--btn); height: var(--btn); }
     .corner #btnHome, .corner #btnBag, .corner #btnPause { width: var(--btn-main); height: var(--btn-main); }
     #btnSound .slash { opacity: 0; transition: opacity .2s; }
@@ -393,7 +386,7 @@
     .toy:focus-visible, .panel button:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
     @media (hover: hover) {
       .toy:hover { transform: translateY(-2px) scale(1.05); }
-      .prize:hover, .mission:hover, .petCard:hover, button.albumCard:hover { transform: translateY(-3px); }
+      .prize:hover, .mission:hover, button.albumCard:hover { transform: translateY(-3px); }
     }
     .toy svg { transition: transform .25s var(--ease-pop); }
     .toy:active svg { transform: scale(.9) rotate(-4deg); }
@@ -426,7 +419,7 @@
     .panel .close:hover { transform: rotate(90deg); transition: transform .3s var(--ease-pop); }
 
     /* cards (lojinha, missões, vitrine, álbum): mesma linguagem */
-    .prize, .mission, .petCard {
+    .prize, .mission {
       border-width: 2px; border-radius: var(--r-card);
       box-shadow: 0 1px 0 #fff inset, 0 4px 0 rgba(160,120,210,.18), 0 8px 18px rgba(70,40,110,.10);
       transition: transform .2s var(--ease-pop), box-shadow .2s;
@@ -528,17 +521,6 @@
     <div class="panel">
       <button class="close" id="bagClose" aria-label="Fechar">✕</button>
       <div class="bagGrid">
-        <button class="toy" id="btnPets" aria-label="Escolher bichinho">
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <ellipse cx="17" cy="9" rx="4" ry="9" fill="#ffe3ee" stroke="#c7709a" stroke-width="2.5"/>
-      <ellipse cx="27" cy="9" rx="4" ry="9" fill="#ffe3ee" stroke="#c7709a" stroke-width="2.5"/>
-      <circle cx="22" cy="27" r="13" fill="#ffe3ee" stroke="#c7709a" stroke-width="3"/>
-      <circle cx="17" cy="25" r="2.2" fill="#3a2f4f"/><circle cx="27" cy="25" r="2.2" fill="#3a2f4f"/>
-      <path d="M20 31l2 2 2-2" fill="none" stroke="#3a2f4f" stroke-width="2" stroke-linecap="round"/>
-      <circle cx="38" cy="34" r="7" fill="#d9a273" stroke="#7a4a1f" stroke-width="2.5"/>
-      <circle cx="33.5" cy="28.5" r="2.6" fill="#d9a273" stroke="#7a4a1f" stroke-width="2"/><circle cx="42.5" cy="28.5" r="2.6" fill="#d9a273" stroke="#7a4a1f" stroke-width="2"/>
-    </svg>
-  </button>
         <button class="toy" id="btnMissions" aria-label="Missões do dia">
     <svg viewBox="0 0 48 48" aria-hidden="true">
       <rect x="11" y="8" width="26" height="34" rx="4" fill="#fff" stroke="#7fa3b8" stroke-width="3"/>
@@ -600,15 +582,6 @@
       <div id="albumTrophies"></div>
       <div id="albumStickers"></div>
       <div id="albumGrid"></div>
-    </div>
-  </div>
-
-  <!-- Vitrine de bichinhos -->
-  <div class="overlay" id="pets">
-    <div class="panel">
-      <button class="close" id="petsClose" aria-label="Fechar">✕</button>
-      <h2>Com quem vamos brincar?</h2>
-      <div id="petsGrid"></div>
     </div>
   </div>
 

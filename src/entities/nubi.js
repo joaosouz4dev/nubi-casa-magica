@@ -697,28 +697,10 @@ export class Nubi {
 
   // ---- espécie: orelhas, focinho, brilho ----
   _earGeom(side, r) {
-    switch (this.petDef.ears) {
-      case "bunny": return { x: side * r * 0.38, y: -r * 1.18, rx: r * 0.17, ry: r * 0.5, rot: side * 0.18 };
-      case "bear":  return { x: side * r * 0.66, y: -r * 0.72, rx: r * 0.25, ry: r * 0.24, rot: 0 };
-      default:      return { x: side * r * 0.66, y: -r * 0.6, rx: r * 0.22, ry: r * 0.3, rot: side * 0.35 };
-    }
+    return { x: side * r * 0.66, y: -r * 0.6, rx: r * 0.22, ry: r * 0.3, rot: side * 0.35 };
   }
 
-  _snout(ctx, r, body, outline) {
-    if (this.petDef.ears === "bear") {
-      ctx.fillStyle = this.tint ? lighten(body, 0.35) : this.petDef.muzzle;
-      ctx.beginPath(); ctx.ellipse(0, r * 0.33, r * 0.3, r * 0.2, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = "#4a2f2a";
-      ctx.beginPath(); ctx.ellipse(0, r * 0.22, r * 0.08, r * 0.055, 0, 0, Math.PI * 2); ctx.fill();
-    } else if (this.petDef.ears === "bunny") {
-      ctx.fillStyle = "#ff8fb1";
-      ctx.beginPath(); ctx.moveTo(-r * 0.06, r * 0.22); ctx.lineTo(r * 0.06, r * 0.22); ctx.lineTo(0, r * 0.29); ctx.closePath(); ctx.fill();
-      ctx.strokeStyle = rgba(outline, 0.45); ctx.lineWidth = Math.max(1, r * 0.018);
-      for (const s of [-1, 1]) for (const dy of [-0.03, 0.04]) {
-        ctx.beginPath(); ctx.moveTo(s * r * 0.2, r * (0.27 + dy)); ctx.lineTo(s * r * 0.48, r * (0.24 + dy * 1.6)); ctx.stroke();
-      }
-    }
-  }
+  _snout() { /* a Nubi não tem focinho desenhado à parte */ }
 
   _shine(ctx, r) {
     ctx.save();
@@ -747,7 +729,7 @@ export class Nubi {
     const k = this._accK(e);
     const drop = e.target ? (1 - Ease.outCubic(e.k)) * r * 0.8 : 0;
     const hairUp = this.cosmetics.hair ? r * 0.1 : 0;
-    const lift = this.fluffyShown * r * 0.16 + this.moonShown * r * 0.1 + hairUp + (this.petDef.ears === "bunny" ? r * 0.04 : 0);
+    const lift = this.fluffyShown * r * 0.16 + this.moonShown * r * 0.1 + hairUp;
     const [ax, ay] = ANCHORS.hat;
     ctx.save();
     ctx.translate(ax * r, ay * r - lift - drop + tuftSquash * r * 0.2);

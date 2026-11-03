@@ -52,7 +52,6 @@ export class ProgressUI {
     bus.on("prize:claimed", (p) => this._claimed(p));
     bus.on("love:changed", () => this._renderLove());
     bus.on("love:up", (e) => this._loveUp(e));
-    bus.on("pet:choose", () => setTimeout(() => this._renderLove(), 50));
     bus.on("mission:done", (e) => this._missionDone(e));
     bus.on("chest:ready", () => { this._missionBadge(); this.audio.chime(5); bump(document.getElementById("btnMissions")); });
     bus.on("chest:opened", () => this._chestOpened());
