@@ -36,7 +36,7 @@ const URL = 'http://127.0.0.1:8742/index.html';
   await wait(1200);
   R.boots = await ev(() => !!window.__nubi && !!window.__nubi.room && !document.getElementById('bootError'));
   R.titleShown = await ev(() => !!document.getElementById('title'));
-  R.hudReady = await ev(() => document.getElementById('btnBack').classList.contains('off') && !!document.querySelector('#starIco canvas'));
+  R.hudReady = await ev(() => document.getElementById('btnBack').classList.contains('off') && !!document.querySelector('#bagStar img') && !!document.querySelector('#starPill #jar'));
   R.noSynthVoice = await ev(() => window.__nubi && window.__nubi.voice.backend !== 'native');
   R.bootClassGone = await ev(() => !document.body.classList.contains('booting'));
 

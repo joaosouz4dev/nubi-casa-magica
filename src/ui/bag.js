@@ -17,7 +17,7 @@ export class Bag {
     // tocar fora do painel fecha
     this.el.addEventListener("click", (e) => { if (e.target === this.el) this.close(); });
     // abrir algo de dentro fecha a mochila (o som fica: dá para ver o estado)
-    this.el.querySelectorAll(".bagGrid .toy").forEach(b => {
+    this.el.querySelectorAll(".bagGrid .toy, #starPill").forEach(b => {
       if (b.id !== "btnSound") b.addEventListener("click", () => this.close(), true);
     });
     // a área dos responsáveis abre por um timer (segurar) e um desafio:
@@ -41,10 +41,22 @@ export class Bag {
   open() { this.el.classList.add("show"); this.bus.emit("audio:pop"); this.sync(); }
   close() { this.el.classList.remove("show"); }
 
+  /* O pontinho da mochila avisa só o que é NOVO: abrir a mochila conta como
+     "vi" (cada botão de dentro continua com o próprio pontinho até ser usado),
+     e ele volta quando algum outro botão de dentro ganha pontinho. */
   sync() {
-    const any = (cls) => !!this.grid.querySelector(".toy." + cls) || !!this.el.querySelector("#btnParent." + cls);
-    this.btn.classList.toggle("ready", any("ready"));
-    this.btn.classList.toggle("wish", any("wish"));
+    const ready = [...this.el.querySelectorAll(".toy.ready, #starPill.ready")].map(b => b.id).sort();
+    if (this.isOpen) this._seen(ready);
+    const seen = this._seen();
+    this.btn.classList.toggle("ready", ready.some(id => !seen.includes(id)));
+    this.btn.classList.toggle("wish", !!this.grid.querySelector(".toy.wish") || !!this.el.querySelector("#btnParent.wish"));
+  }
+  _seen(set) {
+    try {
+      if (set) { localStorage.setItem("nubi.bagSeen", JSON.stringify(set)); return set; }
+      const v = JSON.parse(localStorage.getItem("nubi.bagSeen") || "[]");
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return set || this._mem || (this._mem = []); }
   }
 
   bump() { this.btn.classList.remove("bump"); void this.btn.offsetWidth; this.btn.classList.add("bump"); }

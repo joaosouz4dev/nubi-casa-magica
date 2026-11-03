@@ -13,6 +13,7 @@ import { touchNubi } from "./nubi_touch.js";
 import { drawIcon } from "../ui/icons.js";
 import { atmosphere } from "../ui/scenery.js";
 import { art, drawArtAt, drawBackdrop } from "../core/art.js";
+import { feltFibers, FELT, feltDot, feltRing } from "../ui/felt.js";
 
 /* Desenha a arte "fatiada" na vertical: largura W fixa e cada linha da arte
    (fração 0..1 da altura) presa a um y da tela. Entre duas âncoras a faixa
@@ -330,8 +331,16 @@ export class DentistRoom {
     ctx.translate(M.x, M.y); ctx.scale(b, b); ctx.translate(-M.x, -M.y);
     // lupa
     softShadow(ctx, M.x, M.y + M.H * 0.53, M.W * 0.45, M.H * 0.06, 0.2);
+    // aro da lupa em feltro menta: volume macio, fibrinhas, borda e costura
     ctx.beginPath(); ctx.ellipse(M.x, M.y, M.W * 0.56, M.H * 0.56, 0, 0, Math.PI * 2);
-    ctx.fillStyle = "#ffffff"; ctx.fill(); ctx.strokeStyle = "#7fd0bd"; ctx.lineWidth = Math.max(4, m * 0.018); ctx.stroke();
+    const lg = ctx.createRadialGradient(M.x - M.W * 0.2, M.y - M.H * 0.3, M.H * 0.1, M.x, M.y, M.W * 0.6);
+    lg.addColorStop(0, lighten(FELT.mint, 0.3)); lg.addColorStop(0.6, FELT.mint); lg.addColorStop(1, darken(FELT.mint, 0.08));
+    ctx.fillStyle = lg; ctx.fill();
+    ctx.strokeStyle = darken(FELT.mint, 0.28); ctx.lineWidth = Math.max(2.5, m * 0.008); ctx.stroke();
+    ctx.save(); ctx.clip(); feltFibers(ctx, M.x - M.W * 0.56, M.y - M.H * 0.56, M.W * 1.12, M.H * 1.12); ctx.restore();
+    ctx.save(); ctx.setLineDash([m * 0.012, m * 0.01]); ctx.lineCap = "round"; ctx.globalAlpha = 0.6;
+    ctx.strokeStyle = darken(FELT.mint, 0.35); ctx.lineWidth = Math.max(1.5, m * 0.004);
+    ctx.beginPath(); ctx.ellipse(M.x, M.y, M.W * 0.535, M.H * 0.53, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
     // lábios (cor do bichinho)
     const lip = this.nubi.bodyColor();
     ctx.beginPath(); ctx.ellipse(M.x, M.y, M.W * 0.5, M.H * 0.46, 0, 0, Math.PI * 2);
@@ -371,7 +380,7 @@ export class DentistRoom {
     if (crooked) {
       const h = this.toothHome(crooked);
       ctx.save(); ctx.setLineDash([6, 6]); ctx.lineDashOffset = Motion.reduce ? 0 : -this.t * 0.02;
-      ctx.strokeStyle = "rgba(255,255,255,.85)"; ctx.lineWidth = 2.5;
+      ctx.strokeStyle = FELT.cream; ctx.globalAlpha = 0.9; ctx.lineWidth = 3; ctx.lineCap = "round";
       this._toothPath(ctx, h.x, h.y, s.w, s.h, crooked.upper); ctx.stroke(); ctx.restore();
     }
     if (dragging) this._tooth(ctx, dragging, s, true);
@@ -479,11 +488,10 @@ export class DentistRoom {
     ctx.translate(t.disp.x, t.disp.y - lift); ctx.rotate(t.tilt);
     const k = 1 + lift / r * 0.35; ctx.scale(k, k);
     if (this.selected === t) {
-      ctx.strokeStyle = "rgba(60,120,110,.7)"; ctx.lineWidth = 4; ctx.setLineDash([9, 7]); ctx.lineDashOffset = -this.t * 0.03;
-      ctx.beginPath(); ctx.arc(0, 0, r * 1.3, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      feltRing(ctx, r * 1.32, this.t);
     }
     // base redonda da bandeja (com a bandeja em feltro, a ferramenta fica no compartimento dela)
-    if (!this._trayOk()) { ctx.fillStyle = "rgba(255,255,255,.85)"; ctx.beginPath(); ctx.arc(0, 0, r * 1.05, 0, Math.PI * 2); ctx.fill(); }
+    if (!this._trayOk()) feltDot(ctx, 0, 0, r * 1.05, FELT.cream, { lift: 0.6 });
     const wand = t.id === "wand" && art("dentista/dentista_varinha");
     if (wand) {
       // varinha em feltro, inclinadinha como a antiga

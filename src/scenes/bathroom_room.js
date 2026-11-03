@@ -10,6 +10,7 @@ import { touchNubi } from "./nubi_touch.js";
 import { drawIcon } from "../ui/icons.js";
 import { atmosphere, plant, roundWindow } from "../ui/scenery.js";
 import { art, drawArt, drawArtFit } from "../core/art.js";
+import { feltRing } from "../ui/felt.js";
 
 /* Artes em feltro das ferramentas desenhadas aqui (a escova vem do drawIcon).
    [nome, largura máx., altura máx., deslocamento y] em múltiplos de r. */
@@ -421,8 +422,7 @@ export class BathroomRoom {
     if (!this.poopHeld) softShadow(ctx, p.x, p.y + r * 0.7, r * 0.9, r * 0.2, 0.2);
     ctx.save(); ctx.translate(p.x, p.y);
     if (this.poopSel) {
-      ctx.strokeStyle = "rgba(80,80,140,.7)"; ctx.lineWidth = 3; ctx.setLineDash([7, 6]); ctx.lineDashOffset = -this.t * 0.03;
-      ctx.beginPath(); ctx.arc(0, 0, r * 1.6, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      feltRing(ctx, r * 1.6, this.t);
     }
     const wob = Motion.reduce ? 0 : Math.sin(this.t * 0.005) * 0.04;
     ctx.scale(1 + wob, 1 - wob);
@@ -468,10 +468,7 @@ export class BathroomRoom {
     ctx.scale((1 + lift / r * 0.4) * (1 + sq), (1 + lift / r * 0.4) * (1 - sq));
 
     if (this.selected === t) {
-      const p = (Math.sin(this.t * 0.008) + 1) * 0.5;
-      ctx.strokeStyle = `rgba(80,80,140,${0.5 + p * 0.4})`; ctx.lineWidth = 4;
-      ctx.setLineDash([9, 7]); ctx.lineDashOffset = -this.t * 0.03;
-      ctx.beginPath(); ctx.arc(0, 0, r * (1.35 + p * 0.08), 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+      feltRing(ctx, r * 1.38, this.t);
     }
     const ow = Math.max(2, r * 0.07);
     ctx.lineJoin = "round"; ctx.lineCap = "round";

@@ -19,6 +19,9 @@ import { paintFood } from "../entities/food_art.js";
 import { art, drawBackdrop } from "../core/art.js";
 import { touchNubi } from "./nubi_touch.js";
 import { Skill } from "../systems/skill.js";
+import { feltCard, feltDisc, feltPiece, feltDot as feltDotBase } from "../ui/felt.js";
+/* Bolinha de feltro dos minijogos (marcadores, sequência): mais baixinha. */
+const feltDot = (ctx, cx, cy, r, color, o = {}) => feltDotBase(ctx, cx, cy, r, color, { lift: 0.6, stitch: true, ...o });
 
 export const GAMES = [
   { id: "catch",   icon: "game:catch",   color: "#ff9a5b" },
@@ -41,6 +44,11 @@ const CATCH_FOODS = ["apple", "banana", "strawberry", "pear", "orange", "grapes"
 const MEMORY_ICONS = ["food:apple", "food:banana", "food:strawberry", "food:watermelon", "food:grapes", "food:orange"];
 const BUBBLE_COLORS = ["#ff8fb8", "#8fd3ff", "#b49cff", "#9be564", "#ffb04a"];
 const KEY_COLORS = ["#ff6b6b", "#ffb04a", "#ffd54a", "#62c370", "#5bc0eb"];
+/* Interface em feltro: cada jogo tem a sua cor pastel (cartão do menu, moldura
+   da abertura). Contornos e textos num tom escuro quente, nunca preto. */
+const PASTEL = { catch: "#ffd2b0", bubbles: "#bfe0f7", memory: "#d9c6f5", music: "#bfe8d4", shapes: "#ffe7a3", colors: "#ffc2d6" };
+const FELT = { cream: "#fff4dc", yellow: "#ffe7a3", gold: "#ffd77a", pink: "#ffc2d6", lilac: "#d9c6f5", mint: "#bfe8d4", ink: "#6b4a5a" };
+const pastelOf = (G) => PASTEL[G.id] || lighten(G.color, 0.6);
 const PLAY_MS = 30000;
 const INTRO_MS = 900;
 const RESULT_MS = 5200;   // tempo para escolher "de novo" ou "outro jogo"
@@ -598,24 +606,22 @@ export class GamesRoom {
     const s = appear * (1 - clamp(k, -1, 1) * 0.05);
     const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
     const bob = Motion.reduce ? 0 : Math.sin(this.t * 0.003 + i * 1.3) * m * 0.006;
-    ctx.save(); ctx.translate(cx, cy + bob); ctx.scale(s, s); ctx.translate(-cx, -cy);
-    ctx.shadowColor = "rgba(70,40,110,.25)"; ctx.shadowBlur = m * 0.03; ctx.shadowOffsetY = m * 0.012;
-    const gr = ctx.createLinearGradient(0, r.y, 0, r.y + r.h);
-    gr.addColorStop(0, lighten(G.color, 0.55)); gr.addColorStop(1, lighten(G.color, 0.15));
-    ctx.fillStyle = gr; roundRect(ctx, r.x, r.y, r.w, r.h, m * 0.035); ctx.fill();
-    ctx.shadowColor = "transparent";
-    ctx.strokeStyle = darken(G.color, 0.25); ctx.lineWidth = Math.max(2, m * 0.008);
-    roundRect(ctx, r.x, r.y, r.w, r.h, m * 0.035); ctx.stroke();
-    // brilho no topo
-    ctx.fillStyle = "rgba(255,255,255,.35)"; roundRect(ctx, r.x + r.w * 0.06, r.y + r.h * 0.05, r.w * 0.88, r.h * 0.16, m * 0.02); ctx.fill();
+    // apertado = o feltro "afunda": a espessura some e a face desce até o chão
+    const lift = Math.round((1 - clamp(k, 0, 1) * 0.8) * 4) / 4;
+    const depth = Math.max(2, Math.min(r.w, r.h) * 0.07);
+    ctx.save(); ctx.translate(cx, cy + bob + (1 - lift) * depth); ctx.scale(s, s); ctx.translate(-cx, -cy);
+    const col = pastelOf(G), rad = m * 0.045;
+    feltPiece(ctx, "card|" + col + "|" + rad.toFixed(1) + "|" + lift, r.x, r.y, r.w, r.h,
+      (c, x, y, w, h) => feltCard(c, x, y, w, h, rad, col, { lift }));
     drawIcon(ctx, G.icon, cx, r.y + r.h * 0.48, Math.min(r.w, r.h) * 0.3);
-    // marca pessoal
+    // marca pessoal: etiqueta creme costurada no pé do cartão
     const best = this.best(G.id);
     if (best > 0) {
-      const bx = cx, by = r.y + r.h * 0.86;
-      ctx.fillStyle = "rgba(255,255,255,.85)"; roundRect(ctx, bx - m * 0.055, by - m * 0.024, m * 0.11, m * 0.048, m * 0.024); ctx.fill();
+      const bx = cx, by = r.y + r.h * 0.86, bw = m * 0.11, bh = m * 0.048;
+      feltPiece(ctx, "tag|" + bh.toFixed(1), bx - bw / 2, by - bh / 2, bw, bh,
+        (c, x, y, w, h) => feltCard(c, x, y, w, h, h / 2, FELT.cream, { lift: 0.5 }));
       drawIcon(ctx, "trophy", bx - m * 0.03, by, m * 0.018);
-      ctx.fillStyle = "#6b4a14"; ctx.font = `bold ${Math.round(m * 0.032)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+      ctx.fillStyle = FELT.ink; ctx.font = `bold ${Math.round(m * 0.032)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
       ctx.fillText(String(best), bx - m * 0.008, by + m * 0.002);
     }
     ctx.restore();
@@ -673,11 +679,11 @@ export class GamesRoom {
     ctx.save(); ctx.translate(cx, cy + lift); ctx.scale(sx, 1);
     ctx.shadowColor = "rgba(70,40,110,.22)"; ctx.shadowBlur = m * 0.02; ctx.shadowOffsetY = m * 0.008;
     if (face) {
-      ctx.fillStyle = c.matched ? "#fff7d6" : "#ffffff";
-      roundRect(ctx, -r.w / 2, -r.h / 2, r.w, r.h, m * 0.025); ctx.fill();
+      // frente: retalho de feltro creme (amarelinho quando o par foi achado)
       ctx.shadowColor = "transparent";
-      ctx.strokeStyle = c.matched ? "#e0a21c" : "#b49cff"; ctx.lineWidth = Math.max(2, m * (c.matched ? 0.009 : 0.006));
-      roundRect(ctx, -r.w / 2, -r.h / 2, r.w, r.h, m * 0.025); ctx.stroke();
+      const col = c.matched ? "#ffe7a3" : "#fff4dc";
+      feltPiece(ctx, "memface|" + col, -r.w / 2, -r.h / 2, r.w, r.h,
+        (cc, x, y, w, h) => feltCard(cc, x, y, w, h, m * 0.03, col, { lift: 0.6 }));
       drawIcon(ctx, c.icon, 0, 0, r.w * 0.3);
     } else if (cardBackArt(r.w, r.h)) {
       // verso em feltro (lilás com estrelinha)
@@ -746,9 +752,7 @@ export class GamesRoom {
     const n = g.seq.length, gap = m * 0.05, y = h * 0.42, x0 = w * 0.58 - (n - 1) * gap / 2;
     for (let i = 0; i < n; i++) {
       const done = g.phase === "play" ? i < g.idx : g.phase === "done";
-      ctx.fillStyle = done ? KEY_COLORS[g.seq[i]] : "rgba(255,255,255,.75)";
-      ctx.strokeStyle = "#8a7fa0"; ctx.lineWidth = Math.max(1.5, m * 0.004);
-      ctx.beginPath(); ctx.arc(x0 + i * gap, y, m * 0.016, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      feltDot(ctx, x0 + i * gap, y, m * 0.018, done ? lighten(KEY_COLORS[g.seq[i]], 0.12) : FELT.cream);
     }
     // vez de quem: orelhinha (ouvir) ou mãozinha (tocar)
     drawIcon(ctx, g.phase === "listen" ? "note" : "paw", w * 0.58 + (n + 1) * gap / 2 + m * 0.02, y, m * 0.026);
@@ -814,15 +818,18 @@ export class GamesRoom {
     const g = this.game, t = g.target;
     // alvo (contorno da cor a fazer) no alto
     const tx = w * 0.58, ty = h * 0.3;
-    ctx.save();
-    ctx.fillStyle = "rgba(255,255,255,.9)"; roundRect(ctx, tx - m * 0.11, ty - m * 0.13, m * 0.22, m * 0.2, m * 0.03); ctx.fill();
-    ctx.strokeStyle = darken(t.out, 0.2); ctx.lineWidth = Math.max(2, m * 0.006); roundRect(ctx, tx - m * 0.11, ty - m * 0.13, m * 0.22, m * 0.2, m * 0.03); ctx.stroke();
-    // pote/jarro mostrando a cor-alvo esmaecida (o que queremos fazer)
-    ctx.globalAlpha = 0.4; ctx.fillStyle = t.out; ctx.beginPath(); ctx.arc(tx, ty - m * 0.02, m * 0.06, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    // quadrinho de feltro creme (moldura na cor-alvo clarinha, como aplique)
+    const fw = m * 0.22, fh = m * 0.2, frame = lighten(t.out, 0.55);
+    feltPiece(ctx, "board|" + frame + "|" + fw.toFixed(1), tx - fw / 2, ty - m * 0.13, fw, fh, (c, x, y, w, h) => {
+      feltCard(c, x, y, w, h, m * 0.04, frame, { stitch: false });
+      const k = m * 0.016;
+      feltCard(c, x + k, y + k, w - k * 2, h - k * 2, m * 0.03, FELT.cream, { shadow: false, lift: 0.4 });
+    });
+    // círculo de feltro com a cor-alvo esmaecida (o que queremos fazer)
+    feltDot(ctx, tx, ty - m * 0.02, m * 0.06, lighten(t.out, 0.5), { shadow: false, lift: 0.3 });
     drawIcon(ctx, "star", tx, ty + m * 0.045, m * 0.025);
-    ctx.restore();
-    // resultado da mistura atual, se houver
-    if (g.mixed) { ctx.save(); ctx.fillStyle = g.mixed; ctx.beginPath(); ctx.arc(tx, ty - m * 0.02, m * 0.055, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#fff"; ctx.lineWidth = m * 0.006; ctx.stroke(); ctx.restore(); }
+    // resultado da mistura atual, se houver (peça de feltro por cima do alvo)
+    if (g.mixed) feltDot(ctx, tx, ty - m * 0.02, m * 0.055, g.mixed, { lift: 0.7 });
     // potes de tinta
     for (let i = 0; i < 3; i++) {
       const r = this.swatchRect(i);
@@ -846,7 +853,7 @@ export class GamesRoom {
       ctx.restore();
     }
     // pontinhos de progresso (rodadas)
-    for (let i = 0; i < g.rounds; i++) { ctx.fillStyle = i < g.round ? t.out : "rgba(255,255,255,.7)"; ctx.strokeStyle = "#8a7fa0"; ctx.lineWidth = Math.max(1.5, m * 0.004); ctx.beginPath(); ctx.arc(w * 0.58 + (i - (g.rounds - 1) / 2) * m * 0.05, h * 0.46, m * 0.014, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    for (let i = 0; i < g.rounds; i++) feltDot(ctx, w * 0.58 + (i - (g.rounds - 1) / 2) * m * 0.05, h * 0.46, m * 0.017, i < g.round ? t.out : FELT.cream);
   }
 
   _hud(ctx, g, w, h, m) {
@@ -854,20 +861,31 @@ export class GamesRoom {
     // (no celular deitado a fileira de botões ocupa mais da altura: desce junto)
     const x = w * 0.04, y = Math.max(h * 0.2, this.vp.hudBottom() + m * 0.06);
     ctx.save();
-    ctx.fillStyle = "rgba(255,255,255,.88)"; roundRect(ctx, x, y - m * 0.04, m * 0.2, m * 0.08, m * 0.04); ctx.fill();
-    ctx.strokeStyle = "#e6c86a"; ctx.lineWidth = Math.max(2, m * 0.005); roundRect(ctx, x, y - m * 0.04, m * 0.2, m * 0.08, m * 0.04); ctx.stroke();
+    // faixa de feltro creme costurada (estrela + número)
+    const pw = m * 0.2, ph = m * 0.08;
+    feltPiece(ctx, "score|" + ph.toFixed(1), x, y - ph / 2, pw, ph,
+      (c, x, y, w, h) => feltCard(c, x, y, w, h, h / 2, FELT.cream, { lift: 0.7 }));
     drawIcon(ctx, "star", x + m * 0.045, y, m * 0.028);
-    ctx.fillStyle = "#6b4a14"; ctx.font = `bold ${Math.round(m * 0.05)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+    ctx.fillStyle = FELT.ink; ctx.font = `bold ${Math.round(m * 0.05)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle";
     ctx.fillText(String(g.score), x + m * 0.085, y + m * 0.004);
     ctx.restore();
     // tempo: um solzinho que anda numa trilha (sem número, sem "acabou o tempo")
     if (g.id === "catch" || g.id === "bubbles") {
       const k = clamp(g.t / PLAY_MS), x0 = w * 0.3, x1 = w * 0.8, yy = Math.max(h * 0.135, this.vp.hudBottom() + m * 0.045);
       ctx.save();
-      ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = m * 0.022; ctx.lineCap = "round";
-      ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x1, yy); ctx.stroke();
-      ctx.strokeStyle = "#ffcf4a"; ctx.lineWidth = m * 0.014;
-      ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x0 + (x1 - x0) * k, yy); ctx.stroke();
+      // trilho de feltro creme costurado; por cima, a tira amarela vai crescendo
+      // (a tira inteira fica em cache e só aparece até onde o sol já andou)
+      const th = m * 0.036, fh = th * 0.56, tw = x1 - x0 + th;
+      feltPiece(ctx, "track|" + th.toFixed(1), x0 - th / 2, yy - th / 2, tw, th,
+        (c, x, y, w, h) => feltCard(c, x, y, w, h, h / 2, FELT.cream, { lift: 0.5 }));
+      const fill = (x1 - x0) * k + fh;
+      if (k > 0) {
+        ctx.save();
+        ctx.beginPath(); roundRect(ctx, x0 - fh / 2, yy - fh / 2 - 1, fill, fh + 3, fh / 2); ctx.clip();
+        feltPiece(ctx, "trackfill|" + fh.toFixed(1) + "|" + tw.toFixed(0), x0 - fh / 2, yy - fh / 2, x1 - x0 + fh, fh,
+          (c, x, y, w, h) => feltCard(c, x, y, w, h, h / 2, FELT.gold, { stitch: false, shadow: false, lift: 0.4 }));
+        ctx.restore();
+      }
       drawIcon(ctx, "sun", x0 + (x1 - x0) * k, yy, m * 0.028);
       drawIcon(ctx, "trophy", x1 + m * 0.03, yy, m * 0.022);
       ctx.restore();
@@ -880,7 +898,9 @@ export class GamesRoom {
       const k = f.t / 900;
       ctx.globalAlpha = 1 - Ease.inQuad(k);
       ctx.font = `bold ${Math.round(m * (0.045 + Ease.outBack(Math.min(1, k * 3)) * 0.01))}px Fredoka, system-ui, sans-serif`;
-      ctx.lineWidth = Math.max(3, m * 0.008); ctx.strokeStyle = "#ffffff"; ctx.fillStyle = darken(f.color, 0.25);
+      // letra cheia na cor (clarinha, como feltro) com contorno macio no tom escuro quente
+      ctx.lineJoin = "round"; ctx.lineWidth = Math.max(4, m * 0.012); ctx.strokeStyle = "rgba(107,74,90,.9)";
+      ctx.fillStyle = lighten(f.color, 0.18);
       const y = f.y - Ease.outCubic(k) * m * 0.1;
       ctx.strokeText("+" + f.n, f.x, y); ctx.fillText("+" + f.n, f.x, y);
     }
@@ -894,8 +914,13 @@ export class GamesRoom {
     ctx.globalAlpha = 1 - clamp((k - 0.75) * 4);
     ctx.translate(w * 0.55, h * 0.45); ctx.scale(s, s);
     const G = GAMES.find(x => x.id === g.id);
-    ctx.fillStyle = "rgba(255,255,255,.92)"; ctx.beginPath(); ctx.arc(0, 0, m * 0.15, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = G.color; ctx.lineWidth = m * 0.012; ctx.stroke();
+    // medalhão: disco na cor pastel do jogo com um disco creme costurado por cima
+    const R = m * 0.15, col = pastelOf(G);
+    feltPiece(ctx, "intro|" + col + "|" + R.toFixed(1), -R, -R, R * 2, R * 2, (c, x, y, w) => {
+      const r = w / 2, cx = x + r, cy = y + r;
+      feltDisc(c, cx, cy, r, col, { stitch: false });
+      feltDisc(c, cx, cy, r * 0.8, FELT.cream, { shadow: false, lift: 0.4 });
+    });
     drawIcon(ctx, G.icon, 0, 0, m * 0.08);
     ctx.restore();
   }
@@ -907,14 +932,16 @@ export class GamesRoom {
     ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s);
     // raios girando atrás
     if (!Motion.reduce) {
-      ctx.save(); ctx.rotate(t * 0.0006); ctx.fillStyle = "rgba(255,226,120,.35)";
+      ctx.save(); ctx.rotate(t * 0.0006); ctx.fillStyle = "rgba(255,231,163,.4)";
       for (let i = 0; i < 12; i++) { ctx.rotate(Math.PI / 6); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-m * 0.06, -m * 0.5); ctx.lineTo(m * 0.06, -m * 0.5); ctx.closePath(); ctx.fill(); }
       ctx.restore();
     }
-    ctx.shadowColor = "rgba(70,40,110,.3)"; ctx.shadowBlur = m * 0.04; ctx.shadowOffsetY = m * 0.015;
-    ctx.fillStyle = "#fffaf0"; roundRect(ctx, -pw / 2, -ph / 2, pw, ph, m * 0.05); ctx.fill();
-    ctx.shadowColor = "transparent";
-    ctx.strokeStyle = "#e0a21c"; ctx.lineWidth = m * 0.01; roundRect(ctx, -pw / 2, -ph / 2, pw, ph, m * 0.05); ctx.stroke();
+    // quadro da festa: feltro amarelo por baixo e um creme costurado por cima
+    feltPiece(ctx, "result|" + pw.toFixed(1), -pw / 2, -ph / 2, pw, ph, (c, x, y, w, h) => {
+      feltCard(c, x, y, w, h, m * 0.06, FELT.yellow, { stitch: false });
+      const k = m * 0.026;
+      feltCard(c, x + k, y + k, w - k * 2, h - k * 2, m * 0.042, FELT.cream, { shadow: false, lift: 0.4 });
+    });
     const G = GAMES.find(x => x.id === R.id);
     drawIcon(ctx, G.icon, 0, -ph * 0.26, m * 0.06);
     // estrelinhas ganhas aparecem uma a uma
@@ -930,10 +957,11 @@ export class GamesRoom {
     if (R.newBest && t > 500) {
       const k = clamp((t - 500) / 400), b = Motion.reduce ? 1 : Ease.outBack(k, 2.6);
       ctx.save(); ctx.translate(cx + pw * 0.42, cy - ph * 0.5); ctx.rotate(0.18); ctx.scale(b, b);
-      ctx.fillStyle = "#ff6b9d"; roundRect(ctx, -m * 0.12, -m * 0.04, m * 0.24, m * 0.08, m * 0.04); ctx.fill();
-      ctx.strokeStyle = "#ffffff"; ctx.lineWidth = m * 0.006; roundRect(ctx, -m * 0.12, -m * 0.04, m * 0.24, m * 0.08, m * 0.04); ctx.stroke();
+      // fitinha de feltro rosa costurada
+      feltPiece(ctx, "best|" + m.toFixed(1), -m * 0.12, -m * 0.04, m * 0.24, m * 0.08,
+        (c, x, y, w, h) => feltCard(c, x, y, w, h, h / 2, FELT.pink, { lift: 0.7 }));
       drawIcon(ctx, "trophy", -m * 0.085, 0, m * 0.022);
-      ctx.fillStyle = "#ffffff"; ctx.font = `bold ${Math.round(m * 0.032)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = FELT.ink; ctx.font = `bold ${Math.round(m * 0.032)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Nova marca!", m * 0.02, m * 0.002);
       ctx.restore();
     }
@@ -946,19 +974,18 @@ export class GamesRoom {
     for (const b of this.resultButtons()) {
       const again = b.id === "again";
       ctx.save(); ctx.translate(b.x, b.y); ctx.scale(k, k);
-      ctx.shadowColor = "rgba(70,40,110,.28)"; ctx.shadowBlur = m * 0.025; ctx.shadowOffsetY = m * 0.012;
-      ctx.fillStyle = again ? "#5fc76a" : "#ffffff";
-      ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowColor = "transparent";
-      ctx.lineWidth = Math.max(2, m * 0.008); ctx.strokeStyle = again ? "#2a6f36" : "#cdb8f0"; ctx.stroke();
+      // botões redondos de feltro: menta (de novo) e lilás (outro jogo)
+      const col = again ? FELT.mint : FELT.lilac;
+      feltPiece(ctx, "rbtn|" + col + "|" + b.r.toFixed(1), -b.r, -b.r, b.r * 2, b.r * 2,
+        (c, x, y, w) => feltDisc(c, x + w / 2, y + w / 2, w / 2, col));
       if (again) {
-        // seta em círculo: "de novo"
-        const rr = b.r * 0.46;
-        ctx.strokeStyle = "#ffffff"; ctx.lineWidth = b.r * 0.17; ctx.lineCap = "round";
+        // seta em círculo: "de novo" (cordão verde-escuro, pontas redondas)
+        const rr = b.r * 0.46, ink = "#4b7a5e";
+        ctx.strokeStyle = ink; ctx.lineWidth = b.r * 0.17; ctx.lineCap = "round"; ctx.lineJoin = "round";
         ctx.beginPath(); ctx.arc(0, 0, rr, -Math.PI * 0.35, Math.PI * 1.35); ctx.stroke();
         const a = -Math.PI * 0.35, hx = Math.cos(a) * rr, hy = Math.sin(a) * rr;
-        ctx.fillStyle = "#ffffff"; ctx.beginPath();
-        ctx.moveTo(hx + b.r * 0.2, hy - b.r * 0.02); ctx.lineTo(hx - b.r * 0.12, hy - b.r * 0.22); ctx.lineTo(hx - b.r * 0.06, hy + b.r * 0.2); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = ink; ctx.lineWidth = b.r * 0.06; ctx.beginPath();
+        ctx.moveTo(hx + b.r * 0.2, hy - b.r * 0.02); ctx.lineTo(hx - b.r * 0.12, hy - b.r * 0.22); ctx.lineTo(hx - b.r * 0.06, hy + b.r * 0.2); ctx.closePath(); ctx.fill(); ctx.stroke();
       } else {
         drawIcon(ctx, "games", 0, 0, b.r * 0.55);
       }
@@ -1123,6 +1150,12 @@ function cardBackArt(w, h) {
   }
   return cv;
 }
+/* ---------- interface em feltro (cartões, faixas, bolinhas) ----------
+   As peças ficam guardadas em canvas (feltPiece, em ui/felt.js).
+   feltCard/feltDisc pintam gradiente, padrão de fibras e sombra borrada: caro
+   para repetir a cada quadro. Cada peça é pintada uma vez num canvas (na
+   resolução da tela, com folga para a sombra) e depois só é carimbada.
+   paint(c, x, y, w, h) desenha a peça na caixa (x, y, w, h). */
 function drawImgFit(ctx, im, cx, cy, maxW, maxH) {
   const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
   const k = Math.min(maxW / iw, maxH / ih), dw = iw * k, dh = ih * k;

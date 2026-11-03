@@ -46,7 +46,7 @@
     /* abrindo: enquanto o JavaScript carrega, só o fundo da tela inicial.
        Antes o HUD aparecia sozinho sobre um fundo vazio (parecia uma tela
        de abertura quebrada). O main.js tira "booting" com a tela inicial pronta. */
-    body.booting .corner, body.booting #starPill, body.booting #game { visibility: hidden; }
+    body.booting .corner, body.booting #game { visibility: hidden; }
     body.booting #stage { background: linear-gradient(180deg, #ffe2b0 0%, #f6dcff 55%, #cbb6f5 100%); }
 
     /* Botões "de brinquedo": volume, contorno macio, resposta ao toque */
@@ -107,32 +107,40 @@
     @keyframes dotPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
     #btnShop.wish, #btnHome.wish, .bagGrid .wish { animation: wish 1.3s ease-in-out infinite; box-shadow: 0 4px 0 #cdb8f0, 0 0 0 5px rgba(255,214,90,.7), 0 0 18px 6px rgba(255,214,90,.55); }
 
-    /* Contador de estrelinhas + coração de carinho (topo, centro) */
+    /* Ícone em feltro que "enche" de baixo para cima (pote de estrelinhas,
+       coração de carinho): a arte apagada por baixo e a colorida recortada
+       pela altura de .fill */
+    .fillIcon { position: relative; display: inline-block; width: var(--fi, 48px); height: var(--fi, 48px); flex: none; }
+    .fillIcon img { position: absolute; left: 0; bottom: 0; width: var(--fi, 48px); height: var(--fi, 48px); object-fit: contain; pointer-events: none; }
+    .fillIcon img.base { filter: grayscale(1) brightness(1.15); opacity: .38; }
+    .fillIcon .fill { position: absolute; left: 0; right: 0; bottom: 0; height: 0%; overflow: hidden; transition: height .6s cubic-bezier(.34,1.56,.64,1); }
+    /* estrelinha no canto da mochila */
+    #bagStar { --fi: calc(var(--btn-main) * .4); position: absolute; left: -14%; bottom: -12%;
+      box-sizing: content-box; padding: calc(var(--btn-main) * .06); border-radius: 50%;
+      background: #fffaf0; box-shadow: 0 0 0 2px #f3e3b0, 0 3px 0 #e6c86a; }
+    #bagStar img { left: calc(var(--btn-main) * .06); bottom: calc(var(--btn-main) * .06); }
+    #bagStar .fill { left: calc(var(--btn-main) * .06); right: calc(var(--btn-main) * .06); bottom: calc(var(--btn-main) * .06); }
+    #bagStar .fill img { left: 0; bottom: 0; }
+    #bagStar img.base { opacity: .5; }
+    #bagStar.full, #bagStar.bump { animation: bump .6s cubic-bezier(.34,1.56,.64,1); }
+    /* pote no topo da mochila: um cartão de feltro */
     #starPill {
-      position: fixed; z-index: 6; top: calc(var(--row-t) + var(--btn) * .1); left: 50%; transform: translateX(-50%);
-      display: flex; align-items: center; gap: calc(var(--btn) * .14); padding: calc(var(--btn) * .09) calc(var(--btn) * .26) calc(var(--btn) * .09) calc(var(--btn) * .15); border: none; cursor: pointer;
-      border-radius: 999px; background: linear-gradient(180deg, #ffffff 0%, #fff4c9 100%);
-      box-shadow: 0 4px 0 #e6c86a, 0 6px 14px rgba(160,100,10,.18); font: inherit; color: #6b4a14;
+      display: flex; align-items: center; justify-content: center; gap: calc(var(--btn) * .35);
+      margin: 0 auto calc(var(--btn) * .45); padding: calc(var(--btn) * .18) calc(var(--btn) * .5);
+      border: 3px dashed rgba(201,150,60,.45); border-radius: 26px; cursor: pointer; font: inherit;
+      background: radial-gradient(120% 90% at 50% 0%, #fffbea 0%, #fff1c8 100%);
+      box-shadow: 0 4px 0 #ecd28a, 0 8px 18px rgba(160,100,10,.14);
     }
-    #starPill.bump { animation: pillBump .45s cubic-bezier(.34,1.56,.64,1); }
-    @keyframes pillBump { 0% { transform: translateX(-50%) scale(1); } 40% { transform: translateX(-50%) scale(1.18); } 100% { transform: translateX(-50%) scale(1); } }
-    #starCount { font-size: calc(var(--btn) * .4); font-weight: bold; min-width: 1.6em; text-align: left; }
-    #lvlBadge {
-      font-size: 13px; font-weight: bold; color: #fff; background: linear-gradient(180deg, #b48cff, #8a5cf0);
-      padding: 2px 8px; border-radius: 999px; box-shadow: 0 2px 0 #6e42c0; white-space: nowrap;
-    }
-    #lvlBadge.bump { animation: bump .5s cubic-bezier(.34,1.56,.64,1); }
-    /* pote: enche de baixo para cima; cheio = presente no cômodo */
-    #jar { position: relative; width: calc(var(--btn) * .72); height: calc(var(--btn) * .8); border: 3px solid #d99a1c; border-top-width: 5px;
-      border-radius: 28% 28% 42% 42% / 18% 18% 46% 46%; background: #fffaf0; overflow: hidden; box-shadow: inset 0 -3px 0 rgba(0,0,0,.05); }
-    #jarFill { position: absolute; left: 0; right: 0; bottom: 0; height: 0%; background: linear-gradient(180deg, #ffe680 0%, #ffbf2e 100%); transition: height .6s cubic-bezier(.34,1.56,.64,1); }
-    #jar #starIco { position: absolute; inset: 0; display: grid; place-items: center; }
-    #jar #starIco canvas { width: 70% !important; height: auto !important; }
+    #starPill:active { transform: translateY(2px) scale(.97); }
+    #starPill.bump { animation: bump .45s cubic-bezier(.34,1.56,.64,1); }
+    #jar { --fi: calc(var(--btn) * 1.15); }
     #jar.full { animation: bump .6s cubic-bezier(.34,1.56,.64,1); }
-    #nextPrize { width: calc(var(--btn) * .74); height: calc(var(--btn) * .74); border-radius: 50%; background: #fff; display: grid; place-items: center;
-      box-shadow: 0 0 0 3px #f3e3b0; }
+    #loveMeter { --fi: calc(var(--btn) * .95); }
+    #loveMeter.bump { animation: bump .7s cubic-bezier(.34,1.56,.64,1); }
+    #nextPrize { width: calc(var(--btn) * 1.15); height: calc(var(--btn) * 1.15); border-radius: 50%; background: #fff; display: grid; place-items: center;
+      box-shadow: 0 0 0 4px #f3e3b0; }
     #nextPrize canvas { width: 82% !important; height: 82% !important; }
-    #nextPrize.ready { box-shadow: 0 0 0 3px #ffc93a, 0 0 12px 4px rgba(255,201,58,.6); animation: wish 1.4s ease-in-out infinite; }
+    #nextPrize.ready { box-shadow: 0 0 0 4px #ffc93a, 0 0 14px 5px rgba(255,201,58,.6); animation: wish 1.4s ease-in-out infinite; }
     /* presente no cômodo: 3 toques para abrir */
     #prizeGift { position: absolute; z-index: 5; width: var(--gift, 84px); height: var(--gift, 84px); border-radius: 24px;
       background: radial-gradient(120% 70% at 50% 0%, #fff7c2 0%, rgba(255,247,194,0) 60%), linear-gradient(180deg, #ffe680, #ffbf2e);
@@ -145,12 +153,6 @@
     @keyframes giftItem { 0% { transform: translateY(0) scale(.3); opacity: 0; } 35% { transform: translateY(-60px) scale(1.25); opacity: 1; } 75% { transform: translateY(-70px) scale(1.1); opacity: 1; } 100% { transform: translateY(-90px) scale(.8); opacity: 0; } }
     body.in-game #prizeGift { display: none; }
     body.reduce-motion #prizeGift { animation: none; }
-    #loveMeter { position: relative; width: 30px; height: 28px; margin-left: 4px; }
-    #loveMeter svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-    #loveFillBox { position: absolute; inset: 0; clip-path: path("M15 26 C3 18 0 11 4 6 C8 1 13 3 15 7 C17 3 22 1 26 6 C30 11 27 18 15 26 Z"); }
-    #loveFill { position: absolute; left: 0; right: 0; bottom: 0; height: 0%; background: linear-gradient(180deg, #ff9cc0, #ff4f7a); transition: height .5s cubic-bezier(.34,1.56,.64,1); }
-    #loveLvl { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; font-weight: bold; color: #a8325c; text-shadow: 0 0 2px #fff, 0 0 2px #fff, 0 0 3px #fff; padding-bottom: 3px; }
-    #loveMeter.bump { animation: bump .7s cubic-bezier(.34,1.56,.64,1); }
     .flyStar { position: fixed; left: 0; top: 0; z-index: 40; pointer-events: none; will-change: transform; }
 
     /* Lojinha de prêmios */
@@ -394,12 +396,6 @@
     .toy svg { transition: transform .25s var(--ease-pop); }
     .toy:active svg { transform: scale(.9) rotate(-4deg); }
 
-    #starPill {
-      background: radial-gradient(120% 80% at 50% 0%, #fff 0%, rgba(255,255,255,0) 60%), linear-gradient(180deg, #fffdf3 0%, #ffefb5 100%);
-      border: 2px solid #fff6d1; box-shadow: 0 1px 0 #fff inset, 0 3px 0 #e6c86a, 0 8px 18px rgba(160,100,10,.18);
-      font-weight: 600;
-    }
-    #starCount { font-weight: 700; font-variant-numeric: tabular-nums; }
 
     /* overlays: fundo com cor (não cinza) + painel em vidro */
     .overlay {
@@ -452,6 +448,100 @@
     }
     body.reduce-motion #title::before, body.reduce-motion #title::after, body.reduce-motion #title .logo { animation: none; }
     @media (prefers-reduced-motion: reduce) { #title::before, #title::after, #title .logo { animation: none; } }
+
+    /* ================= Tema feltro (v3) =================
+       Interface no mesmo material das artes: feltro creme com fibrinhas,
+       volume macio e costura tracejada por dentro da borda. Vem por último
+       e só troca a aparência (os testes usam os mesmos ids). */
+    :root {
+      --felt-tex: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 -.2'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
+      --felt-shade: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='f'><feTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .35 0 0 0 0 .2 0 0 0 0 .25 0 0 0 .35 -.12'/></filter><rect width='100%' height='100%' filter='url(%23f)'/></svg>");
+      --felt-cream: #fff4dc; --felt-edge: #ecd6b0; --felt-deep: #d9bd90; --stitch: rgba(160,110,85,.5);
+      --ink: #5b4256; --ink-soft: #8a6f80;
+    }
+    /* botões redondos: disco de feltro creme com costura */
+    .toy {
+      position: relative;
+      background: var(--felt-tex), var(--felt-shade), radial-gradient(circle at 34% 28%, #fffaf0 0%, var(--felt-cream) 45%, #f3e0bf 100%);
+      border: none;
+      box-shadow: 0 4px 0 var(--felt-deep), 0 8px 16px rgba(110,70,50,.18);
+    }
+    .toy::after { content: ""; position: absolute; inset: 8%; border-radius: 50%; border: 2px dashed var(--stitch); pointer-events: none; }
+    /* tela inicial em feltro: o jardim de fundo, Play de feltro costurado */
+    #title { background: linear-gradient(180deg, rgba(255,240,220,.15), rgba(255,236,250,.35)), url("assets/jardim/fundo_jardim.webp") center / cover no-repeat, #ffe9cf; }
+    #title::before, #title::after, #title .tCloud { display: none; }
+    #title .lt { -webkit-text-stroke-color: #7a4a5e; text-shadow: 0 calc(.8 * var(--vh)) 0 rgba(122,74,94,.35); }
+    #title .l1 .lt { color: #e6d4ff; }
+    #title .lt.big { color: #ffd27a; }
+    #btnPlay {
+      background: var(--felt-tex), var(--felt-shade), radial-gradient(circle at 34% 28%, #e3fbe4 0%, #9ddca6 50%, #6cbd7b 100%);
+      border: none; box-shadow: 0 calc(1.4 * var(--vh)) 0 #3f8a51, 0 calc(2.4 * var(--vh)) calc(3 * var(--vh)) rgba(60,40,50,.3);
+    }
+    #btnPlay::after { all: unset; content: ""; position: absolute; inset: 9%; border-radius: 50%; border: calc(.45 * var(--vh)) dashed rgba(255,255,255,.75); pointer-events: none; }
+    #btnPlay img.felt { filter: saturate(.25) brightness(1.4) drop-shadow(0 calc(.5 * var(--vh)) 0 rgba(40,90,50,.35)); }
+    #btnPlay .ring { border-color: rgba(255,255,255,.85); }
+    .toy:active { box-shadow: 0 1px 0 var(--felt-deep), 0 2px 6px rgba(110,70,50,.18); }
+    .toy:focus-visible, .panel button:focus-visible { outline: 3px solid #d98fb0; outline-offset: 3px; }
+    /* voltar e sair: feltro amarelinho */
+    #btnBack, #btnQuit {
+      background: var(--felt-tex), var(--felt-shade), radial-gradient(circle at 34% 28%, #fffbe0 0%, #ffe9a6 55%, #f5d27a 100%);
+      box-shadow: 0 4px 0 #d9b25a, 0 8px 16px rgba(140,100,20,.2);
+    }
+    /* continuar: feltro verde-menta */
+    #btnResume {
+      background: var(--felt-tex), var(--felt-shade), radial-gradient(circle at 34% 28%, #e4fbe6 0%, #a8e2b0 55%, #7cc98a 100%);
+      box-shadow: 0 6px 0 #4f9e5d, 0 10px 22px rgba(40,100,50,.25);
+    }
+    #btnResume img.felt { filter: none; }
+
+    /* fundo atrás dos painéis: lilás macio, sem cinza */
+    .overlay { background: radial-gradient(circle at 50% 40%, rgba(150,100,170,.32), rgba(70,40,80,.55)); }
+    /* painéis: uma peça de feltro creme costurada */
+    .panel {
+      position: relative;
+      background: var(--felt-tex), var(--felt-shade), radial-gradient(120% 90% at 30% 0%, #fffaf0 0%, var(--felt-cream) 50%, #f7e4c4 100%);
+      border: none; border-radius: 34px; color: var(--ink);
+      box-shadow: 0 7px 0 var(--felt-edge), 0 22px 60px rgba(60,30,50,.35);
+    }
+    .panel::before { content: ""; position: absolute; inset: 10px; border-radius: 26px; border: 2.5px dashed var(--stitch); pointer-events: none; }
+    .panel h2 { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: #b0577e; text-shadow: 0 2px 0 rgba(255,255,255,.7); }
+    /* fechar: botão de feltro rosa com um X costurado */
+    .panel .close {
+      background: var(--felt-tex), var(--felt-shade), radial-gradient(circle at 34% 28%, #ffd9e8 0%, #ffaecd 55%, #f08cb4 100%);
+      border: none; color: #fff; text-shadow: 0 1px 0 rgba(160,60,100,.6); font-weight: 700;
+      box-shadow: 0 3px 0 #c9658f, 0 6px 12px rgba(160,60,100,.25);
+      outline: 2px dashed rgba(255,255,255,.7); outline-offset: -7px;
+    }
+    /* cartões (prêmios, missões, álbum, baú): retalhos de feltro */
+    .prize, .mission, .chestRow, .albumIcon {
+      background: var(--felt-tex), var(--felt-shade), linear-gradient(180deg, #fffaf0, #fbecd2);
+      border: none; outline: 2px dashed var(--stitch); outline-offset: -7px; color: var(--ink);
+      box-shadow: 0 4px 0 var(--felt-edge), 0 8px 16px rgba(110,70,50,.12);
+    }
+    .prize.ready { background: var(--felt-tex), var(--felt-shade), linear-gradient(180deg, #fff6c8, #ffe58f); outline-color: rgba(190,140,30,.6); box-shadow: 0 4px 0 #e0b84a, 0 0 0 4px rgba(255,214,90,.35), 0 8px 18px rgba(200,150,30,.35); }
+    .prize.owned, .mission.done { background: var(--felt-tex), var(--felt-shade), linear-gradient(180deg, #f2fff1, #d9f3da); outline-color: rgba(80,150,90,.5); box-shadow: 0 4px 0 #a9d9b0, 0 8px 16px rgba(60,120,70,.12); }
+    .prizeBar { background: #f0dcb8; box-shadow: inset 0 1px 2px rgba(110,70,50,.2); }
+    .prizeBar i { background: var(--felt-tex), linear-gradient(90deg, #ffe07a, #ffbf3c); }
+    .chestRow.ready { background: var(--felt-tex), var(--felt-shade), linear-gradient(180deg, #fff6c8, #ffe07a); outline-style: dashed; }
+    .chestDots i { background: #f3e6cf; border-color: var(--felt-deep); }
+    .chestDots i.on { background: #8fd49a; border-color: #4f9e5d; }
+    .modeRow button { background: var(--felt-tex), linear-gradient(180deg, #fffaf0, #fbecd2); color: var(--ink); box-shadow: 0 3px 0 var(--felt-edge); }
+    .modeRow button.active { background: var(--felt-tex), linear-gradient(180deg, #e6d4fb, #c7aef0); color: #4a2f6e; box-shadow: 0 3px 0 #a088cc; }
+    /* presente no cômodo: caixinha de feltro */
+    #prizeGift {
+      background: var(--felt-tex), var(--felt-shade), radial-gradient(circle at 34% 28%, #fffbe0 0%, #ffe48a 55%, #f3c94f 100%);
+      box-shadow: 0 5px 0 #d4a535, 0 0 0 6px rgba(255,222,120,.35), 0 10px 22px rgba(160,100,10,.28);
+    }
+    /* prêmio ainda bloqueado: desbotado, mas reconhecível no feltro creme */
+    .prize.locked .prizeIco { filter: grayscale(.7) contrast(.9); opacity: .6; }
+    .prize.locked.next .prizeIco { filter: grayscale(.35); opacity: .85; }
+    .panel input[type=checkbox], .panel input[type=radio] { accent-color: #c76f98; }
+    .panel select { border: 2px dashed var(--stitch); border-radius: 14px; background: #fffaf0; color: var(--ink); }
+    /* pontinho de aviso: bolinha de feltro rosa */
+    #btnBag.ready::before, #btnShop.ready::before, #btnMissions.ready::before {
+      background: radial-gradient(circle at 35% 30%, #ff9fbf, #f0628f); border: 3px solid var(--felt-cream);
+      box-shadow: 0 2px 0 #c74c76;
+    }
   </style>
 </head>
 <body class="booting">
@@ -468,23 +558,16 @@
   <div class="corner"><button class="toy" id="btnBack" aria-label="Voltar">
     <img class="felt" src="assets/hud/hud_voltar.webp" alt="" draggable="false">
   </button></div>
-  <div class="corner"><button class="toy" id="btnBag" aria-label="Mochila (álbum, prêmios, missões, bichinhos)">
+  <!-- Mochila: guarda tudo que não é brincar agora. A estrelinha no canto
+       dela enche de dourado com as estrelinhas ganhas (o pote). -->
+  <div class="corner"><button class="toy" id="btnBag" aria-label="Mochila (estrelinhas, prêmios, missões, álbum)">
     <img class="felt" src="assets/hud/hud_mochila.webp" alt="" draggable="false">
+    <span id="bagStar" class="fillIcon" aria-hidden="true"><img class="base" src="assets/hud/hud_estrela.webp" alt=""><span class="fill" id="bagStarFill"><img src="assets/hud/hud_estrela.webp" alt=""></span></span>
   </button></div>
   <div class="corner"><button class="toy" id="btnPause" aria-label="Pausar">
     <img class="felt" src="assets/hud/hud_pausa.webp" alt="" draggable="false">
   </button></div>
 
-  <!-- Pote de estrelinhas (enche até o próximo presente), o desenho do
-       próximo presente e o coração de carinho. Sem números para a criança. -->
-  <button id="starPill" aria-label="Pote de estrelinhas e próximo presente">
-    <span id="jar" aria-hidden="true"><span id="jarFill"></span><span id="starIco"></span></span>
-    <span id="nextPrize" aria-hidden="true"></span>
-    <span id="loveMeter" aria-label="Carinho do bichinho">
-      <span id="loveFillBox"><span id="loveFill"></span></span>
-      <svg viewBox="0 0 30 28" aria-hidden="true"><path d="M15 26 C3 18 0 11 4 6 C8 1 13 3 15 7 C17 3 22 1 26 6 C30 11 27 18 15 26 Z" fill="none" stroke="#a8325c" stroke-width="2.5" stroke-linejoin="round"/></svg>
-    </span>
-  </button>
 
   <!-- Lojinha -->
   <div class="overlay" id="shop">
@@ -510,6 +593,13 @@
   <div class="overlay" id="bag">
     <div class="panel">
       <button class="close" id="bagClose" aria-label="Fechar">✕</button>
+      <!-- Pote de estrelinhas (enche até o próximo presente), o próximo
+           presente e o coração de carinho. Sem números. Tocar abre os prêmios. -->
+      <button id="starPill" aria-label="Estrelinhas e próximo presente">
+        <span id="jar" class="fillIcon" aria-hidden="true"><img class="base" src="assets/hud/hud_estrela.webp" alt=""><span class="fill" id="jarFill"><img src="assets/hud/hud_estrela.webp" alt=""></span></span>
+        <span id="nextPrize" aria-hidden="true"></span>
+        <span id="loveMeter" class="fillIcon" aria-label="Carinho do bichinho"><img class="base" src="assets/hud/hud_coracao.webp" alt=""><span class="fill" id="loveFill"><img src="assets/hud/hud_coracao.webp" alt=""></span></span>
+      </button>
       <div class="bagGrid">
         <button class="toy" id="btnMissions" aria-label="Missões do dia">
     <img class="felt" src="assets/hud/hud_missoes.webp" alt="" draggable="false">
@@ -546,7 +636,7 @@
   <div class="overlay" id="album">
     <div class="panel">
       <button class="close" id="albumClose" aria-label="Fechar">✕</button>
-      <h2>Descobertas do Nubi</h2>
+      <h2>Descobertas da Nubi</h2>
       <div id="albumTrophies"></div>
       <div id="albumStickers"></div>
       <div id="albumGrid"></div>
@@ -576,7 +666,7 @@
       </div>
       <label class="cfg"><input type="checkbox" id="cfgMusic" /> Música</label>
       <label class="cfg"><input type="checkbox" id="cfgSfx" /> Efeitos sonoros</label>
-      <label class="cfg"><input type="checkbox" id="cfgVoice" /> Falas do Nubi</label>
+      <label class="cfg"><input type="checkbox" id="cfgVoice" /> Falas da Nubi</label>
       <label class="cfg"><input type="checkbox" id="cfgReduce" /> Reduzir movimento e partículas</label>
       <p>Limite de tempo (opcional):</p>
       <select id="cfgLimit" class="cfgSelect" aria-label="Limite de tempo de brincadeira">
@@ -586,7 +676,7 @@
         <option value="20">20 minutos</option>
         <option value="30">30 minutos</option>
       </select>
-      <p class="hint">Ao atingir o limite, o Nubi vai dormir com carinho - sem bloqueio brusco nem aviso de culpa.</p>
+      <p class="hint">Ao atingir o limite, a Nubi vai dormir com carinho - sem bloqueio brusco nem aviso de culpa.</p>
       <p>Relatório (últimos dias):</p>
       <div id="parentReport"></div>
       <p class="hint">Indicado para 4 anos ou mais. Esta área reduz toques acidentais; não é comprovação de idade. Sem anúncios, compras, contas ou coleta de dados.</p>

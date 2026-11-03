@@ -12,6 +12,7 @@ import { drawIcon } from "../ui/icons.js";
 import { atmosphere } from "../ui/scenery.js";
 import { art, drawArtAt } from "../core/art.js";
 import { touchNubi } from "./nubi_touch.js";
+import { feltCard, feltFibers, FELT, feltPiece } from "../ui/felt.js";
 
 export const HUB_TILES = [
   // andar de cima (3)
@@ -131,11 +132,18 @@ export class HubRoom {
     ctx.save();
     ctx.strokeStyle = "rgba(90,70,110,.6)"; ctx.lineWidth = Math.max(1, m * 0.003);
     ctx.beginPath(); ctx.moveTo(p.x, p.y + r * 1.2); ctx.quadraticCurveTo(p.x + r * 0.4, p.y + r * 1.8, p.x, p.y + r * 2.4); ctx.stroke();
+    // balão de feltro: cor pastel com volume macio, fibrinhas e costura por dentro
+    const col = lighten(S.color, 0.25);
     const g = ctx.createRadialGradient(p.x - r * 0.35, p.y - r * 0.4, r * 0.1, p.x, p.y, r * 1.2);
-    g.addColorStop(0, lighten(S.color, 0.5)); g.addColorStop(1, S.color);
+    g.addColorStop(0, lighten(col, 0.3)); g.addColorStop(0.6, col); g.addColorStop(1, darken(col, 0.1));
     ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(p.x, p.y, r, r * 1.2, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = darken(S.color, 0.3); ctx.lineWidth = Math.max(1.5, m * 0.004); ctx.stroke();
-    ctx.fillStyle = "rgba(255,255,255,.7)"; ctx.beginPath(); ctx.ellipse(p.x - r * 0.35, p.y - r * 0.45, r * 0.18, r * 0.28, -0.5, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.clip(); feltFibers(ctx, p.x - r, p.y - r * 1.2, r * 2, r * 2.4); ctx.restore();
+    ctx.strokeStyle = darken(col, 0.3); ctx.lineWidth = Math.max(1.5, m * 0.004); ctx.stroke();
+    ctx.save(); ctx.setLineDash([r * 0.12, r * 0.1]); ctx.lineCap = "round"; ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = darken(col, 0.35); ctx.lineWidth = Math.max(1.2, r * 0.045);
+    ctx.beginPath(); ctx.ellipse(p.x, p.y, r * 0.84, r * 1.03, 0, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    // nozinho do balão
+    ctx.fillStyle = darken(col, 0.15); ctx.beginPath(); ctx.moveTo(p.x - r * 0.12, p.y + r * 1.28); ctx.lineTo(p.x + r * 0.12, p.y + r * 1.28); ctx.lineTo(p.x, p.y + r * 1.16); ctx.closePath(); ctx.fill();
     drawIcon(ctx, "gift", p.x, p.y + r * 2.75, r * 0.55);
     ctx.restore();
   }
@@ -243,28 +251,22 @@ export class HubRoom {
     const cx = r.x + r.w / 2, cy = r.y + r.h / 2;
     ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s); ctx.translate(-cx, -cy);
     const x = r.x + pad, y = r.y + pad, ww = r.w - pad * 2, hh = r.h - pad * 2;
-    // brilho de pedido
+    // pedido: aplique de feltro amarelo atrás da janela, respirando devagar
     if (wish) {
       const p = Motion.reduce ? 0.6 : (Math.sin(this.t * 0.006) + 1) / 2;
-      ctx.save(); ctx.shadowColor = `rgba(255,205,60,${0.55 + p * 0.4})`; ctx.shadowBlur = m * (0.03 + p * 0.03);
-      ctx.fillStyle = "#ffe27a"; roundRect(ctx, x - pad * 0.6, y - pad * 0.6, ww + pad * 1.2, hh + pad * 1.2, m * 0.025); ctx.fill(); ctx.restore();
+      const q = 1 + p * 0.025;
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(q, q); ctx.translate(-cx, -cy);
+      feltPiece(ctx, "wish", x - pad * 1.4, y - pad * 1.4, ww + pad * 2.8, hh + pad * 2.8,
+        (c, X, Y, W, H) => feltCard(c, X, Y, W, H, m * 0.034, FELT.yellow, { lift: 0.7 }));
+      ctx.restore();
     }
-    // parede do cômodo com luz de cima
-    const g = ctx.createLinearGradient(0, y, 0, y + hh);
-    g.addColorStop(0, lighten(t.wall, 0.35)); g.addColorStop(1, t.wall);
-    ctx.fillStyle = g; roundRect(ctx, x, y, ww, hh, m * 0.02); ctx.fill();
-    // piso
-    ctx.fillStyle = darken(t.wall, 0.12); roundRect(ctx, x, y + hh * 0.78, ww, hh * 0.22, m * 0.015); ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,.35)"; ctx.fillRect(x, y + hh * 0.78, ww, Math.max(1.5, m * 0.004));
-    // janelinha decorativa no fundo
-    ctx.fillStyle = "rgba(255,255,255,.55)"; roundRect(ctx, x + ww * 0.08, y + hh * 0.1, ww * 0.18, hh * 0.24, m * 0.01); ctx.fill();
+    // janela de feltro na fachada: moldura costurada, cômodo dentro (parede +
+    // piso) e uma janelinha azul no fundo; fica pronta em canvas
+    feltPiece(ctx, "win|" + t.id + "|" + (wish ? 1 : 0), x, y, ww, hh, (c, X, Y, W, H) => this._paintTile(c, t, X, Y, W, H, m, wish));
     // objetos do cômodo (o que se faz lá)
     const ir = Math.min(ww, hh) * 0.24;
     drawIcon(ctx, t.icons[0], x + ww * 0.38, y + hh * 0.56, ir);
     drawIcon(ctx, t.icons[1], x + ww * 0.7, y + hh * 0.6, ir * 0.85);
-    // moldura
-    ctx.strokeStyle = wish ? "#e0a21c" : "#c9a37a"; ctx.lineWidth = Math.max(2, m * (wish ? 0.009 : 0.006));
-    roundRect(ctx, x, y, ww, hh, m * 0.02); ctx.stroke();
     ctx.restore();
     // estrela do pedido pulando sobre o cômodo
     if (wish) {
@@ -274,6 +276,44 @@ export class HubRoom {
       drawIcon(ctx, "star", 0, 0, m * 0.045);
       ctx.restore();
     }
+  }
+
+  /* Janela do cômodo em feltro (pintada uma vez por tamanho de tela). */
+  _paintTile(c, t, x, y, ww, hh, m, wish) {
+    const rad = m * 0.024, f = Math.max(4, Math.min(ww, hh) * 0.075);
+    // moldura (madeirinha de feltro; amarela quando é o cômodo do pedido)
+    feltCard(c, x, y, ww, hh, rad, wish ? "#ffd98a" : "#f3cfa0", { lift: 0.8 });
+    // dentro: parede do cômodo, mais baixinha que a moldura
+    const ix = x + f, iy = y + f, iw = ww - f * 2, ih = hh - f * 2;
+    feltCard(c, ix, iy, iw, ih, rad * 0.6, lighten(t.wall, 0.12), { shadow: false, stitch: false, lift: 0 });
+    c.save();
+    c.beginPath(); roundRect(c, ix, iy, iw, ih, rad * 0.6); c.clip();
+    // sombrinha da moldura sobre a parede (dá profundidade de "janela")
+    const sg = c.createLinearGradient(0, iy, 0, iy + ih * 0.25);
+    sg.addColorStop(0, "rgba(107,74,90,.18)"); sg.addColorStop(1, "rgba(107,74,90,0)");
+    c.fillStyle = sg; c.fillRect(ix, iy, iw, ih * 0.25);
+    // piso: tira de feltro mais escura com costura no alto
+    const fy = iy + ih * 0.76;
+    c.fillStyle = darken(t.wall, 0.14); c.fillRect(ix, fy, iw, iy + ih - fy);
+    feltFibers(c, ix, fy, iw, iy + ih - fy);
+    c.setLineDash([f * 0.35, f * 0.3]); c.lineCap = "round";
+    c.strokeStyle = darken(t.wall, 0.35); c.globalAlpha = 0.55; c.lineWidth = Math.max(1.2, f * 0.13);
+    c.beginPath(); c.moveTo(ix + f * 0.3, fy + f * 0.3); c.lineTo(ix + iw - f * 0.3, fy + f * 0.3); c.stroke();
+    c.restore();
+    // janelinha do fundo: retalho azul-céu em arco, com aro e cruzinha creme
+    const ws = Math.min(iw * 0.2, ih * 0.3), wh = ws * 1.2, wx = ix + iw * 0.06, wy = iy + ih * 0.08;
+    const arch = () => {
+      c.beginPath(); c.moveTo(wx, wy + wh); c.lineTo(wx, wy + ws / 2);
+      c.arc(wx + ws / 2, wy + ws / 2, ws / 2, Math.PI, 0); c.lineTo(wx + ws, wy + wh); c.closePath();
+    };
+    c.save();
+    arch(); c.fillStyle = FELT.blue; c.fill();
+    c.clip(); feltFibers(c, wx, wy, ws, wh);
+    c.strokeStyle = FELT.cream; c.lineWidth = Math.max(1.5, ws * 0.1); c.lineCap = "butt";
+    c.beginPath(); c.moveTo(wx + ws / 2, wy); c.lineTo(wx + ws / 2, wy + wh);
+    c.moveTo(wx, wy + wh * 0.55); c.lineTo(wx + ws, wy + wh * 0.55); c.stroke();
+    c.restore();
+    c.save(); arch(); c.strokeStyle = FELT.cream; c.lineWidth = Math.max(2, ws * 0.14); c.lineJoin = "round"; c.stroke(); c.restore();
   }
 
   // ---------------- enfeites (prêmios) ----------------

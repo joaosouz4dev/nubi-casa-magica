@@ -14,6 +14,7 @@ import { drawIcon } from "../ui/icons.js";
 import { atmosphere } from "../ui/scenery.js";
 import { SALON_PAGES, WIPE, STATIONS, STATION_ORDER, ACT_STATION } from "../data/salon.js";
 import { art, drawBackdrop } from "../core/art.js";
+import { feltCard, feltFibers, FELT, feltPiece, feltDot, feltRing, feltCheck, feltPageBtn } from "../ui/felt.js";
 
 const ROW_Y = [0.3, 0.5, 0.7];
 const PAGE_BTN = { x: 0.09, y: 0.9 };
@@ -516,8 +517,9 @@ export class SalonRoom {
   _bar(ctx) {
     const c0 = this.chipPos(0), c3 = this.chipPos(3);
     ctx.save();
-    ctx.fillStyle = "rgba(255,255,255,.6)";
-    roundRect(ctx, c0.x - c0.r * 1.4, c0.y - c0.r * 1.35, c3.x - c0.x + c0.r * 2.8, c0.r * 2.7, c0.r * 1.35); ctx.fill();
+    // faixa de feltro creme costurada
+    const bw = c3.x - c0.x + c0.r * 2.8, bh = c0.r * 2.7;
+    feltPiece(ctx, "bar", c0.x - c0.r * 1.4, c0.y - c0.r * 1.35, bw, bh, (c, x, y, w, h) => feltCard(c, x, y, w, h, h / 2, FELT.cream, { lift: 0.6 }));
     for (let i = 0; i < 4; i++) {
       const c = this.chipPos(i);
       const id = i ? STATION_ORDER[i - 1] : null;
@@ -527,18 +529,16 @@ export class SalonRoom {
       const im = i ? art(DOOR_ART[id]) : null;
       if (im) {
         // atalho da estação: o mesmo selo em feltro da porta; a estação atual ganha um anel na cor dela
-        if (on) { ctx.fillStyle = STATIONS[id].color; ctx.beginPath(); ctx.arc(0, 0, c.r * 1.22, 0, Math.PI * 2); ctx.fill(); }
+        if (on) feltDot(ctx, 0, 0, c.r * 1.24, lighten(STATIONS[id].color, 0.35), { lift: 0.8 });
         ctx.shadowColor = "rgba(110,40,80,.22)"; ctx.shadowBlur = c.r * 0.35; ctx.shadowOffsetY = c.r * 0.12;
         const R = c.r * 1.08, W = R * 2 * (im.naturalWidth / im.naturalHeight);
         ctx.drawImage(im, -W / 2, -R, W, R * 2);
         ctx.restore();
         continue;
       }
-      ctx.fillStyle = i === 0 ? "#fff1a8" : on ? STATIONS[id].color : "#ffffff";
-      ctx.shadowColor = "rgba(110,40,80,.22)"; ctx.shadowBlur = c.r * 0.35; ctx.shadowOffsetY = c.r * 0.12;
-      ctx.beginPath(); ctx.arc(0, 0, c.r, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowColor = "transparent";
-      ctx.strokeStyle = i === 0 ? "#c49a1a" : on ? darken(STATIONS[id].color, 0.35) : "#f3b6d3"; ctx.lineWidth = Math.max(2, c.r * 0.1); ctx.stroke();
+      // voltar: disco de feltro amarelo; estação: creme (a atual na cor dela, com anel mais escuro)
+      if (on) feltDot(ctx, 0, 0, c.r * 1.14, darken(lighten(STATIONS[id].color, 0.3), 0.2), { lift: 0.5, stitch: false });
+      feltDot(ctx, 0, 0, c.r, i === 0 ? FELT.yellow : on ? lighten(STATIONS[id].color, 0.3) : FELT.cream, { lift: on ? 1 : 0.7 });
       drawIcon(ctx, i === 0 ? "back" : STATIONS[id].icon, 0, 0, c.r * 0.62);
       ctx.restore();
     }
@@ -549,12 +549,13 @@ export class SalonRoom {
     const f = this.flipPos();
     const s = 1 + this.flipK.x * 0.03;
     ctx.save(); ctx.translate(f.x, f.y); ctx.scale(s * (this.pawSide === "L" ? -1 : 1), s);
-    ctx.fillStyle = "#ffffff"; ctx.shadowColor = "rgba(110,40,80,.22)"; ctx.shadowBlur = f.r * 0.35;
-    ctx.beginPath(); ctx.arc(0, 0, f.r, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowColor = "transparent"; ctx.strokeStyle = "#f3b6d3"; ctx.lineWidth = Math.max(2, f.r * 0.1); ctx.stroke();
+    // disco de feltro rosa com a patinha e uma fitinha curva de "virar"
+    feltDot(ctx, 0, 0, f.r, FELT.pink);
     drawIcon(ctx, "paw", -f.r * 0.1, f.r * 0.05, f.r * 0.55);
-    ctx.strokeStyle = "#e0559a"; ctx.lineWidth = Math.max(2, f.r * 0.1); ctx.lineCap = "round";
-    ctx.beginPath(); ctx.arc(0, 0, f.r * 0.78, -0.4, 0.9); ctx.stroke();
+    ctx.strokeStyle = FELT.ring; ctx.lineWidth = Math.max(2.5, f.r * 0.13); ctx.lineCap = "round"; ctx.lineJoin = "round";
+    ctx.beginPath(); ctx.arc(0, 0, f.r * 0.68, -0.5, 0.75); ctx.stroke();
+    const ax = Math.cos(0.75) * f.r * 0.68, ay = Math.sin(0.75) * f.r * 0.68;
+    ctx.beginPath(); ctx.moveTo(ax + f.r * 0.2, ay - f.r * 0.02); ctx.lineTo(ax, ay); ctx.lineTo(ax + f.r * 0.04, ay - f.r * 0.22); ctx.stroke();
     ctx.restore();
   }
 
@@ -584,6 +585,20 @@ export class SalonRoom {
     // almofadinhas
     ctx.fillStyle = inner;
     ctx.beginPath(); ctx.ellipse(0, p.r * 0.22, p.r * 0.42, p.r * 0.32, 0, 0, Math.PI * 2); ctx.fill();
+    // cara de feltro: fibrinhas por cima da patinha e costura em volta da almofada
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(0, p.r * 0.12, p.r * 0.82, p.r * 0.66, 0, 0, Math.PI * 2);
+    TOES.forEach(([tx, ty]) => { ctx.moveTo(tx * p.r + p.r * 0.27, ty * p.r); ctx.ellipse(tx * p.r, ty * p.r, p.r * 0.27, p.r * 0.3, 0, 0, Math.PI * 2); });
+    ctx.rect(-p.r * 0.5, p.r * 0.3, p.r, p.r * 0.9);
+    ctx.clip("nonzero");
+    feltFibers(ctx, -p.r, -p.r * 1.2, p.r * 2, p.r * 2.5);
+    ctx.restore();
+    ctx.save();
+    ctx.setLineDash([ow * 2.2, ow * 1.8]); ctx.lineCap = "round";
+    ctx.strokeStyle = darken(inner, 0.3); ctx.globalAlpha = 0.6; ctx.lineWidth = ow * 0.8;
+    ctx.beginPath(); ctx.ellipse(0, p.r * 0.22, p.r * 0.35, p.r * 0.25, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
     // unhas
     TOES.forEach(([tx, ty], i) => {
       const x = tx * p.r, y = ty * p.r - p.r * 0.16;
@@ -593,8 +608,8 @@ export class SalonRoom {
       const sc = 1 + fx * 0.25;
       ctx.scale(sc, sc);
       ctx.beginPath(); ctx.ellipse(0, 0, p.r * 0.14, p.r * 0.17, 0, 0, Math.PI * 2);
-      ctx.fillStyle = col || "rgba(255,255,255,.85)"; ctx.fill();
-      ctx.strokeStyle = col ? darken(col, 0.35) : "rgba(180,150,190,.8)"; ctx.lineWidth = ow; ctx.stroke();
+      ctx.fillStyle = col || FELT.cream; ctx.fill();
+      ctx.strokeStyle = col ? darken(col, 0.35) : "#c9a9b8"; ctx.lineWidth = ow; ctx.stroke();
       if (col) {
         ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.beginPath(); ctx.ellipse(-p.r * 0.05, -p.r * 0.06, p.r * 0.035, p.r * 0.07, -0.3, 0, Math.PI * 2); ctx.fill();
         if (c.nailArt && c.nailArt[side]) drawIcon(ctx, c.nailArt[side] === "heart" ? "heartLevel" : "star", 0, p.r * 0.03, p.r * 0.08);
@@ -644,18 +659,13 @@ export class SalonRoom {
     ctx.save();
     ctx.translate(s.disp.x, s.disp.y - lift); ctx.rotate(s.tilt);
     const k = pop * (1 + lift / r * 0.35); ctx.scale(k, k);
-    if (this.selected === s) {
-      ctx.strokeStyle = "rgba(150,60,120,.7)"; ctx.lineWidth = 4; ctx.setLineDash([9, 7]); ctx.lineDashOffset = -this.t * 0.03;
-      ctx.beginPath(); ctx.arc(0, 0, r * 1.35, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
-    }
-    ctx.fillStyle = "rgba(255,255,255,.9)"; ctx.beginPath(); ctx.arc(0, 0, r * 1.1, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = "#f3b6d3"; ctx.lineWidth = Math.max(2, r * 0.06); ctx.stroke();
+    if (this.selected === s) feltRing(ctx, r * 1.38, this.t);
+    // base de feltro creme costurada (o item fica "pregado" nela)
+    feltDot(ctx, 0, 0, r * 1.1, FELT.cream, { lift: this.held === s ? 1 : 0.7 });
     drawIcon(ctx, this._iconKey(s.def), 0, 0, r * 0.85);
     // aplicado agora: selinho verde
     if (this._isActive(s.def)) {
-      ctx.fillStyle = "#62c370"; ctx.beginPath(); ctx.arc(r * 0.8, -r * 0.75, r * 0.22, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = "#fff"; ctx.lineWidth = Math.max(2, r * 0.07); ctx.lineCap = "round";
-      ctx.beginPath(); ctx.moveTo(r * 0.7, -r * 0.75); ctx.lineTo(r * 0.78, -r * 0.66); ctx.lineTo(r * 0.92, -r * 0.85); ctx.stroke();
+      feltCheck(ctx, r * 0.8, -r * 0.75, r * 0.24);
     }
     ctx.restore();
   }
@@ -694,18 +704,12 @@ export class SalonRoom {
     const next = pages[(this.pageIdx + 1) % pages.length];
     const s = 1 + this.pageBtn.x * 0.03;
     ctx.save(); ctx.translate(b.x, b.y); ctx.scale(s, s);
-    ctx.shadowColor = "rgba(110,40,80,.25)"; ctx.shadowBlur = b.r * 0.3; ctx.shadowOffsetY = b.r * 0.12;
-    ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowColor = "transparent";
-    ctx.strokeStyle = "#f3b6d3"; ctx.lineWidth = Math.max(2, b.r * 0.1); ctx.stroke();
-    drawIcon(ctx, next.icon, -b.r * 0.12, -b.r * 0.08, b.r * 0.5);
-    ctx.strokeStyle = "#e0559a"; ctx.lineWidth = Math.max(2.5, b.r * 0.13); ctx.lineCap = "round"; ctx.lineJoin = "round";
-    ctx.beginPath(); ctx.moveTo(b.r * 0.42, b.r * 0.25); ctx.lineTo(b.r * 0.62, b.r * 0.45); ctx.lineTo(b.r * 0.82, b.r * 0.25); ctx.stroke();
-    // bolinhas de página (onde estou)
+    feltPageBtn(ctx, b.r, next.icon, FELT.pink);
+    // bolinhas de página (onde estou): botõezinhos de feltro
     const n = pages.length, i0 = this.pageIdx % n;
     for (let i = 0; i < n; i++) {
-      ctx.fillStyle = i === i0 ? "#e0559a" : "rgba(224,85,154,.3)";
-      ctx.beginPath(); ctx.arc((i - (n - 1) / 2) * b.r * 0.34, -b.r * 1.35, b.r * 0.1, 0, Math.PI * 2); ctx.fill();
+      const x = (i - (n - 1) / 2) * b.r * 0.38, y = -b.r * 1.35;
+      feltDot(ctx, x, y, b.r * (i === i0 ? 0.13 : 0.1), i === i0 ? FELT.ring : FELT.pink, { lift: 0.5, stitch: false });
     }
     ctx.restore();
   }
