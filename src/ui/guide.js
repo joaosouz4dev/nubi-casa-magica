@@ -14,6 +14,7 @@ import { HandDemo } from "./hand_demo.js";
 import { Ease, clamp, damp, Motion, roundRect } from "../core/anim.js";
 import { giftFor } from "../data/wardrobe.js";
 import { wearIcon } from "../entities/wear.js";
+import { wishLine } from "../data/voice_lines.js";
 
 const NUBI_ACTS = { wake: "head", pet: "head", tummy: "belly" };
 
@@ -48,8 +49,19 @@ export class Guide {
     bus.on("quest:changed", (w) => { this.wish = w; this._activity(); this.bubbleK = 0; });
     bus.on("quest:step", (e) => this._onStep(e));
     bus.on("quest:chapter", (e) => this._onChapter(e));
+    // tocar no balão de pensamento repete o pedido em voz alta
+    bus.on("tap", (p) => {
+      if (!this.voice || !this.wish || this.bubbleK < 0.6) return;
+      const b = this.bubblePos();
+      if (Math.hypot(p.x - b.x, p.y - b.y) <= b.r * 1.3) this.voice.wish(this._wishLine());
+    });
     this.wish = quests.current();
+    this.voice = null;         // systems/voice.js (ligado no main)
+    this._spokenKey = null;
   }
+
+  // frase do pedido atual (no mapa, todo pedido "está aqui")
+  _wishLine() { return wishLine(this.wish, !this.inRoom(this.wish)); }
 
   _activity() {
     this.idle = 0; this.phase = 0; this.nextDemoAt = 0;
@@ -104,7 +116,8 @@ export class Guide {
   }
 
   _albumPoint() {
-    const btn = document.getElementById("btnAlbum");
+    // o álbum mora na mochila: o adesivo voa até ela (ou até o álbum, se aberta)
+    const btn = this.bag ? this.bag.target("btnAlbum") : document.getElementById("btnAlbum");
     if (!btn) return { x: this.vp.w - 40, y: 40 };
     const b = this.vp.rectToStage(btn.getBoundingClientRect());
     return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
@@ -117,12 +130,10 @@ export class Guide {
     const room = this.room();
     const inRoom = this.inRoom(w);
 
-    // botão do cômodo do pedido pulsa quando o pedido é em outro lugar
+    // pedido em outro cômodo: o botão da casa (mapa) pulsa; no mapa, a
+    // janela daquele cômodo ganha a estrela
     const navWish = w && !inRoom ? w.room : null;
-    if (navWish !== this._navWish) {
-      this._navWish = navWish;
-      document.querySelectorAll("[data-room]").forEach(b => b.classList.toggle("wish", b.getAttribute("data-room") === navWish));
-    }
+    this._navWish = navWish;
     // pedido de interface (ex.: escolher bichinho): o botão correspondente pulsa
     const domWish = w && w.dom ? w.dom : null;
     if (domWish !== this._domWish) {
@@ -130,6 +141,9 @@ export class Guide {
       this._domWish = domWish;
       if (domWish) { const el = document.querySelector(domWish); if (el) el.classList.add("wish"); }
     }
+    // a casa pulsa pelos dois motivos (toggle sem mudança não mexe no DOM)
+    const home = document.getElementById("btnHome");
+    if (home) home.classList.toggle("wish", !!navWish || domWish === "#btnHome");
     // o pedido precisa de algo no cômodo (cocô, casca, saquinho): o cômodo garante
     if (w && inRoom && room && room.ensure) room.ensure(w.act);
     if (this.giftShow) { this.giftShow.t += dt; if (this.giftShow.t > 2600) this.giftShow = null; }
@@ -159,6 +173,7 @@ export class Guide {
             if (tg.nubi) { this.nubi.earL.kick(9); this.nubi.earR.kick(-9); }
             else if (room && room.nudge) room.nudge(w.act);
             this.audio.hint();
+            if (this.voice) this.voice.wish(this._wishLine());   // ajuda: repete o pedido
           }
           if (this.idle > HINT_TIMING.demo * k && this.idle >= this.nextDemoAt) {
             this.phase = 3;
@@ -172,6 +187,7 @@ export class Guide {
       } else if (this.phase < 2 && this.idle > HINT_TIMING.nudge * k) {
         this.phase = 2;
         this.audio.hint();
+        if (this.voice) this.voice.wish(this._wishLine());
       }
     }
 
@@ -185,6 +201,11 @@ export class Guide {
     const show = !!w && !this.nubi.sleeping && !(this.nubi.sayT > 0) && !this.scenes.transitioning;
     this.bubbleShow = show ? 1 : 0;
     this.bubbleK = clamp(this.bubbleK + (show ? dt / 420 : -dt / 160));
+    // pedido falado uma vez quando o balão aparece (minijogo: em silêncio)
+    if (this.voice && w && show && this.bubbleK > 0.6 && !(room && room.quiet && room.quiet())) {
+      const key = w.act + "|" + (w.room || "") + "|" + (inRoom ? "in" : "out") + "|" + (w.chapter ? w.chapter.id + ":" + w.index : "free");
+      if (key !== this._spokenKey) { this._spokenKey = key; this.voice.wish(this._wishLine()); }
+    }
 
     for (const f of this.flights) f.t += dt;
     const arrived = this.flights.filter(f => f.t >= 900);

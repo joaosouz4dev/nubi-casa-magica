@@ -12,7 +12,9 @@
 
 // Quantas estrelinhas cada coisa dá.
 export const STAR_RULES = { act: 1, step: 2, chapter: 5, mission: 5, loveUp: 3, chest: 10, dailyGift: 5, surprise: 3 };
-export const ACT_COOLDOWN = 2500;   // a mesma ação seguida não conta de novo antes disso
+export const ACT_COOLDOWN = 2500;
+// depois do último prêmio, o pote continua: a cada tantas estrelinhas, um presente-festa
+export const JAR_BONUS = 30;   // a mesma ação seguida não conta de novo antes disso
 
 // Ações que não são "brincar" (navegação, troca de aba): não dão estrelinha.
 export const NO_STAR = [/^hub:/, /^tab:/, /^salon:/, /^wake$/, /^prize$/, /^mission/, /^game:any$/, /^chest/, /^daily/];
@@ -68,8 +70,8 @@ export const ACHIEVEMENTS = [
   { id: "ach:ten",     icon: "star",         name: "Dez estrelinhas",     test: (p) => p.total >= 10 },
   { id: "ach:fifty",   icon: "trophy",       name: "Cinquenta!",          test: (p) => p.total >= 50 },
   { id: "ach:hundred", icon: "trophy",       name: "Cem estrelinhas",     test: (p) => p.total >= 100 },
-  { id: "ach:lvl3",    icon: "trophy",       name: "Nível 3",             test: (p) => p.level() >= 3 },
-  { id: "ach:lvl5",    icon: "trophy",       name: "Nível 5",             test: (p) => p.level() >= 5 },
+  { id: "ach:lvl3",    icon: "trophy",       name: "Três presentes",      test: (p) => p.level() >= 3 },
+  { id: "ach:lvl5",    icon: "trophy",       name: "Cinco presentes",     test: (p) => p.level() >= 5 },
   { id: "ach:love",    icon: "heartLevel",   name: "Melhor amigo",        test: (p) => Object.values(p.state.love || {}).some(l => (l.lvl || 0) >= 2) },
   { id: "ach:gamer",   icon: "games",        name: "Brincalhão",          test: (p) => { const g = p.save.state.games; const b = g && g.best; return !!b && Object.keys(b).length >= 3; } },
   { id: "ach:gardener", icon: "flower",      name: "Jardineiro",          test: (p) => { const g = p.save.state.garden; return !!g || (p.save.state.pantry | 0) >= 1; } }

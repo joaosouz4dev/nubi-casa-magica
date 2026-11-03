@@ -18,6 +18,13 @@ orientam sem pressionar.
   destino.
 - Abre direto numa tela inicial animada com botão Play. No Android o app fica
   sempre em paisagem; num navegador com o celular em pé o jogo se gira sozinho.
+- Tela inteira: o APK esconde as barras do Android (modo imersivo) e desenha
+  até o recorte da câmera (`android-src/MainActivity.java`, copiado pelo build).
+  No navegador do celular o Play pede tela cheia, e se a criança sair dela o
+  próximo toque pede de novo (`src/core/fullscreen.js`).
+- Responsivo: o tamanho vem da área visível real (não do `100vh`, que no
+  celular conta a barra do navegador). Os botões se ajustam à altura da tela
+  e respeitam o recorte da câmera.
 
 ## Telas
 
@@ -86,16 +93,44 @@ não custa nada.
 - Ajuda por inatividade em degraus: olhar do bichinho -> objeto pula -> mãozinha.
 - Modos dos responsáveis (Explorar / Experimentar / Resolver) mudam os pedidos e
   a paciência da ajuda.
+- **Área dos responsáveis:** fica pequenininha dentro da mochila. Para abrir,
+  segure o botão por 3s e depois arraste a bolinha até o número escrito por
+  extenso ("Arraste a bolinha até o número sete", entre 6 números
+  sorteados; tocar no número também vale). Quem ainda não lê não sabe qual
+  escolher; a voz do jogo não lê essa tela. Errar fecha; 3 erros seguidos
+  travam por 30s. Não é comprovação de idade e nunca pede idade.
 
-**Ir e voltar:** botão de voltar no topo (sai da estação do salão, depois refaz
-o caminho e por fim volta ao mapa), botão do mapa e a barra lateral de cômodos.
-Esc/Backspace também voltam no computador.
+**HUD enxuto (3 coisas na tela):** a **casa** (mapa) no canto esquerdo, as
+**estrelinhas** no centro e a **mochila** no canto direito. O mapa é a
+navegação: a casa pulsa quando o pedido é em outro cômodo. A mochila guarda
+bichinhos, missões, prêmios, álbum, som e, pequenininha no canto, a área dos
+responsáveis; o botão dela repete os sinais de dentro (pontinho de prêmio ou
+baú pronto, pulso de pedido, pulinho de adesivo novo).
+- **Voltar** só aparece em sub-telas (estação do salão) e sai delas.
+- **Minijogo:** o HUD some e fica só a **pausa**, que congela a partida e
+  oferece continuar (grande, verde) ou sair. Nada de sair sem querer. O jogo
+  também pausa sozinho quando o app vai para o segundo plano.
+- **Fim de partida:** além da festa, dois botões grandes: **de novo** (mesmo
+  jogo) e **outro jogo** (cartões).
+- Esc/Backspace no computador: fecham o que estiver aberto, pausam o
+  minijogo, saem da sub-tela ou vão para o mapa.
 
-**Estrelinhas (temporada 3):** contador no topo. Só sobem: nunca se perdem nem
-se gastam, e não existe errar. Brincar dá 1 (a mesma ação seguida não conta de
-novo por 2,5s), cada pedido 2, cada capítulo 5, cada missão do dia 5.
-- **Lojinha de prêmios:** 12 prêmios (comidas especiais, roupas, enfeites da casa)
-  abrem quando o total alcança o preço; um toque ganha. Nada do jogo básico fica trancado.
+**Estrelinhas (temporada 3):** só sobem: nunca se perdem nem se gastam, e não
+existe errar. Brincar dá 1 (a mesma ação seguida não conta de novo por 2,5s),
+cada pedido 2, cada capítulo 5, cada missão do dia 5.
+- **Pote de estrelinhas (sem números):** no topo, um pote que enche até o
+  próximo presente, o desenho do próximo presente e o coração de carinho. As
+  estrelinhas voam até o pote; quando ele enche, **um presente aparece ao lado
+  do bichinho**, no cômodo: 2 toques balançam, o 3º abre e o prêmio pula para
+  fora (comida especial na geladeira, roupa no guarda-roupa, enfeite na casa).
+  Presente sem abrir continua esperando (inclusive depois de fechar o jogo);
+  no minijogo ele some e volta depois. Depois dos 12 prêmios, a cada 30
+  estrelinhas vem um presente-festa. Cada presente é um "nível".
+- **Coleção de prêmios** (na mochila): 12 prêmios (comidas especiais, roupas,
+  enfeites da casa), sem preços: ganho (cor e ✓), pronto (brilha), a ganhar
+  (silhueta); o próximo mostra a barrinha do pote. Nada do jogo básico fica
+  trancado. Os números (estrelinhas, presentes, preço do próximo) ficam no
+  relatório dos responsáveis.
 - **Carinho:** coração por bichinho que enche com cuidados; cada nível tem festa.
 - **Missões do dia:** 3 sugestões que trocam pela data (sempre uma delas é um
   minijogo), sem sequência nem cobrança; tocar numa missão leva até o cômodo dela.
@@ -111,6 +146,30 @@ novo por 2,5s), cada pedido 2, cada capítulo 5, cada missão do dia 5.
   **Surpresa:** balão com presente no mapa em metade das visitas (+3).
 - Som: timbres em camadas com eco leve e uma musiquinha de fundo diferente por
   cômodo; cada canal pode ser desligado na área dos responsáveis.
+- **Voz (sem leitura obrigatória):** o bichinho fala em voz alta os balões
+  (reações e elogios), o pedido quando o balão de pensamento aparece (e de
+  novo na ajuda por inatividade), o nome do cômodo ao entrar e "Vamos para
+  o banheiro?" quando o pedido é em outro cômodo. Tocar no balão repete o
+  pedido. Pedidos ficam em silêncio nos minijogos, a música abaixa enquanto
+  ele fala e cada bichinho tem um tom. A voz vem de uma gravação em
+  `assets/voice/<id>.mp3`, se existir; senão do aparelho (APK, plugin
+  `@capacitor-community/text-to-speech`) ou do navegador (pt-BR, preferindo
+  voz que funciona sem internet). Desligar "falas" na área dos responsáveis
+  (ou o botão de som) silencia.
+  - **Gravar a voz:** `node scripts/voice-lines.mjs > falas.csv` lista as
+    ~210 falas (`id;texto`). Grave cada uma em `assets/voice/<id>.mp3` e
+    inclua o id em `RECORDED` (`src/data/voice_lines.js`); as que faltarem
+    continuam com a voz sintetizada.
+
+**Dificuldade que acompanha a criança:** cada minijogo tem degraus
+(Memória de 2 a 6 pares, Música de 3 a 7 notas, Formas de 2 a 5, Cores de 2
+a 5 misturas, Pega-frutas e Estoura-bolhas no ritmo e no tamanho). Começa no
+degrau de antes (Explorar), sobe depois de 2 partidas seguidas com 85% de
+acerto ou mais e desce depois de 2 abaixo de 60%; sair no meio não conta. O
+modo dos responsáveis só define até onde sobe. Nada disso aparece para a
+criança; o relatório dos responsáveis mostra degrau, acerto médio e partidas
+por minijogo. Na Música, 5 notas erradas encerram a partida em festa (a
+criança não fica presa).
 
 **Capítulos sem pressão:** além das estrelinhas, nada de porcentagem, sequência diária ou
 recompensa aleatória. Cada capítulo concluído dá um adesivo (álbum + varal) e
@@ -119,9 +178,9 @@ botas brilhantes, capa arco-íris, medalha, chifre de unicórnio, asas de fada).
 O presente é sempre o mesmo pelo mesmo capítulo e nunca se perde.
 
 **Novidades da v1.1:**
-- **Nível do jogador:** um "Nv" ao lado do contador sobe com o total de
-  estrelinhas; cada nível tem festa. É só progressão por brincar, nunca perde.
-- **Conquistas (troféus):** marcos divertidos (primeira estrelinha, nível 3,
+- **Nível do jogador:** virou o pote de estrelinhas (cada presente aberto é
+  um nível). É só progressão por brincar, nunca perde.
+- **Conquistas (troféus):** marcos divertidos (primeira estrelinha, três presentes,
   melhor amigo, brincalhão, jardineiro...) aparecem no álbum. Sem punição.
 - **Área dos responsáveis ampliada:** relatório dos últimos dias (tempo de jogo,
   cuidados e brincadeiras) e um **limite de tempo opcional** - ao atingir, o
@@ -140,7 +199,7 @@ src/
   entities/food_item.js    alimento arrastável (arte em food_art.js)
   scenes/*_room.js         mapa, cozinha, banheiro, jardim, quarto, dentista,
                            salão, quarto de brinquedos (games_room.js)
-  systems/                 efeitos, áudio, save, pedidos/capítulos (quests),
+  systems/                 efeitos, áudio, voz, save, pedidos/capítulos (quests),
                            estrelinhas/prêmios/missões (progress)
   data/                    alimentos, capítulos, bichinhos, guarda-roupa, salão,
                            prêmios
@@ -157,7 +216,7 @@ um penteado ou esmalte novo, em `data/salon.js`; um capítulo, em
 ## Testes
 
 `play`, `stage2`, `mvp`, `visual`, `quests`, `features`, `growth`, `title`,
-`games` e `garden` (Playwright headless, interações reais de ponteiro). `games`
+`games`, `garden`, `voice`, `parent`, `skill` e `gift` (Playwright headless, interações reais de ponteiro). `games`
 joga os 6 minijogos de verdade (arrastar, estourar, virar cartas, tocar
 sininhos, encaixar formas, misturar cores), o voltar no meio da partida, a
 surpresa do mapa, o baú e o presente do dia. `garden` rega e colhe no jardim.
@@ -171,5 +230,6 @@ foram medidos no Chromium headless de um PC.
 
 ## Arte
 
-Toda a arte é procedural (desenhada em código) e as vozes são tons
-sintetizados: é arte de protótipo caprichada, não arte final.
+Toda a arte é procedural (desenhada em código) e a voz é sintetizada (do
+aparelho ou do navegador) até haver gravações: é arte de protótipo
+caprichada, não arte final.

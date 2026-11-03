@@ -101,6 +101,11 @@ export class Audio {
   }
 
   /* ---------- música de fundo ---------- */
+  // abaixa a música enquanto o bichinho fala (voz em systems/voice.js)
+  duckMusic(on) {
+    if (!this.ctx || !this.bus) return;
+    this.bus.music.gain.setTargetAtTime(on ? 0.15 : 0.5, this.ctx.currentTime, 0.12);
+  }
   setTheme(id) { this.theme = THEMES[id] ? id : "hub"; this._step = 0; }
   _startMusic() {
     if (this._musicTimer || !this.ctx) return;

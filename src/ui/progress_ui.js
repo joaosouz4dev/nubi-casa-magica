@@ -1,8 +1,9 @@
-/* Interface das estrelinhas: contador no topo, coração de carinho do
-   bichinho, lojinha de prêmios e missões do dia.
-   Tudo desenhado no estilo do jogo (ícones em canvas, sem emoji) e com
-   feedback imediato: estrelinha voando até o contador, número que pula,
-   prêmio pronto pulsando, festa ao ganhar. */
+/* Interface das estrelinhas: POTE no topo (enche até o próximo presente),
+   o desenho do próximo presente, coração de carinho, PRESENTE no cômodo,
+   lojinha (coleção de prêmios) e missões do dia.
+   Sem números para a criança: estrelinha voa até o pote, o pote enche e,
+   cheio, um presente aparece ao lado do bichinho; 3 toques abrem.
+   Tudo desenhado no estilo do jogo (ícones em canvas, sem emoji). */
 import { drawIcon } from "./icons.js";
 import { PRIZES, loveNeeded } from "../data/prizes.js";
 import { PETS } from "../data/pets.js";
@@ -24,17 +25,16 @@ export class ProgressUI {
   constructor({ bus, progress, nubi, audio, vp }) {
     this.bus = bus; this.progress = progress; this.nubi = nubi; this.audio = audio; this.vp = vp;
     this.pill = document.getElementById("starPill");
-    this.count = document.getElementById("starCount");
-    this.lvlBadge = document.getElementById("lvlBadge");
+    this.jarEl = document.getElementById("jar");
+    this.jarFill = document.getElementById("jarFill");
+    this.nextEl = document.getElementById("nextPrize");
     this.love = document.getElementById("loveMeter");
     this.loveFill = document.getElementById("loveFill");
-    this.loveLvl = document.getElementById("loveLvl");
+    this.giftEl = null;            // presente no cômodo (esperando os 3 toques)
     this.shopEl = document.getElementById("shop");
     this.shopGrid = document.getElementById("shopGrid");
     this.missEl = document.getElementById("missions");
     this.missList = document.getElementById("missionList");
-    this.shown = progress.total;
-
     const starIco = document.getElementById("starIco");
     if (starIco) starIco.appendChild(iconCanvas(30, "star"));
     const on = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener("click", fn); };
@@ -44,8 +44,9 @@ export class ProgressUI {
     on("btnMissions", () => this.openMissions());
     on("missionsClose", () => this.missEl.classList.remove("show"));
 
-    bus.on("stars:changed", (e) => { this._gain(e); this._renderLevel(); });
-    bus.on("level:up", (e) => this._levelUp(e));
+    bus.on("stars:changed", (e) => this._gain(e));
+    bus.on("level:up", () => { this._jarFull = true; });       // o pote encheu: presente quando a estrelinha chegar
+    bus.on("gift:bonus", () => this._bonus());
     bus.on("achievement:got", (e) => this._achievement(e));
     bus.on("prize:ready", () => { this._badge(); this.audio.chime(3); });
     bus.on("prize:claimed", (p) => this._claimed(p));
@@ -55,18 +56,21 @@ export class ProgressUI {
     bus.on("mission:done", (e) => this._missionDone(e));
     bus.on("chest:ready", () => { this._missionBadge(); this.audio.chime(5); bump(document.getElementById("btnMissions")); });
     bus.on("chest:opened", () => this._chestOpened());
-    this._renderCount(); this._renderLove(); this._badge(); this._missionBadge(); this._renderLevel();
+    this._renderJar(); this._renderLove(); this._badge(); this._missionBadge();
+    // presente que ficou sem abrir na última vez continua esperando
+    setTimeout(() => this._spawnGift(true), 600);
   }
 
-  _renderLevel() { if (this.lvlBadge) this.lvlBadge.textContent = "Nv " + this.progress.level(); }
-  _levelUp({ at }) {
-    this._renderLevel();
-    bump(this.lvlBadge);
-    this.nubi.dance();
-    this.nubi.say("Subi de nível!");
-    this.bus.emit("fx:confetti", { amount: 1 });
-    this.bus.emit("fx:burst", at || { x: this.nubi.px(), y: this.nubi.py() - this.nubi.radius() }, "#b48cff");
-    this.audio.fanfare();
+  // ---------------- pote + próximo presente ----------------
+  _renderJar(full) {
+    const j = this.progress.jar();
+    if (this.jarFill) this.jarFill.style.height = Math.round((full ? 1 : j.frac) * 100) + "%";
+    if (this.nextEl) {
+      const g = this.progress.nextGift();
+      const icon = g ? (g.kind === "prize" ? g.prize.icon : "gift") : (j.prize ? j.prize.icon : "gift");
+      if (this.nextEl.dataset.icon !== icon) { this.nextEl.dataset.icon = icon; this.nextEl.innerHTML = ""; this.nextEl.appendChild(iconCanvas(40, icon)); }
+      this.nextEl.classList.toggle("ready", !!g);
+    }
   }
   _achievement(a) {
     // troféu ganho: festa curta + fala; aparece no álbum depois
@@ -77,24 +81,26 @@ export class ProgressUI {
     bump(document.getElementById("btnAlbum"));
   }
 
-  // ---------------- contador ----------------
-  _renderCount() { if (this.count) this.count.textContent = String(this.shown); }
-  _gain({ total, gained, at }) {
-    // estrelinha voando do bichinho até o contador; o número sobe quando ela chega
+  // ---------------- estrelinhas voando até o pote ----------------
+  _gain({ gained, at }) {
+    // estrelinha voando do bichinho até o pote; o pote enche quando a última chega
     const from = at || { x: this.nubi.px(), y: this.nubi.py() - this.nubi.radius() * 1.1 };
     const fly = Math.min(4, gained);
-    for (let i = 0; i < fly; i++) setTimeout(() => this._flyStar(from, i === fly - 1 ? total : null), i * 90);
-    if (!this.pill) { this.shown = total; return; }
+    // pote escondido (minijogo): sem voo. Espera um instante porque o aviso
+    // de "pote cheio" (level:up) chega logo depois deste
+    if (!this.pill || !this.pill.getClientRects().length) { setTimeout(() => this._landed(), 0); return; }
+    for (let i = 0; i < fly; i++) setTimeout(() => this._flyStar(from, i === fly - 1), i * 90);
   }
-  _flyStar(from, finalTotal) {
+  _flyStar(from, last) {
     // coordenadas no palco (#stage): o canvas ocupa o palco a partir de (0,0)
-    const tgt = this.pill ? this.vp.rectToStage(this.pill.getBoundingClientRect()) : { left: this.vp.w / 2, top: 10, width: 40, height: 40 };
+    const box = this.jarEl || this.pill;
+    const tgt = box ? this.vp.rectToStage(box.getBoundingClientRect()) : { left: this.vp.w / 2, top: 10, width: 40, height: 40 };
     const el = document.createElement("div");
     el.className = "flyStar";
     el.appendChild(iconCanvas(28, "star"));
     (document.getElementById("stage") || document.body).appendChild(el);
     const x0 = from.x - 14, y0 = from.y - 14;
-    const x1 = tgt.left + 18 - 14, y1 = tgt.top + tgt.height / 2 - 14;
+    const x1 = tgt.left + tgt.width / 2 - 14, y1 = tgt.top + tgt.height / 2 - 14;
     const reduce = document.body.classList.contains("reduce-motion");
     const midX = (x0 + x1) / 2 + (Math.random() - 0.5) * 80, midY = Math.min(y0, y1) - 60;
     const anim = el.animate([
@@ -104,28 +110,96 @@ export class ProgressUI {
     ], { duration: reduce ? 200 : 750, easing: "cubic-bezier(.45,.05,.4,1)" });
     anim.onfinish = () => {
       el.remove();
-      const from = this.shown;
-      const to = finalTotal != null ? this.progress.total : this.shown + 1;
-      this._rollCount(from, to, reduce ? 0 : 320);
       bump(this.pill);
       this.audio.coin(this._coinStep = ((this._coinStep || 0) + 1) % 8);
+      if (last) this._landed();
     };
   }
-  /* O número sobe contando (em vez de pular), como um placar de fliperama. */
-  _rollCount(from, to, ms) {
-    if (this._roll) cancelAnimationFrame(this._roll);
-    const t0 = performance.now();
-    const tick = (now) => {
-      const k = ms ? Math.min(1, (now - t0) / ms) : 1;
-      this.shown = Math.round(from + (to - from) * (1 - Math.pow(1 - k, 3)));
-      this._renderCount();
-      if (k < 1) this._roll = requestAnimationFrame(tick); else { this.shown = to; this._renderCount(); this._roll = null; }
-    };
-    this._roll = requestAnimationFrame(tick);
+  // a última estrelinha chegou: o pote sobe; se encheu, festa e presente no cômodo
+  _landed() {
+    if (!this._jarFull) { this._renderJar(); return; }
+    this._jarFull = false;
+    this._renderJar(true);
+    bump(this.jarEl, "full");
+    this.audio.chime(5);
+    setTimeout(() => { this._renderJar(); this._spawnGift(); }, 650);
+  }
+
+  // ---------------- presente no cômodo ----------------
+  /* Aparece ao lado do bichinho; 3 toques: balança, balança, abre. O que
+     estava dentro pula para fora e vai para o lugar dele (roupa no
+     guarda-roupa, comida na geladeira, enfeite na casa). */
+  _spawnGift(quiet) {
+    if (this.giftEl || !this.progress.nextGift()) return;
+    const b = document.createElement("button");
+    b.id = "prizeGift"; b.className = "toy"; b.setAttribute("aria-label", "Presente: toque 3 vezes para abrir");
+    b.appendChild(iconCanvas(64, "gift"));
+    b.dataset.taps = "0";
+    b.addEventListener("click", () => this._tapGift());
+    (document.getElementById("stage") || document.body).appendChild(b);
+    this.giftEl = b;
+    this.update();
+    this._badge();
+    if (!quiet && window.__titleDone !== false) {
+      this.nubi.celebrate();
+      this.nubi.say("Um presente!");
+      const r = this._giftCenter();
+      this.bus.emit("fx:burst", { x: r.x, y: r.y, color: "#ffd54a" });
+    }
+  }
+  _giftCenter() { const b = this.giftEl; return b ? { x: b.offsetLeft + b.offsetWidth / 2, y: b.offsetTop + b.offsetHeight / 2 } : { x: 0, y: 0 }; }
+  _tapGift() {
+    const b = this.giftEl; if (!b || b.classList.contains("open")) return;
+    const taps = Number(b.dataset.taps) + 1;
+    b.dataset.taps = String(taps);
+    const c = this._giftCenter();
+    if (taps < 3) {
+      bump(b, "shake");
+      this.audio.pop();
+      this.bus.emit("fx:burst", { x: c.x, y: c.y - 20, color: "#ffd54a", small: true });
+      return;
+    }
+    const g = this.progress.nextGift();
+    b.classList.remove("shake"); b.classList.add("open");
+    this.audio.sparkle();
+    // o que estava dentro pula para fora
+    const item = document.createElement("div"); item.className = "giftItem";
+    item.appendChild(iconCanvas(72, g && g.kind === "prize" ? g.prize.icon : "star"));
+    item.style.left = (c.x - 36) + "px"; item.style.top = (c.y - 36) + "px";
+    (document.getElementById("stage") || document.body).appendChild(item);
+    setTimeout(() => item.remove(), 1200);
+    setTimeout(() => {
+      b.remove(); this.giftEl = null;
+      this.progress.openGift(g);
+      this._renderJar(); this._badge();
+      setTimeout(() => this._spawnGift(), 1400);   // mais de um pronto: o próximo aparece depois
+    }, 450);
+  }
+  _bonus() {
+    // depois de todos os prêmios: o presente é uma festa
+    this.audio.fanfare();
+    this.bus.emit("fx:confetti", { amount: 1.2 });
+    this.nubi.dance();
+    this.nubi.say("Festa!");
+  }
+  /* Chamado a cada quadro: o presente acompanha o bichinho (no chão, ao lado). */
+  update() {
+    const b = this.giftEl; if (!b) return;
+    const n = this.nubi, vp = this.vp, r = n.radius();
+    const size = Math.round(Math.max(64, Math.min(96, vp.h * 0.17)));
+    let x = n.px() + r * 1.2;
+    if (x + size > vp.w - 12) x = n.px() - r * 1.2 - size;
+    let y = n.py() + r * 0.8 - size;
+    x = Math.round(Math.max(12, Math.min(vp.w - size - 12, x)));
+    y = Math.round(Math.max(vp.hudBottom() + 12, Math.min(vp.h - size - 12, y)));
+    const key = x + "," + y + "," + size;
+    if (b.dataset.pos !== key) { b.dataset.pos = key; b.style.left = x + "px"; b.style.top = y + "px"; b.style.setProperty("--gift", size + "px"); }
   }
   _badge() {
+    // prêmio pronto: o sinal principal é o presente no cômodo; a lojinha só
+    // chama quando o presente não está à vista
     const b = document.getElementById("btnShop");
-    if (b) b.classList.toggle("ready", this.progress.readyCount() > 0);
+    if (b) b.classList.toggle("ready", this.progress.readyCount() > 0 && !this.giftEl);
   }
   _missionBadge() {
     const b = document.getElementById("btnMissions");
@@ -137,7 +211,6 @@ export class ProgressUI {
     const l = this.progress.love();
     const k = Math.min(1, l.pts / loveNeeded(l.lvl));
     if (this.loveFill) this.loveFill.style.height = Math.round(k * 100) + "%";
-    if (this.loveLvl) this.loveLvl.textContent = String(l.lvl + 1);
   }
   _loveUp({ pet }) {
     this._renderLove();
@@ -155,11 +228,14 @@ export class ProgressUI {
   renderShop() {
     const g = this.shopGrid; if (!g) return;
     g.innerHTML = "";
-    const total = this.progress.total;
+    // sem preços para a criança: ganho (cor + ✓), pronto (brilha), a ganhar
+    // (silhueta); só o próximo mostra o quanto o pote já encheu
+    const jar = this.progress.jar();
+    const nextId = jar.prize ? jar.prize.id : null;
     PRIZES.forEach((p, i) => {
       const owned = this.progress.owned(p.id), ready = this.progress.ready(p);
       const card = document.createElement("button");
-      card.className = "prize" + (owned ? " owned" : ready ? " ready" : " locked");
+      card.className = "prize" + (owned ? " owned" : ready ? " ready" : " locked") + (p.id === nextId ? " next" : "");
       card.style.animationDelay = (i * 0.03) + "s";
       card.setAttribute("aria-label", owned ? "Prêmio ganho" : ready ? "Ganhar prêmio" : "Prêmio com " + p.price + " estrelinhas");
       const ico = document.createElement("div"); ico.className = "prizeIco";
@@ -167,19 +243,20 @@ export class ProgressUI {
       card.appendChild(ico);
       const price = document.createElement("div"); price.className = "prizePrice";
       if (owned) price.innerHTML = '<span class="ok">✓</span>';
-      else {
-        price.appendChild(iconCanvas(18, "star"));
-        const n = document.createElement("span"); n.textContent = String(p.price); price.appendChild(n);
-      }
       card.appendChild(price);
-      if (!owned && !ready) {
-        // barrinha de "quase lá" (só enche, nunca esvazia)
+      if (p.id === nextId) {
+        // barrinha de "quase lá" (é o pote, deitado; só enche)
         const bar = document.createElement("div"); bar.className = "prizeBar";
-        const f = document.createElement("i"); f.style.width = Math.round(Math.min(1, total / p.price) * 100) + "%";
+        const f = document.createElement("i"); f.style.width = Math.round(jar.frac * 100) + "%";
         bar.appendChild(f); card.appendChild(bar);
       }
       card.addEventListener("click", () => {
-        if (ready) { this.progress.claim(p.id); this.renderShop(); }
+        if (ready) {
+          // o presente pronto é o mesmo que espera no cômodo: some de lá
+          if (this.giftEl) { this.giftEl.remove(); this.giftEl = null; }
+          this.progress.claim(p.id); this.renderShop(); this._renderJar();
+          setTimeout(() => this._spawnGift(), 1400);
+        }
         else if (!owned) { bump(card, "nope"); this.audio.hint(); }
       });
       g.appendChild(card);
@@ -204,7 +281,7 @@ export class ProgressUI {
       row.appendChild(iconCanvas(56, m.icon));
       const st = document.createElement("div"); st.className = "missionState";
       if (m.done) st.innerHTML = '<span class="ok">✓</span>';
-      else { st.appendChild(iconCanvas(20, "star")); const s = document.createElement("span"); s.textContent = "+5"; st.appendChild(s); }
+      else st.appendChild(iconCanvas(22, "star"));          // vale estrelinha (sem número)
       row.appendChild(st);
       // tocar numa missão leva até o cômodo dela
       row.addEventListener("click", () => { this.missEl.classList.remove("show"); if (!m.done && m.room) this.bus.emit("room:go", m.room); });

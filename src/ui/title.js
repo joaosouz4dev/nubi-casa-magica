@@ -4,6 +4,8 @@
    áudio (exigência dos navegadores) e, no navegador de celular, pede tela
    cheia + trava em paisagem. No APK a orientação já vem travada pelo Android.
    Testes podem pular a tela com ?notitle na URL. */
+import { enterFullscreen } from "../core/fullscreen.js";
+
 export function showTitle({ audio, onStart }) {
   const stage = document.getElementById("stage") || document.body;
   if (/[?&]notitle\b/.test(location.search)) { onStart && onStart(); return null; }
@@ -55,13 +57,4 @@ export function showTitle({ audio, onStart }) {
 
 // navegador de celular: tela cheia + paisagem (falha em silêncio onde não há
 // suporte, ex.: iOS; aí o palco girado por CSS do Viewport resolve)
-function lockLandscape() {
-  if (window.Capacitor) return;                       // APK: o Android já trava
-  if (!matchMedia("(pointer: coarse)").matches) return; // computador: nada a fazer
-  const de = document.documentElement;
-  const req = de.requestFullscreen || de.webkitRequestFullscreen;
-  if (!req) return;
-  Promise.resolve(req.call(de)).then(() => {
-    if (screen.orientation && screen.orientation.lock) return screen.orientation.lock("landscape");
-  }).catch(() => {});
-}
+function lockLandscape() { enterFullscreen(); }

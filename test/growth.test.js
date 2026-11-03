@@ -18,6 +18,8 @@ fs.mkdirSync(OUT, { recursive: true });
   const shot = (name) => page.screenshot({ path: path.join(OUT, name + '.png') });
   const ev = (fn, arg) => page.evaluate(fn, arg);
   const wait = (ms) => page.waitForTimeout(ms);
+  // álbum, prêmios, missões, bichinhos e som moram na mochila
+  const openBag = async () => { await page.click('#btnBag', { force: true }); await wait(500); };   // pode estar pulsando
   const R = {};
   const drag = async (from, to, steps = 12) => {
     await page.mouse.move(from.x, from.y); await page.mouse.down();
@@ -42,7 +44,8 @@ fs.mkdirSync(OUT, { recursive: true });
   await page.waitForFunction(() => !!window.__nubi && window.__nubi.room);
   await ev(() => { window.__acts = []; window.__nubi.bus.on('act', (a) => window.__acts.push(a)); window.__ups = 0; window.__nubi.bus.on('love:up', () => window.__ups++); });
   R.firstVisitKitchen = (await room()) === 'kitchen';
-  R.backVisibleInKitchen = await ev(() => !document.getElementById('btnBack').classList.contains('off'));   // cozinha -> pode voltar ao mapa
+  // cozinha: a casa (mapa) aparece; voltar só existe em sub-telas
+  R.homeInKitchen = await ev(() => !document.getElementById('btnHome').classList.contains('off') && document.getElementById('btnBack').classList.contains('off'));
   await page.mouse.click(380, 120); await wait(900);          // acorda
 
   // ================= COMIDAS NOVAS (abas) + ESTRELINHAS =================
@@ -52,7 +55,8 @@ fs.mkdirSync(OUT, { recursive: true });
   await feedItem(1);                                           // morango
   R.starsUp = (await total()) > s0;
   await wait(900);
-  R.pillShows = await ev(() => Number(document.getElementById('starCount').textContent) === window.__nubi.progress.total);
+  // o pote (não um número) mostra o quanto falta para o próximo presente
+  R.pillShows = await ev(() => document.getElementById('jarFill').style.height === Math.round(window.__nubi.progress.jar().frac * 100) + '%');
   const eaten = [];
   for (const t of [1, 2, 3]) {
     await tapTab(t);
@@ -74,23 +78,28 @@ fs.mkdirSync(OUT, { recursive: true });
   await page.click('#btnHome', { force: true }); await wait(800);
   R.hub = (await room()) === 'hub';
   R.backHiddenInHub = await ev(() => document.getElementById('btnBack').classList.contains('off'));
+  R.noSideNav = await ev(() => !document.getElementById('nav'));
   await shot('g05-mapa');
   R.fpsHub = (await fps()) > 30;
   const tile = (id) => ev((r) => window.__nubi.hub.tileCenter(r), id);
   let p = await tile('bathroom'); await page.mouse.click(p.x, p.y); await wait(900);
   R.tileToBathroom = (await room()) === 'bathroom';
-  await page.click('[data-room="bedroom"]', { force: true }); await wait(800);
-  await page.click('#btnBack', { force: true }); await wait(800);
-  R.backToBathroom = (await room()) === 'bathroom';
-  await page.click('#btnBack', { force: true }); await wait(800);
-  R.backToHub = (await room()) === 'hub';
+  // pedido em outro cômodo faz o botão da casa (mapa) pulsar
+  await ev(() => { window.__nubi.guide.wish = { act: 'look', icon: 'looks', room: 'bedroom' }; });
+  await wait(200);
+  R.homePulse = await ev(() => document.getElementById('btnHome').classList.contains('wish'));
+  // sem sub-tela não há voltar: a casa leva ao mapa (e some no próprio mapa)
+  R.noBackWithoutSub = await ev(() => document.getElementById('btnBack').classList.contains('off'));
+  await page.click('#btnHome', { force: true }); await wait(800);   // pulsando (pedido em outro cômodo)
+  R.homeToHub = (await room()) === 'hub';
+  R.homeHiddenInHub = await ev(() => document.getElementById('btnHome').classList.contains('off'));
   p = await tile('salon'); await page.mouse.click(p.x, p.y); await wait(900);
   R.tileToSalon = (await room()) === 'salon';
   await page.click('#btnHome', { force: true }); await wait(800);
 
   // ================= LOJINHA =================
   const before = await total();
-  await page.click('#btnShop', { force: true }); await wait(700);
+  await openBag(); await page.click('#btnShop', { force: true }); await wait(700);
   R.shopCards = (await page.$$('#shopGrid .prize')).length === 12;
   R.someReady = (await page.$$('#shopGrid .prize.ready')).length >= 1;
   await shot('g06-lojinha');
@@ -112,11 +121,11 @@ fs.mkdirSync(OUT, { recursive: true });
   await feedItem(0);
   R.feedSpecial = (await acts()).includes('feed:special') && (await ev(() => !!window.__nubi.save.state.discoveries.nubi_estrelado));
   // roupa ganha aparece no guarda-roupa (página de presentes)
-  await page.click('[data-room="bedroom"]', { force: true }); await wait(800);
+  await ev(() => window.__nubi.go('bedroom')); await wait(800);
   R.crownInWardrobe = await ev(() => { const b = window.__nubi.bedroom; return b.availablePages().some(pg => pg.gifts) && b.giftUnlocked({ id: 'goldcrown', gift: 'cozinha_nao_feito' }); });
 
   // ================= MISSÕES DO DIA =================
-  await page.click('#btnMissions', { force: true }); await wait(600);
+  await openBag(); await page.click('#btnMissions', { force: true }); await wait(600);
   R.missions = (await page.$$('#missionList .mission')).length === 3;
   await shot('g09-missoes');
   const m0 = await ev(() => window.__nubi.progress.missions().find(m => !m.done));
@@ -126,7 +135,7 @@ fs.mkdirSync(OUT, { recursive: true });
   await wait(300);
   R.missionDone = !m0 || ((await ev((a) => window.__nubi.progress.missions().find(m => m.act === a).done, m0.act)) && (await total()) - sM >= 5);
   // tocar numa missão leva até o cômodo dela
-  await page.click('#btnMissions', { force: true }); await wait(600);
+  await openBag(); await page.click('#btnMissions', { force: true }); await wait(600);
   const pending = await ev(() => window.__nubi.progress.missions().filter(m => !m.done).map(m => m.room));
   if (pending.length) {
     const idx = await ev(() => window.__nubi.progress.missions().findIndex(m => !m.done));
@@ -135,7 +144,7 @@ fs.mkdirSync(OUT, { recursive: true });
   } else { R.missionGoesToRoom = true; await page.click('#missionsClose'); }
 
   // ================= ÁLBUM com as comidas novas =================
-  await page.click('#btnAlbum'); await wait(700);
+  await openBag(); await page.click('#btnAlbum', { force: true }); await wait(700);
   const titles = await ev(() => [...document.querySelectorAll('#albumGrid .albumCard.found .albumTitle')].map(e => e.textContent));
   R.albumHasFoods = ['Melancia', 'Pizza', 'Picolé', 'Biscoito estrela'].every(t => titles.includes(t));
   await page.click('#albumClose'); await wait(300);
@@ -159,7 +168,7 @@ fs.mkdirSync(OUT, { recursive: true });
   await wait(200);
   R.levelRises = (await ev(() => window.__nubi.progress.level())) > lvl0;
   R.hasAchievements = await ev(() => window.__nubi.progress.achievedCount() >= 2);   // ach:first + ach:ten etc.
-  R.levelBadgeShown = await ev(() => { const b = document.getElementById('lvlBadge'); return !!b && /Nv \d/.test(b.textContent); });
+  R.noNumbersOnPill = await ev(() => !/\d/.test(document.getElementById('starPill').textContent));
 
   await browser.close();
   for (const [key, v] of Object.entries(R)) console.log((v ? 'ok  ' : 'FAIL') + ' ' + key);

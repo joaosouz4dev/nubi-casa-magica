@@ -1,6 +1,6 @@
 /* Service worker — joga 100% offline. Precache de todos os módulos e assets.
    Estratégia cache-first: ótimo para um jogo estático que não muda em runtime. */
-const CACHE = "nubi-v14";
+const CACHE = "nubi-v20";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,9 +9,12 @@ const ASSETS = [
   "./src/core/anim.js",
   "./src/core/events.js",
   "./src/core/viewport.js",
+  "./src/core/fullscreen.js",
   "./src/core/input.js",
   "./src/core/scene_manager.js",
   "./src/systems/audio.js",
+  "./src/systems/voice.js",
+  "./src/data/voice_lines.js",
   "./src/systems/save.js",
   "./src/systems/effects.js",
   "./src/entities/nubi.js",
@@ -27,6 +30,7 @@ const ASSETS = [
   "./src/scenes/garden_room.js",
   "./src/entities/food_art.js",
   "./src/systems/progress.js",
+  "./src/systems/skill.js",
   "./src/ui/progress_ui.js",
   "./src/ui/title.js",
   "./src/data/prizes.js",
@@ -38,7 +42,9 @@ const ASSETS = [
   "./src/data/wardrobe.js",
   "./src/data/salon.js",
   "./src/ui/album.js",
+  "./src/ui/bag.js",
   "./src/ui/parent_gate.js",
+  "./src/ui/adult_check.js",
   "./src/ui/hand_demo.js",
   "./src/ui/icons.js",
   "./src/ui/guide.js",

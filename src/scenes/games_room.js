@@ -17,6 +17,7 @@ import { atmosphere } from "../ui/scenery.js";
 import { FOODS } from "../data/foods.js";
 import { paintFood } from "../entities/food_art.js";
 import { touchNubi } from "./nubi_touch.js";
+import { Skill } from "../systems/skill.js";
 
 export const GAMES = [
   { id: "catch",   icon: "game:catch",   color: "#ff9a5b" },
@@ -41,7 +42,7 @@ const BUBBLE_COLORS = ["#ff8fb8", "#8fd3ff", "#b49cff", "#9be564", "#ffb04a"];
 const KEY_COLORS = ["#ff6b6b", "#ffb04a", "#ffd54a", "#62c370", "#5bc0eb"];
 const PLAY_MS = 30000;
 const INTRO_MS = 900;
-const RESULT_MS = 3200;
+const RESULT_MS = 5200;   // tempo para escolher "de novo" ou "outro jogo"
 
 /* Estrelinhas por partida: sempre um mínimo (não existe perder). */
 export function starsFor(score) { return clamp(Math.ceil(score / 2), 3, 12); }
@@ -51,6 +52,8 @@ export class GamesRoom {
     this.vp = vp; this.bus = bus; this.nubi = nubi; this.save = save;
     this.t = 0; this.unsub = [];
     this.game = null;            // partida em andamento
+    this.paused = false;         // pausa (botão do HUD; ver wirePause no main)
+    this.skill = new Skill(save); // dificuldade que acompanha a criança (systems/skill.js)
     this.result = null;          // festa do fim da partida
     this.press = GAMES.map(() => new Spring(0, { stiffness: 340, damping: 14 }));
     this.cardIn = 0;
@@ -104,6 +107,31 @@ export class GamesRoom {
     if (this.result) { this.result = null; this._menuPose(); return true; }
     return false;
   }
+  /* Acerto da partida (0..1) para a dificuldade adaptativa; null = sem dado. */
+  accuracy(g) {
+    const ratio = (ok, bad) => (ok + bad > 0 ? ok / (ok + bad) : null);
+    switch (g.id) {
+      case "catch": return ratio(g.caught, g.dropped);
+      case "bubbles": return ratio(g.popped, g.escaped);
+      case "memory": return ratio(g.pairs, g.misses);
+      case "music": return ratio(g.round, g.wrong);
+      case "shapes": return ratio(g.done, g.wrong);
+      case "colors": return ratio(g.round, g.miss);
+    }
+    return null;
+  }
+  _toMenu() { this.result = null; this._menuPose(); this.bus.emit("room:sub", "games"); }
+
+  /* Fim da partida: dois botões grandes embaixo do cartão da festa.
+     "De novo" repete o mesmo jogo; o outro volta para os cartões. */
+  resultButtons() {
+    const vp = this.vp, w = vp.w, h = vp.h, m = Math.min(w, h);
+    const cx = w * 0.6, y = Math.min(h * 0.5 + m * 0.25 + m * 0.12, h - m * 0.1), r = m * 0.075;
+    return [{ id: "again", x: cx - m * 0.11, y, r }, { id: "menu", x: cx + m * 0.11, y, r }];
+  }
+  resultButtonAt(px, py) {
+    return this.resultButtons().find(b => Math.hypot(px - b.x, py - b.y) <= b.r * 1.35) || null;
+  }
 
   // ---------------- cartões ----------------
   cardRect(i) {
@@ -125,7 +153,9 @@ export class GamesRoom {
 
   onTap(p) {
     if (this.result) {
-      if (this.result.t > 900) { this.result = null; this._menuPose(); }
+      const b = this.result.t > 350 ? this.resultButtonAt(p.x, p.y) : null;
+      if (b && b.id === "again") { const id = this.result.id; this.result = null; this.bus.emit("audio:pop"); this.start(id); return; }
+      if (b || this.result.t > 900) this._toMenu();
       return;
     }
     if (this.game) { this._gameTap(p); return; }
@@ -137,23 +167,25 @@ export class GamesRoom {
   // ---------------- partida ----------------
   start(id) {
     const mode = this.save.state.mode || "explore";
-    const g = { id, t: -INTRO_MS, score: 0, spawn: 0, items: [], mode };
+    // tamanho/ritmo da partida = degrau atual da criança neste jogo
+    const P = this.skill.param(id);
+    const g = { id, t: -INTRO_MS, score: 0, spawn: 0, items: [], mode, lvl: this.skill.level(id) };
     if (id === "catch") {
-      g.targetX = 0.47; g.every = mode === "solve" ? 650 : mode === "experiment" ? 760 : 900;
+      g.targetX = 0.47; g.every = P.every; g.speedK = P.speed; g.caught = 0; g.dropped = 0;
       this.nubi.sizeK = 0.62; this.nubi.pos = { x: 0.47, y: 0.8 };
     } else if (id === "bubbles") {
-      g.every = mode === "solve" ? 420 : 520;
+      g.every = P.every; g.sizeK = P.size; g.popped = 0; g.escaped = 0;
       this.nubi.sizeK = 0.6; this.nubi.pos = { x: 0.1, y: 0.8 };
     } else if (id === "memory") {
-      const pairs = mode === "solve" ? 6 : mode === "experiment" ? 4 : 3;
+      const pairs = P;
       const icons = MEMORY_ICONS.slice(0, pairs);
       const deck = icons.concat(icons).map((icon, k) => ({ icon, k, open: false, matched: false, flip: new Spring(0, { stiffness: 260, damping: 20 }) }));
       for (let k = deck.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [deck[k], deck[j]] = [deck[j], deck[k]]; }
       g.cards = deck; g.pairs = pairs; g.misses = 0; g.lock = 0; g.first = null;
-      g.cols = pairs === 3 ? 3 : 4;
+      g.cols = { 2: 2, 3: 3, 4: 4, 5: 5, 6: 4 }[pairs] || 4;
       this.nubi.sizeK = 0.6; this.nubi.pos = { x: 0.1, y: 0.8 };
     } else if (id === "music") {
-      g.maxLen = mode === "solve" ? 6 : mode === "experiment" ? 5 : 4;
+      g.maxLen = P; g.wrong = 0;
       g.seq = [this._rnd5(), this._rnd5()];
       g.phase = "listen"; g.idx = 0; g.wait = 600; g.lit = -1; g.litT = 0; g.round = 0;
       g.keys = KEY_COLORS.map(() => new Spring(0, { stiffness: 380, damping: 16 }));
@@ -161,24 +193,26 @@ export class GamesRoom {
       this.nubi.sizeK = 0.62; this.nubi.pos = { x: 0.14, y: 0.62 };
     } else if (id === "shapes") {
       // quantas formas encaixar (dificuldade por modo)
-      const n = mode === "solve" ? 5 : mode === "experiment" ? 4 : 3;
+      const n = P;
       const ids = SHAPE_DEFS.slice(0, n);
       // embaralha a ordem das peças soltas, mantendo os furos em ordem
       const order = ids.slice(); for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; }
       g.holes = ids.map((shape, i) => ({ shape, i, filled: false }));
       g.pieces = order.map((shape, i) => ({ shape, i, placed: false, pos: null, pop: new Spring(0, { stiffness: 320, damping: 14 }) }));
-      g.n = n; g.drag = null; g.done = 0;
-      this.nubi.sizeK = 0.52; this.nubi.pos = { x: 0.12, y: 0.3 };
+      g.n = n; g.drag = null; g.done = 0; g.wrong = 0;
+      this.nubi.sizeK = 0.52; this.nubi.pos = { x: 0.12, y: 0.7 };
     } else if (id === "colors") {
-      g.rounds = mode === "solve" ? 5 : mode === "experiment" ? 4 : 3;
+      g.rounds = P; g.miss = 0;
       g.round = 0; g.pick = []; g.mixed = null; g.target = this._colorTarget();
       this.nubi.sizeK = 0.6; this.nubi.pos = { x: 0.12, y: 0.68 };
     }
     this.game = g;
+    this.paused = false;
     this.nubi.arrive();
     this.nubi.say(["Vamos lá!", "Bora brincar!", "Já!"][Math.floor(Math.random() * 3)]);
     this.bus.emit("audio:sparkle");
     this.bus.emit("room:sub", "games");
+    this.bus.emit("game:playing", true);   // HUD: some tudo, fica só a pausa
   }
   _rnd5() { return Math.floor(Math.random() * KEY_COLORS.length); }
   _colorTarget() { return COLOR_MIX[Math.floor(Math.random() * COLOR_MIX.length)]; }
@@ -193,7 +227,8 @@ export class GamesRoom {
   /* Fim da partida: sempre festa e estrelinhas. quick = saiu pelo "voltar". */
   _finish({ quick = false } = {}) {
     const g = this.game; if (!g) return;
-    this.game = null;
+    this.game = null; this.paused = false;
+    this.bus.emit("game:playing", false);
     const best = this.best(g.id);
     const played = g.t > 1500 || g.score > 0;
     if (!played) return;                       // saiu antes de começar: nada a entregar
@@ -204,6 +239,8 @@ export class GamesRoom {
     if (newBest) st.best[g.id] = g.score;
     st.plays[g.id] = (st.plays[g.id] || 0) + 1;
     this.save.persist();
+    // dificuldade: partida inteira conta (sair no meio, não)
+    if (!quick) { const acc = this.accuracy(g); if (acc !== null) this.skill.record(g.id, acc); }
     this.bus.emit("game:reward", { id: g.id, score: g.score, stars, newBest, at: { x: this.vp.w / 2, y: this.vp.h * 0.45 } });
     this.bus.emit("effect:discoveryOnly", { id: "jogo_" + g.id });
     this.bus.emit("act", "game:" + g.id);
@@ -232,7 +269,7 @@ export class GamesRoom {
         const b = g.items[i];
         const dx = p.x - this.vp.dx(b.x), dy = p.y - this.vp.dy(b.y), rr = this.vp.s(b.r) * 1.25;
         if (dx * dx + dy * dy <= rr * rr) {
-          g.items.splice(i, 1);
+          g.items.splice(i, 1); g.popped++;
           this._score(b.gold ? 3 : 1, { x: this.vp.dx(b.x), y: this.vp.dy(b.y) }, b.gold ? "#ffd54a" : b.color);
           this.bus.emit(b.gold ? "audio:sparkle" : "audio:pop");
           this.nubi.look({ x: b.x, y: b.y }); this.nubi.sq.kick(0.6);
@@ -329,6 +366,8 @@ export class GamesRoom {
       }
     } else {
       // errou a nota: sem castigo, o bichinho toca de novo a mesma melodia
+      g.wrong++;
+      if (g.wrong >= 5) { g.phase = "done"; g.endIn = 900; this.nubi.say("Que música!"); return true; }   // não fica preso: termina em festa (e o próximo fica mais fácil)
       this.nubi.say(["De novo!", "Escuta só!", "Outra vez!"][g.round % 3]);
       g.phase = "listen"; g.idx = 0; g.wait = 1000;
     }
@@ -339,15 +378,17 @@ export class GamesRoom {
   shapeHoleRect(i) {
     const vp = this.vp, g = this.game, n = g.n;
     const x0 = 0.3, x1 = 0.86, span = x1 - x0, step = span / n;
-    return { x: vp.dx(x0 + step * (i + 0.5)), y: vp.dy(0.4), r: vp.s(0.065) };
+    return { x: vp.dx(x0 + step * (i + 0.5)), y: vp.dy(0.4), r: this.shapeR() };
   }
   shapePieceRect(i) {
     const vp = this.vp, g = this.game, n = g.n;
     const x0 = 0.3, x1 = 0.86, span = x1 - x0, step = span / n;
     const p = g.pieces[i];
-    if (p.pos) return { x: p.pos.x, y: p.pos.y, r: vp.s(0.06) };
-    return { x: vp.dx(x0 + step * (i + 0.5)), y: vp.dy(0.78), r: vp.s(0.06) };
+    if (p.pos) return { x: p.pos.x, y: p.pos.y, r: this.shapeR() * 0.92 };
+    return { x: vp.dx(x0 + step * (i + 0.5)), y: vp.dy(0.78), r: this.shapeR() * 0.92 };
   }
+  // formas grandes para mãos pequenas, sem encostar umas nas outras
+  shapeR() { const vp = this.vp; return Math.min(vp.s(0.09), vp.dx(0.56 / this.game.n) * 0.36); }
   shapePieceAt(px, py) {
     const g = this.game;
     for (let i = g.pieces.length - 1; i >= 0; i--) {
@@ -378,6 +419,7 @@ export class GamesRoom {
         return;
       }
     }
+    if (pc.pos) g.wrong++;   // soltou fora do furo certo
     pc.pos = null;   // volta ao lugar (sem castigo)
     this.bus.emit("audio:plop");
   }
@@ -415,6 +457,7 @@ export class GamesRoom {
       else setTimeout(() => { if (this.game === g) { g.pick = []; g.mixed = null; g.target = this._colorTarget(); } }, 700);
     } else {
       // combinou diferente: nada de errado, só tenta de novo
+      g.miss++;
       this.nubi.say(["Hmm, que cor!", "Quase!", "Mistura outra!"][g.round % 3]);
       setTimeout(() => { if (this.game === g) { g.pick = []; g.mixed = null; } }, 700);
     }
@@ -432,9 +475,9 @@ export class GamesRoom {
     this.cardIn = Math.min(1, this.cardIn + dt / 450);
     for (const s of this.press) s.update(dt);
     this.floaters = this.floaters.filter(f => (f.t += dt) < 900);
-    if (this.result) { this.result.t += dt; if (this.result.t > RESULT_MS) { this.result = null; this._menuPose(); } }
+    if (this.result) { this.result.t += dt; if (this.result.t > RESULT_MS) this._toMenu(); }
     const g = this.game;
-    if (!g) return;
+    if (!g || this.paused) return;   // pausado: a partida congela
     g.t += dt;
     if (g.t < 0) return;
     const speed = Motion.reduce ? 0.75 : 1;
@@ -447,7 +490,7 @@ export class GamesRoom {
         g.spawn = g.every * (0.8 + Math.random() * 0.4);
         const gold = Math.random() < 0.1;
         const fid = CATCH_FOODS[Math.floor(Math.random() * CATCH_FOODS.length)];
-        g.items.push({ x: 0.12 + Math.random() * 0.7, y: -0.06, vy: (0.17 + Math.min(0.12, g.t / 200000)) * speed, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 3, food: fid, gold });
+        g.items.push({ x: 0.12 + Math.random() * 0.7, y: -0.06, vy: (0.17 + Math.min(0.12, g.t / 200000)) * speed * g.speedK, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 3, food: fid, gold });
       }
       const mx = n.px(), my = n.py() - n.radius() * 0.2, rr = n.radius() * 1.05;
       for (let i = g.items.length - 1; i >= 0; i--) {
@@ -456,7 +499,7 @@ export class GamesRoom {
         const px = this.vp.dx(f.x), py = this.vp.dy(f.y);
         const dx = px - mx, dy = py - my;
         if (!f.landed && dx * dx + dy * dy < rr * rr) {
-          g.items.splice(i, 1);
+          g.items.splice(i, 1); g.caught++;
           this._score(f.gold ? 3 : 1, { x: px, y: py }, f.gold ? "#ffd54a" : (FOODS[f.food].color));
           this.bus.emit("audio:coin", g.score);
           n.sq.kick(1.1);
@@ -464,7 +507,7 @@ export class GamesRoom {
           continue;
         }
         // caiu no chão: só some devagar, sem castigo
-        if (f.y > 0.93) { f.landed = true; f.y = 0.93; f.vy = 0; f.vr = 0; f.fade = (f.fade || 0) + dt; if (f.fade > 500) g.items.splice(i, 1); }
+        if (f.y > 0.93) { if (!f.landed) g.dropped++; f.landed = true; f.y = 0.93; f.vy = 0; f.vr = 0; f.fade = (f.fade || 0) + dt; if (f.fade > 500) g.items.splice(i, 1); }
       }
       if (g.t >= PLAY_MS && !g.items.some(f => !f.landed)) this._finish();
     } else if (g.id === "bubbles") {
@@ -472,10 +515,12 @@ export class GamesRoom {
       if (g.t < PLAY_MS - 800 && g.spawn <= 0) {
         g.spawn = g.every * (0.7 + Math.random() * 0.6);
         const gold = Math.random() < 0.1;
-        g.items.push({ x: 0.22 + Math.random() * 0.62, y: 1.08, r: 0.05 + Math.random() * 0.035, vy: (0.12 + Math.random() * 0.08) * speed, ph: Math.random() * 6, gold, color: BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)] });
+        g.items.push({ x: 0.22 + Math.random() * 0.62, y: 1.08, r: (0.05 + Math.random() * 0.035) * g.sizeK, vy: (0.12 + Math.random() * 0.08) * speed, ph: Math.random() * 6, gold, color: BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)] });
       }
       for (const b of g.items) { b.y -= b.vy * dt / 1000; b.ph += dt / 600; }
+      const before = g.items.length;
       g.items = g.items.filter(b => b.y > -0.15);
+      g.escaped += before - g.items.length;
       if (g.t >= PLAY_MS) this._finish();
     } else if (g.id === "memory") {
       for (const c of g.cards) { if (!c.open && !c.matched) c.flip.target = 0; c.flip.update(dt); }
@@ -510,7 +555,7 @@ export class GamesRoom {
     this._bunting(ctx, w, h, m);
     const g = this.game;
     if (!g && !this.result) { GAMES.forEach((G, i) => this._card(ctx, G, i, m)); this.nubi.draw(); return; }
-    if (this.result && !g) { this.nubi.draw(); this._result(ctx, w, h, m); this._floaters(ctx, m); return; }
+    if (this.result && !g) { this.nubi.draw(); this._result(ctx, w, h, m); this._resultButtons(ctx, m); this._floaters(ctx, m); return; }
 
     if (g.id === "catch") {
       for (const f of g.items) this._fruit(ctx, f, m);
@@ -740,7 +785,8 @@ export class GamesRoom {
 
   _hud(ctx, g, w, h, m) {
     // placar da partida (estrela + número), canto esquerdo abaixo dos botões
-    const x = w * 0.04, y = h * 0.2;
+    // (no celular deitado a fileira de botões ocupa mais da altura: desce junto)
+    const x = w * 0.04, y = Math.max(h * 0.2, this.vp.hudBottom() + m * 0.06);
     ctx.save();
     ctx.fillStyle = "rgba(255,255,255,.88)"; roundRect(ctx, x, y - m * 0.04, m * 0.2, m * 0.08, m * 0.04); ctx.fill();
     ctx.strokeStyle = "#e6c86a"; ctx.lineWidth = Math.max(2, m * 0.005); roundRect(ctx, x, y - m * 0.04, m * 0.2, m * 0.08, m * 0.04); ctx.stroke();
@@ -750,7 +796,7 @@ export class GamesRoom {
     ctx.restore();
     // tempo: um solzinho que anda numa trilha (sem número, sem "acabou o tempo")
     if (g.id === "catch" || g.id === "bubbles") {
-      const k = clamp(g.t / PLAY_MS), x0 = w * 0.3, x1 = w * 0.8, yy = h * 0.135;
+      const k = clamp(g.t / PLAY_MS), x0 = w * 0.3, x1 = w * 0.8, yy = Math.max(h * 0.135, this.vp.hudBottom() + m * 0.045);
       ctx.save();
       ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = m * 0.022; ctx.lineCap = "round";
       ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x1, yy); ctx.stroke();
@@ -814,9 +860,6 @@ export class GamesRoom {
       const pop = Math.min(1, (t - i * 110) / 220);
       drawIcon(ctx, "star", x, y, m * 0.03 * (Motion.reduce ? 1 : Ease.outBack(clamp(pop), 2.5)));
     }
-    ctx.fillStyle = "#6b4a14"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.font = `bold ${Math.round(m * 0.05)}px Fredoka, system-ui, sans-serif`;
-    ctx.fillText("+" + R.stars, 0, ph * 0.33);
     ctx.restore();
     if (R.newBest && t > 500) {
       const k = clamp((t - 500) / 400), b = Motion.reduce ? 1 : Ease.outBack(k, 2.6);
@@ -826,6 +869,33 @@ export class GamesRoom {
       drawIcon(ctx, "trophy", -m * 0.085, 0, m * 0.022);
       ctx.fillStyle = "#ffffff"; ctx.font = `bold ${Math.round(m * 0.032)}px Fredoka, system-ui, sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillText("Nova marca!", m * 0.02, m * 0.002);
+      ctx.restore();
+    }
+  }
+
+  _resultButtons(ctx, m) {
+    const t = this.result.t;
+    if (t < 350) return;
+    const k = Motion.reduce ? 1 : Ease.outBack(clamp((t - 350) / 380), 2.2);
+    for (const b of this.resultButtons()) {
+      const again = b.id === "again";
+      ctx.save(); ctx.translate(b.x, b.y); ctx.scale(k, k);
+      ctx.shadowColor = "rgba(70,40,110,.28)"; ctx.shadowBlur = m * 0.025; ctx.shadowOffsetY = m * 0.012;
+      ctx.fillStyle = again ? "#5fc76a" : "#ffffff";
+      ctx.beginPath(); ctx.arc(0, 0, b.r, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowColor = "transparent";
+      ctx.lineWidth = Math.max(2, m * 0.008); ctx.strokeStyle = again ? "#2a6f36" : "#cdb8f0"; ctx.stroke();
+      if (again) {
+        // seta em círculo: "de novo"
+        const rr = b.r * 0.46;
+        ctx.strokeStyle = "#ffffff"; ctx.lineWidth = b.r * 0.17; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.arc(0, 0, rr, -Math.PI * 0.35, Math.PI * 1.35); ctx.stroke();
+        const a = -Math.PI * 0.35, hx = Math.cos(a) * rr, hy = Math.sin(a) * rr;
+        ctx.fillStyle = "#ffffff"; ctx.beginPath();
+        ctx.moveTo(hx + b.r * 0.2, hy - b.r * 0.02); ctx.lineTo(hx - b.r * 0.12, hy - b.r * 0.22); ctx.lineTo(hx - b.r * 0.06, hy + b.r * 0.2); ctx.closePath(); ctx.fill();
+      } else {
+        drawIcon(ctx, "games", 0, 0, b.r * 0.55);
+      }
       ctx.restore();
     }
   }

@@ -1,8 +1,15 @@
-/* Área dos responsáveis protegida por uma barreira simples (segurar o botão
-   por um instante) — reduz acessos acidentais; NÃO é comprovação de idade,
-   e nunca pede idade/data de nascimento. Dentro: três modos (Explorar /
-   Experimentar / Resolver) e controles de som. Sem links externos na área
-   infantil. */
+/* Área dos responsáveis protegida por duas etapas: SEGURAR o botão por 3s
+   e depois um desafio de leitura (ui/adult_check.js). Reduz acessos de
+   criança; NÃO é comprovação de idade, e nunca pede idade/data de
+   nascimento. Dentro: três modos (Explorar / Experimentar / Resolver),
+   controles de som, limite de tempo e relatório. Sem links externos na
+   área infantil. */
+import { AdultCheck } from "./adult_check.js";
+import { Skill } from "../systems/skill.js";
+import { PRIZES, JAR_BONUS } from "../data/prizes.js";
+
+const HOLD_MS = 3000;
+
 export class ParentGate {
   constructor(bus, audio, save) {
     this.bus = bus; this.audio = audio; this.save = save;
@@ -10,9 +17,10 @@ export class ParentGate {
     this.btn = document.getElementById("btnParent");
     this.closeBtn = document.getElementById("parentClose");
     this.holdT = null;
+    this.check = new AdultCheck(audio);
     if (this.btn) {
-      // precisa SEGURAR ~1.2s para abrir (barreira contra toque acidental)
-      const start = (e) => { e.preventDefault(); this.holdT = setTimeout(() => this.open(), 1200); };
+      // 1) SEGURAR 3s (o anel do botão mostra o tempo); 2) desafio de leitura
+      const start = (e) => { e.preventDefault(); this.holdT = setTimeout(() => { this.holdT = null; this._held(); }, HOLD_MS); };
       const cancel = () => { if (this.holdT) { clearTimeout(this.holdT); this.holdT = null; } };
       this.btn.addEventListener("touchstart", start, { passive: false });
       this.btn.addEventListener("mousedown", start);
@@ -23,6 +31,10 @@ export class ParentGate {
     this._wireSound();
     this._wireReportAndLimit();
     this._startUsageTracking();
+  }
+  _held() {
+    // travado por erros seguidos: o botão só balança
+    if (!this.check.open(() => this.open())) { this.btn.classList.remove("nope"); void this.btn.offsetWidth; this.btn.classList.add("nope"); }
   }
   open() { if (this.el) { this._renderReport(); this.el.classList.add("show"); } }
   close() { if (this.el) this.el.classList.remove("show"); }
@@ -91,6 +103,19 @@ export class ParentGate {
     if (!days.length) html += "<tr><td colspan='4'>Ainda sem registro.</td></tr>";
     for (const d of days) { const r = u[d]; html += `<tr><td>${label(d)}</td><td>${fmt(r.secs || 0)}</td><td>${r.care || 0}</td><td>${r.play || 0}</td></tr>`; }
     html += "</table>";
+    // estrelinhas e presentes: a criança só vê o pote; os números ficam aqui
+    const st = this.save.state.stars || {};
+    const total = st.total || 0, owned = PRIZES.filter(p => st.claimed && st.claimed[p.id]).length;
+    const next = PRIZES.map(p => p.price).sort((a, b) => a - b).find(x => x > total);
+    html += `<p class='hint'>Estrelinhas: ${total}. Presentes abertos: ${owned} de ${PRIZES.length}. ` +
+      (next ? `Próximo presente com ${next} estrelinhas.` : `Todos os prêmios ganhos; a cada ${JAR_BONUS} estrelinhas vem um presente-festa.`) + "</p>";
+    // minijogos: a dificuldade acompanha a criança (systems/skill.js)
+    const games = new Skill(this.save).summary();
+    if (games.length) {
+      html += "<table class='report'><tr><th>Minijogo</th><th>Degrau</th><th>Acerto</th><th>Partidas</th></tr>";
+      for (const g of games) html += `<tr><td>${g.name}</td><td>${g.step} de ${g.of}</td><td>${g.avg}%</td><td>${g.plays}</td></tr>`;
+      html += "</table><p class='hint'>A dificuldade de cada minijogo sobe depois de 2 partidas com 85% de acerto ou mais e desce depois de 2 abaixo de 60%. O modo de brincadeira define até onde sobe.</p>";
+    }
     box.innerHTML = html;
   }
 
@@ -105,6 +130,7 @@ export class ParentGate {
         const mode = m.getAttribute("data-mode");
         this.save.state.mode = mode; this.save.persist();
         this.bus.emit("mode:changed", mode);
+        this._renderReport();   // o teto dos degraus depende do modo
       });
     });
   }

@@ -3,9 +3,12 @@
    A aparência do Nubi persiste ao trocar de cômodo e entre sessões. */
 import { EventBus } from "./core/events.js";
 import { Viewport } from "./core/viewport.js";
+import { keepFullscreen } from "./core/fullscreen.js";
 import { Input } from "./core/input.js";
 import { SceneManager } from "./core/scene_manager.js";
 import { Audio } from "./systems/audio.js";
+import { Voice } from "./systems/voice.js";
+import { ROOM_NAMES } from "./data/voice_lines.js";
 import { showTitle } from "./ui/title.js";
 import { Save } from "./systems/save.js";
 import { Effects } from "./systems/effects.js";
@@ -26,6 +29,7 @@ import { FOODS } from "./data/foods.js";
 import { PetPicker } from "./ui/pets.js";
 import { PETS } from "./data/pets.js";
 import { Album } from "./ui/album.js";
+import { Bag } from "./ui/bag.js";
 import { ParentGate } from "./ui/parent_gate.js";
 import { Guide } from "./ui/guide.js";
 import { Quests } from "./systems/quests.js";
@@ -46,6 +50,10 @@ export function boot() {
   bus.on("save:accessories", (acc) => save.setAccessories({ ...acc }));
   bus.on("save:cosmetics", (c) => save.setCosmetics(c));
 
+  // voz: o bichinho fala os balões em voz alta (quem ainda não lê entende)
+  const voice = new Voice({ audio, save });
+  nubi.onSay = (text) => voice.say(text);
+
   const effects = new Effects(vp, bus, save);
   const scenes = new SceneManager(bus, vp);
   scenes.register("kitchen", new KitchenRoom({ vp, bus, nubi, save }));
@@ -60,10 +68,12 @@ export function boot() {
   scenes.onBeforeEnter = () => { nubi.sizeK = 1; };
 
   new Input(canvas, bus);
+  keepFullscreen();   // celular no navegador: saiu da tela cheia, o próximo toque volta
 
   // pedidos/capítulos + guia (direcionamento e celebração)
   const quests = new Quests(bus, save);
   const guide = new Guide({ vp, bus, nubi, scenes, quests, audio });
+  guide.voice = voice;
   scenes.rooms.get("bedroom").decor = (ctx, w, h) => guide.drawGarland(ctx, w, h);
   // presentes fixos por capítulo: aparecem no guarda-roupa e nunca se perdem
   const bedroom = scenes.rooms.get("bedroom");
@@ -132,7 +142,7 @@ export function boot() {
     bus.emit("fx:burst", { x: nubi.px(), y: nubi.py() - nubi.radius(), color: "#cdb8f0", small: true });
   });
   // música de fundo diferente por cômodo + "fuuu" curtinho na troca
-  bus.on("room:changed", (id) => { audio.setTheme(id); if (booted) audio.whoosh(); });
+  bus.on("room:changed", (id) => { audio.setTheme(id); if (booted) { audio.whoosh(); voice.say(ROOM_NAMES[id]); } });
   // ganhar estrelinhas faz o bichinho dar um "boing" de alegria (só visual)
   bus.on("stars:changed", (e) => { if (e && e.gained > 0 && nubi.sq) nubi.sq.kick(0.9); });
   bus.on("pointer:down", startAudio);
@@ -154,13 +164,15 @@ export function boot() {
   // álbum vivo: tocar num adesivo repete a reação (sem mudar o estado salvo)
   bus.on("album:replay", ({ kind, id }) => replay(kind, id, { nubi, bus, audio }));
 
-  // UI: álbum, responsáveis, navegação, som rápido
+  // UI: álbum, responsáveis, mochila, navegação, pausa, som rápido
   const album = new Album(bus, save, progress);
-  new ParentGate(bus, audio, save);
+  const parentGate = new ParentGate(bus, audio, save);
+  const bag = new Bag(bus, audio);
+  guide.bag = bag;
   const progressUI = new ProgressUI({ bus, progress, nubi, audio, vp });
-  wireNav(bus, scenes);
-  wireBack(bus, scenes);
-  wireQuickSound(audio);
+  const pause = wirePause(bus, scenes);
+  wireBack(bus, scenes, pause);
+  wireQuickSound(audio, voice);
 
   // movimento reduzido (acessibilidade): vale para TODAS as animações
   Motion.reduce = !!save.state.reduceMotion;
@@ -176,7 +188,7 @@ export function boot() {
 
   // segundo plano: pausa áudio e salva (requisito técnico)
   document.addEventListener("visibilitychange", () => {
-    if (document.hidden) { if (audio.ctx) audio.ctx.suspend(); save.persist(); }
+    if (document.hidden) { if (audio.ctx) audio.ctx.suspend(); save.persist(); pause.auto(); voice.stop(); }
     else if (audio.ctx) audio.ctx.resume();
   });
 
@@ -206,6 +218,7 @@ export function boot() {
     scenes.update(dt);
     effects.update(dt);
     guide.update(dt);
+    progressUI.update();     // presente no cômodo acompanha o bichinho
 
     scenes.draw();
     guide.draw();
@@ -230,28 +243,67 @@ export function boot() {
     get garden() { return scenes.rooms.get("garden"); },
     get items() { return scenes.rooms.get("kitchen").items; },  // compat Etapa 1/2
     get interactions() { return scenes.rooms.get("kitchen"); },
-    nubi, bus, vp, save, effects, album, quests, guide, progress, progressUI, scenes, go: (id) => scenes.go(id), back: () => scenes.back()
+    nubi, bus, vp, save, effects, album, bag, voice, parentGate, quests, guide, progress, progressUI, scenes, go: (id) => scenes.go(id), back: () => scenes.back()
   };
 }
 
-/* Voltar (botão do topo, Esc/Backspace no computador): primeiro sai da
-   sub-tela do cômodo (estação do salão), depois volta pelo caminho feito,
-   e por fim para o mapa da casa. O botão some quando não há para onde voltar. */
-function wireBack(bus, scenes) {
+/* Navegação para 3+: a CASA (mapa) fica sempre no canto, menos no próprio
+   mapa. VOLTAR só aparece quando o cômodo tem uma sub-tela (estação do
+   salão, partida/festa do minijogo) e sai dela. No computador, Esc/Backspace
+   fecham o que estiver aberto, saem da sub-tela ou vão para o mapa. */
+function wireBack(bus, scenes, pause) {
   const back = document.getElementById("btnBack");
   const home = document.getElementById("btnHome");
-  const sync = () => { if (back) back.classList.toggle("off", !scenes.canBack()); };
+  const sub = () => !!(scenes.current && typeof scenes.current.canBack === "function" && scenes.current.canBack());
+  const sync = () => {
+    if (back) back.classList.toggle("off", !sub());
+    if (home) home.classList.toggle("off", scenes.currentId === "hub");
+  };
   if (back) back.addEventListener("click", () => bus.emit("room:back"));
   if (home) home.addEventListener("click", () => bus.emit("room:go", "hub"));
   bus.on("room:changed", sync);
-  bus.on("room:sub", () => { sync(); if (back && scenes.canBack()) { back.classList.remove("hey"); void back.offsetWidth; back.classList.add("hey"); } });
+  bus.on("game:playing", sync);
+  bus.on("room:sub", () => { const was = back && !back.classList.contains("off"); sync(); if (back && sub() && !was) { back.classList.remove("hey"); void back.offsetWidth; back.classList.add("hey"); } });
   window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" || e.key === "Backspace") {
-      if (document.querySelector(".overlay.show")) { document.querySelectorAll(".overlay.show").forEach(o => o.classList.remove("show")); return; }
-      bus.emit("room:back");
-    }
+    if (e.key !== "Escape" && e.key !== "Backspace") return;
+    if (pause.isOpen()) { pause.resume(); return; }
+    if (document.querySelector(".overlay.show")) { document.querySelectorAll(".overlay.show").forEach(o => o.classList.remove("show")); return; }
+    if (pause.playing()) { pause.open(); return; }
+    if (sub()) bus.emit("room:back"); else bus.emit("room:go", "hub");
   });
   sync();
+}
+
+/* Pausa do minijogo: durante a partida o HUD some (body.in-game) e fica só
+   o botão de pausa. Pausar congela a partida; continuar retoma; sair encerra
+   a partida (sempre com estrelinhas) e volta para os cartões de jogos.
+   O jogo também pausa sozinho quando o app vai para o segundo plano. */
+function wirePause(bus, scenes) {
+  const el = document.getElementById("pause");
+  const games = () => scenes.rooms.get("games");
+  let playing = false;
+  const set = (paused) => {
+    const g = games(); if (g) g.paused = paused;
+    if (el) el.classList.toggle("show", paused);
+  };
+  const api = {
+    playing: () => playing,
+    isOpen: () => !!(el && el.classList.contains("show")),
+    open: () => { if (playing) { set(true); bus.emit("audio:pop"); } },
+    resume: () => set(false),
+    auto: () => { if (playing) set(true); },
+  };
+  bus.on("game:playing", (on) => {
+    playing = !!on;
+    document.body.classList.toggle("in-game", playing);
+    if (!playing) set(false);
+  });
+  bus.on("room:changed", () => { if (playing) { playing = false; document.body.classList.remove("in-game"); set(false); } });
+  const btn = (id, fn) => { const b = document.getElementById(id); if (b) b.addEventListener("click", fn); };
+  btn("btnPause", api.open);
+  btn("btnResume", api.resume);
+  btn("btnQuit", () => { set(false); bus.emit("room:back"); });
+  return api;
 }
 
 /* Reação repetida pelo álbum: só aparência/efeito temporário, nunca muda
@@ -278,21 +330,12 @@ function replay(kind, id, { nubi, bus, audio }) {
   }
 }
 
-function wireNav(bus, scenes) {
-  document.querySelectorAll("[data-room]").forEach(btn => {
-    btn.addEventListener("click", () => bus.emit("room:go", btn.getAttribute("data-room")));
-  });
-  bus.on("room:changed", (id) => {
-    document.querySelectorAll("[data-room]").forEach(b =>
-      b.classList.toggle("active", b.getAttribute("data-room") === id));
-  });
-}
-
-function wireQuickSound(audio) {
+function wireQuickSound(audio, voice) {
   const sound = document.getElementById("btnSound");
   if (sound) sound.addEventListener("click", () => {
     const on = !audio.enabled.sfx;
     audio.enabled.sfx = on; audio.enabled.voice = on; audio.enabled.music = on;
+    if (!on) voice.stop();
     sound.classList.toggle("off", !on);
     sound.setAttribute("aria-pressed", String(!on));
   });
