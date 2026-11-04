@@ -1,6 +1,6 @@
 /* JARDIM (v1.1 Stage 2) - um cômodo ao ar livre, de cuidado calmo:
-   - 4 canteiros com brotos; tocar com o regador faz a planta crescer em 3
-     passos (broto -> folhas -> flor com fruta);
+   - 4 canteiros com brotos; tocar no canteiro, ou arrastar o regador até ele,
+     faz a planta crescer em 3 passos (broto -> folhas -> flor com fruta);
    - quando a fruta amadurece, tocar nela colhe (vai "para a cozinha": marca
      uma frutinha extra no prato) e dá estrelinhas;
    - borboletas passeiam e reagem ao toque (voam um pouquinho);
@@ -20,6 +20,7 @@ const GROW_STEPS = 3;        // broto -> folhas -> flor/fruta
 // caule fica embaixo, no meio); o estágio 3 é a flor com a fruta pendurada
 const PLANT_ART = ["jardim/jardim_broto", "jardim/jardim_folhas", "jardim/jardim_flor", "jardim/jardim_flor"];
 const POUR_MS = 900;         // regador em feltro despejando água no canteiro
+const HOVER_WATER_MS = 650;  // regador arrastado parado sobre o canteiro: rega sozinho
 
 export class GardenRoom {
   constructor({ vp, bus, nubi, save }) {
@@ -32,10 +33,11 @@ export class GardenRoom {
       this._paintBack(c, w, h, m); atmosphere(c, w, h, m, { floorY: 0.72, light: { x: 0.15, y: 0.14, r: 1.1, color: "255,246,200" }, tint: "60,110,70", vignette: 0.14 });
     });
     this.pour = null;            // { i, t }: o regador indo regar o canteiro i (só desenho)
+    this.can = null;             // { x, y, over, hoverT }: regador na mão da criança
   }
 
   // ---- interface do cômodo ----
-  get held() { return false; }
+  get held() { return !!this.can; }
   quiet() { return false; }
   canBack() { return false; }
   hintTarget(act) {
@@ -64,10 +66,41 @@ export class GardenRoom {
     this.butterflies = [0, 1, 2].map((i) => this._newButterfly(i));
     this.unsub = [
       this.bus.on("tap", (p) => this.onTap(p)),
+      this.bus.on("pointer:down", (p) => this.onDown(p)),
+      this.bus.on("pointer:move", (p) => this.onMove(p)),
+      this.bus.on("pointer:up", (e) => this.onUp(e)),
     ];
     this.bus.emit("act", "garden:visit");
   }
-  exit() { this.unsub.forEach(u => u()); this.unsub = []; this._persist(); }
+  exit() { this.unsub.forEach(u => u()); this.unsub = []; this.can = null; this._persist(); }
+
+  // ---- regador arrastável ----
+  canHome() { const vp = this.vp, m = Math.min(vp.w, vp.h), cw = this._canSize(m); return { x: vp.dx(0.065), y: vp.dy(0.935) - cw * 0.45, r: cw * 0.7 }; }
+  overCan(p) { const c = this.canHome(); return Math.hypot(p.x - c.x, p.y - c.y) <= c.r; }
+  bedAt(p) {
+    for (let i = 0; i < this.beds.length; i++) {
+      const r = this.bedRect(i);
+      if (p.x >= r.x - r.w * 0.7 && p.x <= r.x + r.w * 0.7 && p.y >= r.y - r.h * 1.6 && p.y <= r.y + r.h * 0.3) return i;
+    }
+    return -1;
+  }
+  onDown(p) {
+    if (!p || !this.overCan(p) || this.pour) return;
+    this.can = { x: p.x, y: p.y, over: -1, hoverT: 0 };
+    this.bus.emit("audio:pop");
+  }
+  onMove(p) {
+    if (!this.can || !p) return;
+    this.can.x = p.x; this.can.y = p.y;
+    const i = this.bedAt(p);
+    if (i !== this.can.over) { this.can.over = i; this.can.hoverT = 0; }
+  }
+  onUp(e) {
+    if (!this.can) return;
+    const p = (e && e.point) || this.can, i = this.bedAt(p);
+    if (i >= 0 && this.beds[i].stage < GROW_STEPS && this.can.hoverT < HOVER_WATER_MS * 0.6) this._water(i);
+    this.can = null;
+  }
 
   _persist() {
     this.save.state.garden = { beds: this.beds.map(b => ({ stage: b.stage, ripe: b.ripe })) };
@@ -103,13 +136,7 @@ export class GardenRoom {
           this.bus.emit("act", "garden:harvest");
           this._persist();
         } else if (b.stage < GROW_STEPS) {  // REGAR / CRESCER
-          b.stage++;
-          this.pour = { i, t: POUR_MS };
-          this.bus.emit("audio:water");
-          this.bus.emit("fx:burst", { x: r.x, y: r.y - r.h * 0.4, color: "#8fd3ff", small: true });
-          if (b.stage >= GROW_STEPS) { b.ripe = true; this.bus.emit("audio:note", 4); this.bus.emit("fx:burst", { x: r.x, y: r.y - r.h, color: "#ffd54a" }); }
-          this.bus.emit("act", "garden:water");
-          this._persist();
+          this._water(i, true);
         } else {                            // já florida, ainda não madura (não ocorre, mas seguro)
           this.bus.emit("audio:pop");
         }
@@ -117,6 +144,21 @@ export class GardenRoom {
       }
     }
     touchNubi(this, p);
+  }
+
+  /* Rega o canteiro i: a planta cresce um passo. anim = o regador voa até lá
+     (tocar no canteiro); arrastando, o regador já está na mão. */
+  _water(i, anim) {
+    const b = this.beds[i], r = this.bedRect(i);
+    if (b.stage >= GROW_STEPS) return;
+    b.stage++;
+    b.pop.kick(-16);
+    if (anim) this.pour = { i, t: POUR_MS };
+    this.bus.emit("audio:water");
+    this.bus.emit("fx:burst", { x: r.x, y: r.y - r.h * 0.4, color: "#8fd3ff", small: true });
+    if (b.stage >= GROW_STEPS) { b.ripe = true; this.bus.emit("audio:note", 4); this.bus.emit("fx:burst", { x: r.x, y: r.y - r.h, color: "#ffd54a" }); }
+    this.bus.emit("act", "garden:water");
+    this._persist();
   }
 
   butterflyPos(bf) {
@@ -130,6 +172,11 @@ export class GardenRoom {
     this.t += dt;
     for (const b of this.beds) b.pop.update(dt);
     if (this.pour && (this.pour.t -= dt) <= 0) this.pour = null;
+    // regador parado em cima de um canteiro que ainda cresce: rega sozinho
+    if (this.can && this.can.over >= 0 && this.beds[this.can.over].stage < GROW_STEPS) {
+      this.can.hoverT += dt;
+      if (this.can.hoverT >= HOVER_WATER_MS) { this._water(this.can.over); this.can.hoverT = 0; }
+    }
     for (const bf of this.butterflies) { if (bf.flee > 0) bf.flee -= dt; else bf.y = clamp(bf.y + (Math.random() - 0.5) * 0.0006 * dt, 0.12, 0.5); }
   }
 
@@ -141,6 +188,7 @@ export class GardenRoom {
     this.beds.forEach((b, i) => this._bed(ctx, b, i, m));
     this._pouring(ctx, m);
     this.nubi.draw();
+    this._canInHand(ctx, m);
     // borboletas por cima
     for (const bf of this.butterflies) { const p = this.butterflyPos(bf); const fl = Motion.reduce ? 1 : (Math.sin(this.t * 0.02 + bf.ph) * 0.3 + 1); ctx.save(); ctx.translate(p.x, p.y); ctx.scale(1, fl); drawIcon(ctx, "butterfly", 0, 0, m * 0.04); ctx.restore(); }
   }
@@ -198,15 +246,39 @@ export class GardenRoom {
     return true;
   }
 
-  /* Regador em feltro: descansa no gramado, à esquerda dos canteiros (fora
-     das áreas de toque), e voa até o canteiro regado, inclinado, soltando
-     gotinhas. É só enfeite: regar continua sendo tocar no canteiro. */
+  /* Regador em feltro: descansa no gramado, à esquerda dos canteiros. Dá para
+     arrastar até um canteiro (rega ao soltar, ou sozinho se ficar parado em
+     cima). Tocar no canteiro também rega: aí ele voa até lá, inclinado. */
   _canSize(m) { const w = this.vp.w; return Math.min(w * 0.09, m * 0.2); }
   _wateringCan(ctx, m) {
-    if (this.pour || !art("jardim/jardim_regador")) return;
+    if (this.pour || this.can || !art("jardim/jardim_regador")) return;
     const vp = this.vp, cw = this._canSize(m);
     softShadow(ctx, vp.dx(0.065), vp.dy(0.93), cw * 0.45, m * 0.012, 0.2);
     drawArtAt(ctx, "jardim/jardim_regador", vp.dx(0.065), vp.dy(0.935), cw);
+  }
+  /* Regador na mão: segue o dedo; sobre um canteiro inclina e solta gotinhas. */
+  _canInHand(ctx, m) {
+    const C = this.can, im = art("jardim/jardim_regador");
+    if (!C || !im) return;
+    const cw = this._canSize(m) * 1.1, ch = cw * (im.naturalHeight / im.naturalWidth);
+    const pouring = C.over >= 0;
+    const tilt = pouring ? 0.5 + (Motion.reduce ? 0 : Math.sin(this.t * 0.012) * 0.05) : -0.08;
+    ctx.save();
+    ctx.translate(C.x, C.y); ctx.rotate(tilt);
+    ctx.shadowColor = "rgba(40,70,40,.25)"; ctx.shadowBlur = m * 0.02; ctx.shadowOffsetY = m * 0.015;
+    ctx.drawImage(im, -cw / 2, -ch / 2, cw, ch);
+    ctx.restore();
+    if (pouring) {
+      const r = this.bedRect(C.over);
+      const sx = C.x + Math.cos(tilt) * cw * 0.46 - Math.sin(tilt) * -ch * 0.2;
+      const sy = C.y + Math.sin(tilt) * cw * 0.46 + Math.cos(tilt) * -ch * 0.2;
+      ctx.save(); ctx.fillStyle = "rgba(120,190,255,.85)";
+      for (let k = 0; k < 6; k++) {
+        const q = ((this.t * 0.0016 + k / 6) % 1);
+        ctx.beginPath(); ctx.ellipse(sx + (k - 2.5) * m * 0.005 + q * m * 0.01, sy + q * Math.max(m * 0.05, r.y - sy), m * 0.005, m * 0.008, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
   }
   _pouring(ctx, m) {
     const P = this.pour, im = art("jardim/jardim_regador");
