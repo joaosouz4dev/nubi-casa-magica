@@ -624,7 +624,9 @@ export class Nubi {
     const capeFelt = cape && FELT[cape.def.id];
     if (capeFelt) {
       const k = clamp(this._accK(cape));
-      ctx.save(); ctx.globalAlpha = k; S.piece(ctx, r, pose, capeFelt[0], false, 0.85 + 0.15 * k); ctx.restore();
+      ctx.save(); ctx.globalAlpha = k;
+      if (!S.bodyPiece(ctx, r, pose, capeFelt[0], 0.85 + 0.15 * k, false)) S.piece(ctx, r, pose, capeFelt[0], false, 0.85 + 0.15 * k);
+      ctx.restore();
     } else if (cape) {
       ctx.save(); S.bodyT(ctx, r);
       if (cape.def.shape === "wings") { const k = this._accK(cape); ctx.scale(k, k); paintWings(ctx, cape.def, r, this.t); }
@@ -659,7 +661,7 @@ export class Nubi {
       ctx.save();
       ctx.globalAlpha = clamp(k);
       const felt = FELT[bodyWear.def.id];
-      if (felt && S.piece(ctx, r, pose, felt[0], false, 0.85 + 0.15 * clamp(k))) { /* roupa em feltro */ }
+      if (felt && (S.bodyPiece(ctx, r, pose, felt[0], 0.85 + 0.15 * clamp(k)) || S.piece(ctx, r, pose, felt[0], false, 0.85 + 0.15 * clamp(k)))) { /* roupa em feltro, moldada na pose */ }
       else if (bodyWear.def.shape === "tutu") { S.bodyT(ctx, r); ctx.translate(0, r * 0.65); ctx.scale(k, k); ctx.translate(0, -r * 0.65); paintTutu(ctx, bodyWear.def, r, this.t); }
       else { S.torsoClip(ctx, r); S.bodyWearT(ctx, r); ctx.translate(0, (1 - clamp(k)) * r * 0.4); paintBody(ctx, bodyWear.def, r, this.t); }
       ctx.restore();

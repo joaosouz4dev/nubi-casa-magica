@@ -25,7 +25,8 @@ const FUR = { nubi: "#cbabe5" };
 class PetSprites {
   constructor(species) {
     this.species = species;
-    this.meta = null; this.img = {}; this.front = {}; this.feetImg = {}; this.noFeet = {}; this.loaded = 0; this.total = -1;
+    this.meta = null; this.img = {}; this.front = {}; this.feetImg = {}; this.noFeet = {}; this.bodyMask = {}; this.bodyCache = new Map();
+    this.loaded = 0; this.total = -1;
     this.tintCache = new Map();
     fetch("assets/" + species + "/sprites.json").then(r => (r.ok ? r.json() : null)).then(meta => {
       if (!meta || !meta.poses) return;
@@ -59,6 +60,10 @@ class PetSprites {
           pe.onload = () => { pe.ok = true; };
           pe.src = "assets/" + species + "/" + meta.prefix + "_" + p + "_pes.webp";
           this.feetImg[p] = pe;
+          const bm = new Image();
+          bm.onload = () => { bm.ok = true; };
+          bm.src = "assets/" + species + "/" + meta.prefix + "_" + p + "_corpo.webp";
+          this.bodyMask[p] = bm;
         }
       }
     }).catch(() => {});
@@ -127,6 +132,44 @@ class PetSprites {
     ctx.restore();
     return true;
   }
+  /* Roupa do corpo (e capa/asas) moldada na pose: a peça, desenhada sobre a
+     Nubi parada, vai da caixa do tronco da parada para a caixa do tronco da
+     pose (sprites.json "torso") e, se clip, é cortada pelo molde do tronco da
+     pose (nubi_<pose>_corpo.webp): nada sobra para fora do corpo, sentada ou
+     dormindo. Pintada uma vez por pose e peça; k = aparecer (escala). */
+  bodyPiece(ctx, r, pose, name, k = 1, clip = true) {
+    if (!this.img[pose]) pose = "parada";
+    const im = art(name), pm = artMeta(name), B = this.meta.box;
+    const T0 = (this.meta.poses.parada || {}).torso, T1 = (this.meta.poses[pose] || {}).torso, bm = this.bodyMask[pose];
+    if (!im || !pm || !pm.box || !B || !T0 || !T1 || (clip && !(bm && bm.ok))) return false;
+    const key = pose + "|" + name + "|" + (clip ? 1 : 0);
+    let c = this.bodyCache.get(key);
+    if (!c) {
+      const W = this.meta.w, H = this.meta.h, s = H / (B[3] - B[1]);
+      const sx = (T1[2] - T1[0]) / (T0[2] - T0[0]), sy = (T1[3] - T1[1]) / (T0[3] - T0[1]);
+      // a peça sobre a parada (px) levada para o tronco da pose
+      const x = (pm.box[0] - B[0]) * s, y = (pm.box[1] - B[1]) * s, w = (pm.box[2] - pm.box[0]) * s, h = (pm.box[3] - pm.box[1]) * s;
+      // folga para a capa/saia que passa do tronco
+      const pad = Math.round(W * 0.25);
+      c = document.createElement("canvas"); c.width = W + pad * 2; c.height = H + pad * 2;
+      const g = c.getContext("2d");
+      g.drawImage(im, pad + T1[0] + (x - T0[0]) * sx, pad + T1[1] + (y - T0[1]) * sy, w * sx, h * sy);
+      if (clip) { g.globalCompositeOperation = "destination-in"; g.drawImage(bm, pad, pad, W, H); }
+      c.pad = pad;
+      if (this.bodyCache.size > 64) this.bodyCache.clear();
+      this.bodyCache.set(key, c);
+    }
+    const F = this.F * r, x = this.left * r - c.pad * F, y = this.top * r - c.pad * F, w = c.width * F, h = c.height * F;
+    ctx.save();
+    if (k !== 1) {   // aparece crescendo a partir do meio do tronco
+      const cx = this.lx((T1[0] + T1[2]) / 2) * r, cy = this.ly((T1[1] + T1[3]) / 2) * r;
+      ctx.translate(cx, cy); ctx.scale(k, k); ctx.translate(-cx, -cy);
+    }
+    ctx.drawImage(c, x, y, w, h);
+    ctx.restore();
+    return true;
+  }
+
   /* Par de calçados: cada metade (art.json "parts") vai para o pé certo da
      pose (sprites.json "feet": [centro x, base, largura]), no tamanho do pé.
      Assim o pé some dentro do sapato também sentada e dormindo. */
