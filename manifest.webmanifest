@@ -1,7 +1,7 @@
 {
-  "name": "Casa do Nubi",
+  "name": "Casa da Nubi",
   "short_name": "Nubi",
-  "description": "Jogo de cuidar e brincar com o Nubi, para crianças de 3 a 5 anos.",
+  "description": "Jogo de cuidar e brincar com a Nubi, para crianças de 3 a 5 anos.",
   "lang": "pt-BR",
   "start_url": "./index.html",
   "scope": "./",

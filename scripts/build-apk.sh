@@ -11,7 +11,7 @@ export ANDROID_SDK_ROOT="$ANDROID_HOME"
 SRC="$(cd "$(dirname "$0")/.." && pwd)"
 APP="${APP_DIR:-$HOME/nubi-apk}"
 APP_ID="dev.joaovictorsouza.nubi"
-APP_NAME="Casa do Nubi"
+APP_NAME="Casa da Nubi"
 
 if [ ! -d "$APP/android" ]; then
   echo "=== criando projeto Capacitor em $APP ==="
