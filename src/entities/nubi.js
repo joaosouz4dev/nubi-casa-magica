@@ -631,7 +631,8 @@ export class Nubi {
       else this._capeBack(ctx, r, cape, outline, ow);
       ctx.restore();
     }
-    S.draw(ctx, r, pose, this._spriteTint, this.tintK);
+    const feet = this.accShown.boots, feetFelt = feet && FELT[feet.def.id];
+    S.draw(ctx, r, pose, this._spriteTint, this.tintK, !!feetFelt);   // calçada: sem os pés da imagem
     // lua no topete (banana)
     if (this.moonShown > 0.02) {
       const k = Ease.outBack(clamp(this.moonShown));
@@ -694,7 +695,7 @@ export class Nubi {
     if (neckFelt) S.piece(ctx, r, pose, neckFelt[0], true, this._accK(this.accShown.neck));
     else { ctx.save(); S.neckT(ctx, r, pose); this._slot(ctx, r, "neck", paintNeck); ctx.restore(); }
     // patinhas e pés da pose na frente da roupa e do que vai no pescoço
-    if (bodyWear || this.accShown.neck) S.drawFront(ctx, r, pose, this._spriteTint, this.tintK);
+    if (bodyWear || this.accShown.neck) S.drawFront(ctx, r, pose, this._spriteTint, this.tintK, !feetFelt);
     // molhado e espuma
     if (this.wetShown > 0.02 || this.foamShown > 0.02) {
       ctx.save(); S.bodyT(ctx, r);
@@ -710,7 +711,6 @@ export class Nubi {
       { x: -r * 0.46, y: r * 0.93 - step, color: cs.colorL, k: cs.nailsL },
       { x: r * 0.46, y: r * 0.93 + step, color: cs.colorR, k: cs.nailsR }
     ], r);
-    const feet = this.accShown.boots, feetFelt = feet && FELT[feet.def.id];
     if (feet && !feetFelt) {
       if (feet.def.shape) { const k = this._accK(feet); ctx.save(); ctx.translate(0, r * ANCHORS.boots[1]); ctx.scale(k, k); paintFeet(ctx, feet.def, r, this.t, step); ctx.restore(); }
       else this._boots(ctx, r, feet, outline, ow);
