@@ -26,7 +26,7 @@ const URL = 'http://127.0.0.1:8742/index.html';
   await page.reload({ waitUntil: 'networkidle' });
   await page.waitForFunction(() => !!window.__nubi && window.__nubi.room);
   R.titleShown = await page.isVisible('#title #btnPlay');
-  R.logoText = (await page.getAttribute('#title .logo', 'aria-label')) === 'Casa do Nubi';
+  R.logoText = (await page.getAttribute('#title .logo', 'aria-label')) === 'Casa da Nubi';
   R.noRotateBlock = (await page.$('#rotate')) === null;
   await page.waitForTimeout(1600);   // animação de entrada
   await page.screenshot({ path: path.join(OUT, 't1-tela-inicial.png') });

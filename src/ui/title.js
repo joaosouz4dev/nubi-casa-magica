@@ -1,4 +1,4 @@
-/* Tela inicial (Play). O app abre direto nela: céu animado, logo "Casa do
+/* Tela inicial (Play). O app abre direto nela: céu animado, logo "Casa da
    Nubi" com letras que pulam, o Nubi quicando no ninho de nuvem e um botão
    Play grande que pulsa. O toque no Play é também o gesto que libera o
    áudio (exigência dos navegadores) e, no navegador de celular, pede tela
@@ -18,8 +18,8 @@ export function showTitle({ audio, onStart }) {
     <div class="tCloud c1"></div><div class="tCloud c2"></div><div class="tCloud c3"></div>
     <span class="tw t1">★</span><span class="tw t2">★</span><span class="tw t3">✦</span><span class="tw t4">★</span><span class="tw t5">✦</span>
     <div class="tLeft">
-      <h1 class="logo" aria-label="Casa do Nubi">
-        <span class="l1">${letters("Casa do", "lt")}</span>
+      <h1 class="logo" aria-label="Casa da Nubi">
+        <span class="l1">${letters("Casa da", "lt")}</span>
         <span class="l2">${letters("Nubi", "lt big")}</span>
       </h1>
       <button id="btnPlay" class="toy" aria-label="Jogar">

@@ -1,6 +1,6 @@
-# Casa do Nubi
+# Casa da Nubi
 
-<img src="assets/icon-192.png" width="96" alt="Ícone do Casa do Nubi" />
+<img src="assets/icon-192.png" width="96" alt="Ícone da Casa da Nubi" />
 
 Ícones (PWA e Android) são gerados de um único desenho em `scripts/make-icons.cjs`
 (precisa de Playwright: `NODE_PATH=<node_modules com playwright> node scripts/make-icons.cjs`).
