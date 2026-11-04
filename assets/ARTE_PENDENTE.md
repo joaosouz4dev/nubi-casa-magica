@@ -1,6 +1,6 @@
 # Arte em feltro que ainda falta gerar
 
-> **Atualização:** as Fases 6, 7, 8 e 9 abaixo já foram entregues e estão no jogo. O arquivo fica como registro dos pedidos e do jeito de pedir (para novas peças, siga o mesmo formato). O que segue em código de propósito está no fim.
+> **Atualização:** as Fases 6, 7, 8 e 9 abaixo já foram entregues e estão no jogo, **menos os calçados, que precisam ser refeitos (veja "Refazer agora", logo abaixo)**. O arquivo fica como registro dos pedidos e do jeito de pedir (para novas peças, siga o mesmo formato). O que segue em código de propósito está no fim.
 
 As Fases 1 a 5 de `assets/ARTE.md` já estão no jogo. Esta lista traz **tudo que ainda é desenhado em código**, em ordem de prioridade: o que aparece mais vem primeiro.
 
@@ -27,6 +27,34 @@ Pode gerar em levas, uma seção por vez. Para entregar, junte as imagens numa p
   > Use the attached Nubi image as the exact BASE: same canvas size (1254x1254), same position and same scale. Draw ONLY the requested item, worn by Nubi, exactly where it would sit on her body. Do NOT draw Nubi herself: everything that is not the item must be solid flat chroma green (#00FF00). No text, no shadow on the green.
 
   É o mesmo jeito do boné, do pijama e dos penteados da Fase 5. Funcionou porque a peça vem no lugar certo e o jogo encaixa sozinha.
+
+---
+
+## Refazer agora: calçados calçados (prioridade máxima)
+
+Os 5 calçados da Fase 6 vieram como **sapatos soltos, com a boca aberta virada para cima**. Na Nubi eles parecem colados na frente da perna, não calçados. Não dá para corrigir isso no código: é preciso gerar de novo.
+
+**O jeito novo:** em vez de pedir só o sapato, peça **a Nubi inteira, idêntica, calçando o sapato**. Assim o gerador desenha o pé lá dentro e a barriga por cima da borda do sapato. Depois eu comparo com a Nubi original e recorto só o que mudou: o sapato do jeito que fica no pé dela.
+
+**Como pedir (cada calçado):**
+
+1. Anexe o PNG original da Nubi parada, da pasta da Fase 1 (`nubi_parada.png`, 1254x1254, fundo verde). Não use o `.webp` do jogo, que está recortado.
+2. Cole o texto de estilo do começo deste arquivo.
+3. Cole o pedido abaixo, trocando `<CALÇADO>` pela descrição da tabela:
+
+> Redraw the attached image EXACTLY as it is: same Nubi, same pose, same size, same position, same colors, same lighting, same solid green background (#00FF00), same canvas size 1254x1254. The ONLY change: Nubi is now wearing <CALÇADO>. Her cream feet are completely inside the shoes (no cream foot visible). The shoes are worn, not placed in front of her: the top edge of each shoe goes up under her round lilac belly and is partly hidden by it, like feet slipped into the shoes. No visible empty opening or inside of the shoe. Same felt style as Nubi. Do not change anything else: face, ears, tuft, arms, paws, tail and body must stay pixel-identical.
+
+| Arquivo | O que é | `<CALÇADO>` |
+|---|---|---|
+| `calcado_botas.png` | botas | a pair of blue felt rain boots with a little pink cloud and raindrops on the side |
+| `calcado_botas_brilho.png` | botas brilhantes (presente) | a pair of lilac felt boots with tiny cream and yellow stars on the side |
+| `calcado_tenis.png` | tênis | a pair of red felt sneakers with white laces and cream soles |
+| `calcado_pantufas.png` | pantufas | a pair of fluffy pink felt bunny slippers with little ears and a sleepy bunny face on the toes |
+| `calcado_sapatilhas.png` | sapatilhas | a pair of pink felt ballet flats with a small bow on top and ribbons around the ankles |
+
+**Confira antes de mandar:** a Nubi tem que sair igual à original (mesmo tamanho e lugar). Se o gerador mexer no rosto, nas orelhas ou no tamanho dela, gere de novo: o recorte depende disso.
+
+Entregue numa pasta `assets/roupas/` com esses nomes (pode ser junto de outras peças). Para sentada e dormindo, o jogo encaixa o mesmo calçado em cada pé. Não precisa gerar por pose.
 
 ---
 
