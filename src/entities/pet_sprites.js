@@ -127,7 +127,8 @@ class PetSprites {
      pose (sprites.json "feet": [centro x, base, largura]), no tamanho do pé.
      Assim o pé some dentro do sapato também sentada e dormindo. */
   shoes(ctx, r, pose, name, k = 1) {
-    const im = art(name), pm = artMeta(name), B = this.meta.box;
+    // versão "calçada" (boca do sapato com o pé dentro), do mesmo tamanho da original
+    const im = art(name + "_pe") || art(name), pm = artMeta(name), B = this.meta.box;
     const P = this.meta.poses.parada && this.meta.poses.parada.feet, E = (this.meta.poses[pose] || {}).feet || P;
     if (!im || !pm || !pm.parts || !P || !E) return this.piece(ctx, r, pose, name, "fixed", k);
     const s = this.meta.h / (B[3] - B[1]), c = (pm.box[2] - pm.box[0]) / im.naturalWidth;
