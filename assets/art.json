@@ -1367,6 +1367,622 @@
    1254
   ]
  },
+ "poses/acenando/roupa_astronauta": {
+  "w": 671,
+  "h": 526,
+  "box": [
+   395,
+   664,
+   1066,
+   1190
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/acenando/roupa_colete": {
+  "w": 672,
+  "h": 526,
+  "box": [
+   392,
+   664,
+   1064,
+   1190
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/acenando/roupa_pijama": {
+  "w": 673,
+  "h": 527,
+  "box": [
+   391,
+   664,
+   1064,
+   1191
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/acenando/roupa_vestido": {
+  "w": 687,
+  "h": 527,
+  "box": [
+   377,
+   664,
+   1064,
+   1191
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/comemorando/roupa_astronauta": {
+  "w": 705,
+  "h": 480,
+  "box": [
+   395,
+   664,
+   1100,
+   1144
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/comemorando/roupa_colete": {
+  "w": 644,
+  "h": 480,
+  "box": [
+   395,
+   664,
+   1039,
+   1144
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/comemorando/roupa_pijama": {
+  "w": 636,
+  "h": 480,
+  "box": [
+   395,
+   664,
+   1031,
+   1144
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/comemorando/roupa_vestido": {
+  "w": 660,
+  "h": 480,
+  "box": [
+   382,
+   664,
+   1042,
+   1144
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/comendo/roupa_astronauta": {
+  "w": 656,
+  "h": 528,
+  "box": [
+   391,
+   662,
+   1047,
+   1190
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/comendo/roupa_colete": {
+  "w": 661,
+  "h": 526,
+  "box": [
+   394,
+   664,
+   1055,
+   1190
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/comendo/roupa_pijama": {
+  "w": 663,
+  "h": 526,
+  "box": [
+   390,
+   664,
+   1053,
+   1190
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/comendo/roupa_vestido": {
+  "w": 673,
+  "h": 526,
+  "box": [
+   381,
+   664,
+   1054,
+   1190
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/acessorio_cachecol": {
+  "w": 634,
+  "h": 353,
+  "box": [
+   422,
+   701,
+   1056,
+   1054
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/acessorio_colar_flores": {
+  "w": 554,
+  "h": 229,
+  "box": [
+   433,
+   699,
+   987,
+   928
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/acessorio_gravata": {
+  "w": 239,
+  "h": 312,
+  "box": [
+   663,
+   734,
+   902,
+   1046
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/acessorio_medalha": {
+  "w": 580,
+  "h": 236,
+  "box": [
+   423,
+   711,
+   1003,
+   947
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/calcado_botas": {
+  "w": 635,
+  "h": 200,
+  "box": [
+   363,
+   1002,
+   998,
+   1202
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/calcado_botas_brilho": {
+  "w": 636,
+  "h": 191,
+  "box": [
+   363,
+   1002,
+   999,
+   1193
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/calcado_pantufas": {
+  "w": 635,
+  "h": 194,
+  "box": [
+   363,
+   1002,
+   998,
+   1196
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/calcado_sapatilhas": {
+  "w": 635,
+  "h": 193,
+  "box": [
+   363,
+   1002,
+   998,
+   1195
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/calcado_tenis": {
+  "w": 636,
+  "h": 194,
+  "box": [
+   363,
+   1002,
+   999,
+   1196
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/roupa_asas": {
+  "w": 720,
+  "h": 320,
+  "box": [
+   101,
+   529,
+   1192,
+   1014
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/roupa_astronauta": {
+  "w": 607,
+  "h": 478,
+  "box": [
+   405,
+   718,
+   1012,
+   1196
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/roupa_capa": {
+  "w": 720,
+  "h": 310,
+  "box": [
+   111,
+   692,
+   986,
+   1069
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/roupa_capa_arcoiris": {
+  "w": 720,
+  "h": 326,
+  "box": [
+   144,
+   704,
+   987,
+   1086
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/roupa_colete": {
+  "w": 589,
+  "h": 434,
+  "box": [
+   439,
+   762,
+   1028,
+   1196
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/roupa_pijama": {
+  "w": 574,
+  "h": 434,
+  "box": [
+   439,
+   762,
+   1013,
+   1196
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/dormindo/roupa_vestido": {
+  "w": 578,
+  "h": 434,
+  "box": [
+   439,
+   762,
+   1017,
+   1196
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/acessorio_cachecol": {
+  "w": 497,
+  "h": 283,
+  "box": [
+   509,
+   751,
+   1006,
+   1034
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/acessorio_colar_flores": {
+  "w": 433,
+  "h": 139,
+  "box": [
+   530,
+   759,
+   963,
+   898
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/acessorio_gravata": {
+  "w": 432,
+  "h": 144,
+  "box": [
+   531,
+   752,
+   963,
+   896
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/acessorio_medalha": {
+  "w": 319,
+  "h": 239,
+  "box": [
+   579,
+   775,
+   898,
+   1014
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/calcado_botas": {
+  "w": 600,
+  "h": 243,
+  "box": [
+   446,
+   945,
+   1046,
+   1188
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/calcado_botas_brilho": {
+  "w": 598,
+  "h": 239,
+  "box": [
+   446,
+   945,
+   1044,
+   1184
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/calcado_pantufas": {
+  "w": 600,
+  "h": 240,
+  "box": [
+   446,
+   945,
+   1046,
+   1185
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/calcado_sapatilhas": {
+  "w": 600,
+  "h": 240,
+  "box": [
+   446,
+   945,
+   1046,
+   1185
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/calcado_tenis": {
+  "w": 600,
+  "h": 240,
+  "box": [
+   446,
+   945,
+   1046,
+   1185
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/roupa_asas": {
+  "w": 720,
+  "h": 295,
+  "box": [
+   136,
+   523,
+   1208,
+   962
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/roupa_astronauta": {
+  "w": 628,
+  "h": 421,
+  "box": [
+   411,
+   764,
+   1039,
+   1185
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/roupa_capa": {
+  "w": 720,
+  "h": 337,
+  "box": [
+   97,
+   750,
+   962,
+   1155
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/roupa_capa_arcoiris": {
+  "w": 633,
+  "h": 253,
+  "box": [
+   406,
+   749,
+   1039,
+   1002
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/roupa_colete": {
+  "w": 633,
+  "h": 421,
+  "box": [
+   411,
+   764,
+   1044,
+   1185
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/roupa_pijama": {
+  "w": 626,
+  "h": 421,
+  "box": [
+   411,
+   764,
+   1037,
+   1185
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
+ "poses/sentada/roupa_vestido": {
+  "w": 622,
+  "h": 421,
+  "box": [
+   411,
+   764,
+   1033,
+   1185
+  ],
+  "canvas": [
+   1254,
+   1254
+  ]
+ },
  "quarto/fundo_quarto": {
   "w": 1870,
   "h": 841
