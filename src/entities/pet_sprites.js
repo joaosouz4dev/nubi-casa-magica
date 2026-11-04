@@ -25,7 +25,7 @@ const FUR = { nubi: "#cbabe5" };
 class PetSprites {
   constructor(species) {
     this.species = species;
-    this.meta = null; this.img = {}; this.loaded = 0; this.total = -1;
+    this.meta = null; this.img = {}; this.front = {}; this.loaded = 0; this.total = -1;
     this.tintCache = new Map();
     fetch("assets/" + species + "/sprites.json").then(r => (r.ok ? r.json() : null)).then(meta => {
       if (!meta || !meta.poses) return;
@@ -49,6 +49,13 @@ class PetSprites {
         im.onload = () => { this.loaded++; };
         im.src = "assets/" + species + "/" + meta.prefix + "_" + p + ".webp";
         this.img[p] = im;
+        // patinhas e pés da pose (vão por cima da roupa); não seguram o "pronto"
+        if (meta.poses[p].front) {
+          const f = new Image();
+          f.onload = () => { f.ok = true; };
+          f.src = "assets/" + species + "/" + meta.prefix + "_" + p + "_frente.webp";
+          this.front[p] = f;
+        }
       }
     }).catch(() => {});
   }
@@ -97,17 +104,45 @@ class PetSprites {
      senão só acompanha o quanto a cabeça desceu ou andou (sentada);
      "fixed": fica onde está na parada (calçados, no chão).
      k = escala em volta do centro da peça (aparecer); tint = cor (cabelo). */
-  piece(ctx, r, pose, name, head, k = 1, tint = null) {
+  piece(ctx, r, pose, name, head, k = 1, tint = null, adj = null) {
     const im = art(name), pm = artMeta(name), B = this.meta.box;
     if (!im || !pm || !pm.box || !B) return false;
     const s = this.meta.h / (B[3] - B[1]);
+    // caixa da peça sobre a Nubi parada (px da imagem da pose)
+    let x = (pm.box[0] - B[0]) * s, y = (pm.box[1] - B[1]) * s, w = (pm.box[2] - pm.box[0]) * s, h = (pm.box[3] - pm.box[1]) * s;
+    if (adj) {   // acerto fino da peça: escala pela base (chapéu assenta) e desloca
+      const ka = adj.k || 1, w2 = w * ka, h2 = h * ka;
+      x += (w - w2) / 2 + (adj.dx || 0); y += (h - h2) + (adj.dy || 0); w = w2; h = h2;
+    }
     const P = this._e("parada"), E = head === "fixed" ? P : this._e(pose), q = head === true ? E[2] / P[2] : 1;
-    const x = E[0] + ((pm.box[0] - B[0]) * s - P[0]) * q, y = E[1] + ((pm.box[1] - B[1]) * s - P[1]) * q;
-    const W = (pm.box[2] - pm.box[0]) * s * q * this.F * r, H = (pm.box[3] - pm.box[1]) * s * q * this.F * r;
+    x = E[0] + (x - P[0]) * q; y = E[1] + (y - P[1]) * q;
+    const W = w * q * this.F * r, H = h * q * this.F * r;
     ctx.save();
     ctx.translate(this.lx(x) * r + W / 2, this.ly(y) * r + H / 2); ctx.scale(k, k);
     ctx.drawImage(tint ? this._tintedPiece(name, im, tint) : im, -W / 2, -H / 2, W, H);
     ctx.restore();
+    return true;
+  }
+  /* Par de calçados: cada metade (art.json "parts") vai para o pé certo da
+     pose (sprites.json "feet": [centro x, base, largura]), no tamanho do pé.
+     Assim o pé some dentro do sapato também sentada e dormindo. */
+  shoes(ctx, r, pose, name, k = 1) {
+    const im = art(name), pm = artMeta(name), B = this.meta.box;
+    const P = this.meta.poses.parada && this.meta.poses.parada.feet, E = (this.meta.poses[pose] || {}).feet || P;
+    if (!im || !pm || !pm.parts || !P || !E) return this.piece(ctx, r, pose, name, "fixed", k);
+    const s = this.meta.h / (B[3] - B[1]), c = (pm.box[2] - pm.box[0]) / im.naturalWidth;
+    pm.parts.forEach((pt, i) => {
+      // a metade sobre a Nubi parada (px da imagem da pose)
+      const x0 = (pm.box[0] + pt[0] * c - B[0]) * s, x1 = (pm.box[0] + pt[2] * c - B[0]) * s;
+      const y0 = (pm.box[1] + pt[1] * c - B[1]) * s, y1 = (pm.box[1] + pt[3] * c - B[1]) * s;
+      const fp = P[i], fe = E[i], q = fe[2] / fp[2];
+      const cx = fe[0] + ((x0 + x1) / 2 - fp[0]) * q, by = fe[1] + (y1 - fp[1]) * q;
+      const W = (x1 - x0) * q * this.F * r, H = (y1 - y0) * q * this.F * r;
+      ctx.save();
+      ctx.translate(this.lx(cx) * r, this.ly(by) * r - H / 2); ctx.scale(k, k);
+      ctx.drawImage(im, pt[0], pt[1], pt[2] - pt[0], pt[3] - pt[1], -W / 2, -H / 2, W, H);
+      ctx.restore();
+    });
     return true;
   }
   _tintedPiece(name, im, color) {
@@ -124,11 +159,10 @@ class PetSprites {
   }
 
   /* Cor das comidas (mirtilo, melancia): imagem tingida em cache por pose e cor. */
-  _tinted(pose, color) {
+  _tinted(pose, im, color) {
     const key = pose + "|" + color;
     let c = this.tintCache.get(key);
     if (c) return c;
-    const im = this.img[pose];
     c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
     const g = c.getContext("2d");
     g.drawImage(im, 0, 0);
@@ -136,22 +170,31 @@ class PetSprites {
     g.fillStyle = color; g.fillRect(0, 0, c.width, c.height);
     g.globalAlpha = 1; g.globalCompositeOperation = "destination-in";
     g.drawImage(im, 0, 0);
-    if (this.tintCache.size > 24) this.tintCache.clear();
+    if (this.tintCache.size > 48) this.tintCache.clear();
     this.tintCache.set(key, c);
     return c;
+  }
+
+  /* Patinhas e pés da pose por cima da roupa (e debaixo do sapato). */
+  drawFront(ctx, r, pose, tint, tintK) {
+    if (!this.img[pose]) pose = "parada";
+    const f = this.front[pose];
+    if (f && f.ok) this._blit(ctx, r, f, "f|" + pose, tint, tintK);
   }
 
   /* Desenha a pose (já no sistema local do bichinho). tintK 0..1 mistura a
      cor da comida por cima. */
   draw(ctx, r, pose, tint, tintK) {
     if (!this.img[pose]) pose = "parada";
-    const im = this.img[pose];
+    this._blit(ctx, r, this.img[pose], pose, tint, tintK);
+  }
+  _blit(ctx, r, im, key, tint, tintK) {
     const x = this.left * r, y = this.top * r, w = this.meta.w * this.F * r, h = this.meta.h * this.F * r;
     ctx.drawImage(im, x, y, w, h);
     if (tint && tintK > 0.01) {
       const a = ctx.globalAlpha;
       ctx.globalAlpha = a * Math.min(1, tintK);
-      ctx.drawImage(this._tinted(pose, tint), x, y, w, h);
+      ctx.drawImage(this._tinted(key, im, tint), x, y, w, h);
       ctx.globalAlpha = a;
     }
   }

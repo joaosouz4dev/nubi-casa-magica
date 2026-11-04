@@ -27,8 +27,10 @@ import { art } from "../core/art.js";
    [arte, segue a cabeça]. As outras peças continuam desenhadas em código. */
 const FELT = {
   // cabeça e rosto (seguem os olhos da pose)
-  hat: ["acessorios/acessorio_chapeu_mago", true], cap: ["acessorios/acessorio_bone", true],
-  crown: ["acessorios/acessorio_coroa", true], goldcrown: ["acessorios/acessorio_coroa_ouro", true],
+  // (3º item: acerto fino na Nubi parada: escala pela base e deslocamento em
+  // px da imagem; a coroa veio pequena e os chapéus "equilibrados" no topete)
+  hat: ["acessorios/acessorio_chapeu_mago", true, { k: 1.12, dy: 14 }], cap: ["acessorios/acessorio_bone", true, { k: 1.08, dy: 14 }],
+  crown: ["acessorios/acessorio_coroa", true, { k: 1.85, dy: 52, dx: -10 }], goldcrown: ["acessorios/acessorio_coroa_ouro", true, { dy: 8 }],
   helmet: ["acessorios/acessorio_capacete", true], pirate: ["acessorios/acessorio_pirata", true],
   unicorn: ["acessorios/acessorio_unicornio", true],
   sunglasses: ["acessorios/acessorio_oculos", true], heromask: ["acessorios/acessorio_mascara", true],
@@ -691,6 +693,8 @@ export class Nubi {
     const neckFelt = this.accShown.neck && FELT[this.accShown.neck.def.id];
     if (neckFelt) S.piece(ctx, r, pose, neckFelt[0], true, this._accK(this.accShown.neck));
     else { ctx.save(); S.neckT(ctx, r, pose); this._slot(ctx, r, "neck", paintNeck); ctx.restore(); }
+    // patinhas e pés da pose na frente da roupa e do que vai no pescoço
+    if (bodyWear || this.accShown.neck) S.drawFront(ctx, r, pose, this._spriteTint, this.tintK);
     // molhado e espuma
     if (this.wetShown > 0.02 || this.foamShown > 0.02) {
       ctx.save(); S.bodyT(ctx, r);
@@ -712,12 +716,12 @@ export class Nubi {
       else this._boots(ctx, r, feet, outline, ow);
     }
     ctx.restore();
-    if (feetFelt) S.piece(ctx, r, pose, feetFelt[0], feetFelt[1], this._accK(feet));
+    if (feetFelt) S.shoes(ctx, r, pose, feetFelt[0], this._accK(feet));
     // enfeite de cabelo e chapéu
     const accFelt = this.cosmetics.hairAcc && FELT["acc:" + this.cosmetics.hairAcc];
     if (accFelt) S.piece(ctx, r, pose, accFelt[0], true);
     const head = this.accShown.hat, hatFelt = head && FELT[head.def.id];
-    if (hatFelt) S.piece(ctx, r, pose, hatFelt[0], true, this._accK(head));
+    if (hatFelt) S.piece(ctx, r, pose, hatFelt[0], true, this._accK(head), null, hatFelt[2]);
     ctx.save(); S.headT(ctx, r, pose);
     if (this.cosmetics.hairAcc && !accFelt) paintHairAcc(ctx, this.cosmetics.hairAcc, r, this.t);
     if (head && !hatFelt) {
