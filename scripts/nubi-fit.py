@@ -8,6 +8,10 @@ parada. Nas outras poses as patinhas e os pés mudam de lugar, então:
 - grava assets/nubi/nubi_<pose>_frente.webp: só as patinhas da pose (o resto
   transparente). O jogo desenha essa camada POR CIMA da roupa, para as mãos
   aparecerem na frente do tecido;
+- grava assets/nubi/nubi_<pose>_corpo.webp: o molde do tronco da pose (sem
+  cabeça, rabo e pés) e em sprites.json "torso", a caixa dele. A roupa do
+  corpo, desenhada sobre a Nubi parada, é levada da caixa do tronco da parada
+  para a da pose e cortada pelo molde: nada sobra para fora do corpo;
 - grava assets/nubi/nubi_<pose>_pes.webp: só os pés. Sem sapato o jogo desenha
   os pés por cima da roupa; com sapato, apaga os pés da Nubi (para nenhuma
   pontinha aparecer atrás do sapato);
@@ -53,7 +57,16 @@ FEET = {
     "sentada":     [[318, 690, 113], [533, 690, 127]],
     "dormindo":    [[278, 700, 135], [492, 700, 135]],
 }
-FOOT_H = {"sentada": 110, "dormindo": 85}   # altura do pé visto (padrão 54: sem a sombra da barriga)
+FOOT_H = {"sentada": 110, "dormindo": 85}
+# tronco de cada pose (onde a roupa do corpo pode ficar): elipse do tronco
+# menos a cabeça (elipse) e menos o que fica NA FRENTE do corpo (rabo abraçado
+# dormindo). Em px da imagem da pose.
+STAND = {"torso": (415, 545, 200, 160), "head": (445, 255, 218, 142), "cut": []}
+TORSO = {
+    "parada": STAND, "falando": STAND, "piscando": STAND, "acenando": STAND, "comemorando": STAND, "comendo": STAND,
+    "sentada":  {"torso": (415, 575, 190, 125), "head": (440, 290, 232, 160), "cut": []},
+    "dormindo": {"torso": (420, 575, 178, 132), "head": (440, 270, 228, 180), "cut": [(418, 512, 100, 72)]},
+}   # altura do pé visto (padrão 54: sem a sombra da barriga)
 
 
 def _layer(im, mask):
@@ -64,11 +77,12 @@ def _layer(im, mask):
 
 
 def front_layer(pose):
-    """Só as patinhas da pose."""
+    """Só as patinhas da pose (e o que fica na frente da roupa, como o rabo
+    abraçado dormindo)."""
     im = Image.open(os.path.join(NUBI, f"nubi_{pose}.webp")).convert("RGBA")
     mask = Image.new("L", im.size, 0)
     d = ImageDraw.Draw(mask)
-    for cx, cy, rx, ry in PAWS[pose]:
+    for cx, cy, rx, ry in PAWS[pose] + TORSO[pose]["cut"]:   # e o rabo abraçado (dormindo)
         d.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
     return _layer(im, mask.filter(ImageFilter.GaussianBlur(2.5)))
 
@@ -93,6 +107,28 @@ def feet_layer(pose):
     m = m.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.MinFilter(3)).filter(ImageFilter.MaxFilter(3))
     m = Image.fromarray(np.minimum(np.asarray(m), np.asarray(ell)))
     return _layer(im, m.filter(ImageFilter.GaussianBlur(1)))
+
+
+def body_mask(pose):
+    """Molde do tronco da pose: onde a roupa do corpo é desenhada (o resto da
+    roupa é cortado). Sem cabeça, rabo, patinhas e pés."""
+    im = Image.open(os.path.join(NUBI, f"nubi_{pose}.webp")).convert("RGBA")
+    t = TORSO[pose]
+    m = Image.new("L", im.size, 0)
+    d = ImageDraw.Draw(m)
+    cx, cy, rx, ry = t["torso"]
+    d.ellipse((cx - rx, cy - ry, cx + rx, cy + ry), fill=255)
+    hx, hy, hrx, hry = t["head"]
+    d.ellipse((hx - hrx, hy - hry, hx + hrx, hy + hry), fill=0)
+    for x, y, a, b in t["cut"]:
+        d.ellipse((x - a, y - b, x + a, y + b), fill=0)
+    for fx, base, w in FEET[pose]:
+        h = FOOT_H.get(pose, 54)
+        d.ellipse((fx - w / 2, base - h, fx + w / 2, base + 8), fill=0)
+    alpha = np.asarray(im.getchannel("A"))
+    a = np.minimum(np.asarray(m), alpha)
+    out = Image.fromarray(a, "L").filter(ImageFilter.GaussianBlur(1.5))
+    return out
 
 
 def shoe_parts(path):
@@ -121,6 +157,11 @@ def main(preview=None):
         fl = front_layer(pose)
         fl.save(os.path.join(NUBI, f"nubi_{pose}_frente.webp"), "WEBP", quality=90, method=6)
         feet_layer(pose).save(os.path.join(NUBI, f"nubi_{pose}_pes.webp"), "WEBP", quality=90, method=6)
+        bm = body_mask(pose)
+        white = Image.new("RGBA", bm.size, (255, 255, 255, 255))
+        white.putalpha(bm)
+        white.save(os.path.join(NUBI, f"nubi_{pose}_corpo.webp"), "WEBP", quality=90, method=6)
+        meta["poses"][pose]["torso"] = list(bm.point(lambda v: 255 if v > 60 else 0).getbbox())
         meta["poses"][pose]["feet"] = FEET[pose]
         meta["poses"][pose]["feetH"] = FOOT_H.get(pose, 54)   # altura do pé visto (sentada: a sola pra frente)
         meta["poses"][pose]["front"] = True

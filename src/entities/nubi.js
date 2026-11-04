@@ -624,7 +624,9 @@ export class Nubi {
     const capeFelt = cape && FELT[cape.def.id];
     if (capeFelt) {
       const k = clamp(this._accK(cape));
-      ctx.save(); ctx.globalAlpha = k; S.piece(ctx, r, pose, capeFelt[0], false, 0.85 + 0.15 * k); ctx.restore();
+      ctx.save(); ctx.globalAlpha = k;
+      if (!S.bodyPiece(ctx, r, pose, capeFelt[0], 0.85 + 0.15 * k, false)) S.piece(ctx, r, pose, capeFelt[0], false, 0.85 + 0.15 * k);
+      ctx.restore();
     } else if (cape) {
       ctx.save(); S.bodyT(ctx, r);
       if (cape.def.shape === "wings") { const k = this._accK(cape); ctx.scale(k, k); paintWings(ctx, cape.def, r, this.t); }
@@ -659,7 +661,7 @@ export class Nubi {
       ctx.save();
       ctx.globalAlpha = clamp(k);
       const felt = FELT[bodyWear.def.id];
-      if (felt && S.piece(ctx, r, pose, felt[0], false, 0.85 + 0.15 * clamp(k))) { /* roupa em feltro */ }
+      if (felt && (S.bodyPiece(ctx, r, pose, felt[0], 0.85 + 0.15 * clamp(k)) || S.piece(ctx, r, pose, felt[0], false, 0.85 + 0.15 * clamp(k)))) { /* roupa em feltro, moldada na pose */ }
       else if (bodyWear.def.shape === "tutu") { S.bodyT(ctx, r); ctx.translate(0, r * 0.65); ctx.scale(k, k); ctx.translate(0, -r * 0.65); paintTutu(ctx, bodyWear.def, r, this.t); }
       else { S.torsoClip(ctx, r); S.bodyWearT(ctx, r); ctx.translate(0, (1 - clamp(k)) * r * 0.4); paintBody(ctx, bodyWear.def, r, this.t); }
       ctx.restore();
@@ -697,12 +699,8 @@ export class Nubi {
     // patinhas e pés da pose na frente da roupa e do que vai no pescoço
     if (bodyWear || this.accShown.neck) S.drawFront(ctx, r, pose, this._spriteTint, this.tintK, !feetFelt);
     // molhado e espuma
-    if (this.wetShown > 0.02 || this.foamShown > 0.02) {
-      ctx.save(); S.bodyT(ctx, r);
-      if (this.wetShown > 0.02) this._wet(ctx, r);
-      if (this.foamShown > 0.02) this._foam(ctx, r);
-      ctx.restore();
-    }
+    if (this.wetShown > 0.02) { ctx.save(); S.bodyT(ctx, r); this._wet(ctx, r); ctx.restore(); }
+    if (this.foamShown > 0.02) this._foamSprite(ctx, r, S, pose);
     // unhas e calçados
     const step = this.state === "celebrate" ? Math.sin(this.stateT * 0.03) * r * 0.03 : 0;
     const cs = this.cosShown;
@@ -1040,6 +1038,45 @@ export class Nubi {
       ctx.fillStyle = "rgba(255,255,255,1)";
       ctx.beginPath(); ctx.arc(x - br * 0.35, y - br * 0.35, br * 0.22, 0, Math.PI * 2); ctx.fill();
     }
+  }
+
+  /* Espuma na Nubi em feltro: montinhos de bolhas redondas no alto da cabeça
+     (xampu), nas bochechas de fora e nos ombros e lados do corpo, medidos na
+     pose (olhos e tronco). O rosto fica livre. */
+  _foamSprite(ctx, r, S, pose) {
+    const k = this.foamShown, [ex, ey, half] = S._e(pose);
+    const T = ((S.meta.poses[pose] || {}).torso) || ((S.meta.poses.parada || {}).torso);
+    if (!T) return;
+    const tw = T[2] - T[0], th = T[3] - T[1];
+    // [x, y, tamanho] em px da imagem da pose
+    const spots = [
+      [ex - half * 1.3, ey - half * 2.0, 1.1], [ex, ey - half * 2.35, 1.3], [ex + half * 1.35, ey - half * 2.0, 1.1],
+      [ex - half * 2.55, ey + half * 0.35, 0.7], [ex + half * 2.55, ey + half * 0.35, 0.7],
+      [T[0] + tw * 0.14, T[1] + th * 0.12, 0.95], [T[2] - tw * 0.14, T[1] + th * 0.12, 0.95],
+      [T[0] + tw * 0.06, T[1] + th * 0.5, 0.8], [T[2] - tw * 0.06, T[1] + th * 0.5, 0.8],
+      [T[0] + tw * 0.5, T[1] + th * 0.62, 0.75]
+    ];
+    const tinted = !!this.tint, unit = half * S.F * r * 0.6;
+    ctx.save();
+    spots.forEach(([px, py, sz], i) => {
+      const appear = Ease.outBack(clamp(k * spots.length * 0.9 - i * 0.7));
+      if (appear <= 0) return;
+      const cx = S.lx(px) * r, cy = S.ly(py) * r;
+      const wob = Motion.reduce ? 0 : Math.sin(this.t * 0.004 + i * 1.3) * 0.06;
+      // montinho: 4 bolhas que se sobrepõem
+      for (const [dx, dy, b] of [[-0.7, 0.25, 0.75], [0.7, 0.25, 0.7], [0, -0.1, 1], [0.15, 0.55, 0.6]]) {
+        const br = unit * sz * b * appear * (1 + wob);
+        const x = cx + dx * unit * sz * appear, y = cy + dy * unit * sz * appear;
+        const g = ctx.createRadialGradient(x - br * 0.35, y - br * 0.4, br * 0.1, x, y, br);
+        g.addColorStop(0, "#ffffff"); g.addColorStop(0.7, tinted ? "#e3ecff" : "#f4f8ff"); g.addColorStop(1, tinted ? "#c6d6f5" : "#dce6f5");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(x, y, br, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = "rgba(140,165,205,.35)"; ctx.lineWidth = Math.max(1, br * 0.07); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,.95)";
+        ctx.beginPath(); ctx.arc(x - br * 0.35, y - br * 0.38, br * 0.2, 0, Math.PI * 2); ctx.fill();
+      }
+    });
+    ctx.restore();
   }
 
   _wet(ctx, r) {

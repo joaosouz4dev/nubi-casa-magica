@@ -30,7 +30,13 @@
         ]
       ],
       "front": true,
-      "feetH": 54
+      "feetH": 54,
+      "torso": [
+        214,
+        388,
+        614,
+        699
+      ]
     },
     "comemorando": {
       "eyes": [
@@ -51,7 +57,13 @@
         ]
       ],
       "front": true,
-      "feetH": 54
+      "feetH": 54,
+      "torso": [
+        214,
+        388,
+        592,
+        667
+      ]
     },
     "comendo": {
       "eyes": [
@@ -72,7 +84,13 @@
         ]
       ],
       "front": true,
-      "feetH": 54
+      "feetH": 54,
+      "torso": [
+        214,
+        388,
+        600,
+        699
+      ]
     },
     "dormindo": {
       "eyes": [
@@ -93,7 +111,13 @@
         ]
       ],
       "front": true,
-      "feetH": 85
+      "feetH": 85,
+      "torso": [
+        241,
+        448,
+        587,
+        706
+      ]
     },
     "falando": {
       "eyes": [
@@ -114,7 +138,13 @@
         ]
       ],
       "front": true,
-      "feetH": 54
+      "feetH": 54,
+      "torso": [
+        214,
+        388,
+        613,
+        699
+      ]
     },
     "parada": {
       "eyes": [
@@ -135,7 +165,13 @@
         ]
       ],
       "front": true,
-      "feetH": 54
+      "feetH": 54,
+      "torso": [
+        214,
+        388,
+        613,
+        699
+      ]
     },
     "piscando": {
       "eyes": [
@@ -156,7 +192,13 @@
         ]
       ],
       "front": true,
-      "feetH": 54
+      "feetH": 54,
+      "torso": [
+        214,
+        388,
+        613,
+        699
+      ]
     },
     "sentada": {
       "eyes": [
@@ -177,7 +219,13 @@
         ]
       ],
       "front": true,
-      "feetH": 110
+      "feetH": 110,
+      "torso": [
+        224,
+        449,
+        605,
+        696
+      ]
     }
   }
 }
