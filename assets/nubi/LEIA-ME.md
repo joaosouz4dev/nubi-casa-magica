@@ -46,3 +46,7 @@ A Nubi do jogo vai ser feita com imagens no estilo do modelo em feltro, uma por 
 3. Pose nova (Fase 2): diga quando ela aparece em `_choosePose()` (`src/entities/nubi.js`) e inclua o arquivo no `sw.js`.
 
 A Fase 1 já está no jogo: parada, piscando, falando, acenando, comemorando, comendo, dormindo e sentada.
+
+## Encaixe das roupas (pose por pose)
+
+As roupas, sapatos e acessórios em feltro são desenhados sobre a Nubi parada. Depois de trocar uma pose, rode `python scripts/nubi-fit.py` (com `--preview <arquivo.png>` para conferir). Ele grava, para cada pose, a camada `nubi_<pose>_frente.webp` (só patinhas e pés, que o jogo desenha por cima da roupa) e a posição de cada pé em `sprites.json`, e marca em `art.json` a metade esquerda e a direita de cada calçado. As patinhas e os pés de cada pose estão marcados à mão no começo do script: se a pose nova mudar as mãos ou os pés de lugar, ajuste ali.
