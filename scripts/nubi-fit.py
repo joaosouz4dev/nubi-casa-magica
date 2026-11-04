@@ -11,7 +11,11 @@ parada. Nas outras poses as patinhas e os pés mudam de lugar, então:
 - grava em assets/nubi/sprites.json, em cada pose, "feet": [esquerdo, direito],
   cada pé como [centro x, base y, largura] (px da imagem da pose);
 - grava em assets/art.json, em cada calçado, "parts": as caixas do pé esquerdo
-  e do direito dentro da imagem (o jogo encaixa cada metade no pé certo).
+  e do direito dentro da imagem (o jogo encaixa cada metade no pé certo);
+- grava assets/roupas/calcado_<x>_pe.webp: o calçado "calçado". A boca do
+  sapato veio vazia (era verde e saiu com o fundo), então por ela se via a
+  barriga e o sapato parecia estar na frente do pé. Aqui a boca é preenchida
+  com o feltro do pé da Nubi, com sombrinha por dentro: o pé fica dentro.
 
 As patinhas e os pés foram marcados à mão (elipses em px da imagem da pose,
 720 de altura) olhando cada imagem com uma grade.
@@ -86,6 +90,43 @@ def shoe_parts(path):
     return parts
 
 
+def foot_felt(size):
+    """Retalho do feltro do pé da Nubi parada, no tamanho pedido."""
+    nub = Image.open(os.path.join(NUBI, "nubi_parada.webp")).convert("RGBA")
+    patch = nub.crop((250, 655, 315, 690)).convert("RGB")
+    return patch.resize(size, Image.LANCZOS)
+
+
+def worn_shoe(path):
+    """Preenche os buracos fechados (a boca do calçado) com o pé da Nubi."""
+    im = Image.open(path).convert("RGBA")
+    a = np.asarray(im.getchannel("A"))
+    solid = Image.fromarray(((a > 40) * 255).astype(np.uint8), "L")
+    # fundo de verdade = transparente ligado à borda; o resto transparente é buraco
+    reach = solid.copy()
+    w, h = reach.size
+    seeds = [(x, 0) for x in range(0, w, 4)] + [(x, h - 1) for x in range(0, w, 4)] +             [(0, y) for y in range(0, h, 4)] + [(w - 1, y) for y in range(0, h, 4)]
+    for sx, sy in seeds:
+        if reach.getpixel((sx, sy)) == 0:
+            ImageDraw.floodfill(reach, (sx, sy), 128)
+    r = np.asarray(reach)
+    hole = Image.fromarray(((r == 0) * 255).astype(np.uint8), "L")
+    if not hole.getbbox():
+        return im
+    hole = hole.filter(ImageFilter.MaxFilter(5)).filter(ImageFilter.GaussianBlur(1))
+    fill = Image.new("RGBA", im.size, (0, 0, 0, 0))
+    x0, y0, x1, y1 = hole.getbbox()
+    felt = foot_felt((x1 - x0, y1 - y0)).convert("RGBA")
+    # sombrinha por dentro: mais escuro em cima (perto da borda da boca)
+    g = np.linspace(0.72, 1.0, y1 - y0)[:, None, None]
+    fa = np.asarray(felt).astype(np.float32)
+    fa[..., :3] *= g
+    fill.paste(Image.fromarray(fa.clip(0, 255).astype(np.uint8), "RGBA"), (x0, y0))
+    fill.putalpha(hole)
+    fill.alpha_composite(im)
+    return fill
+
+
 def main(preview=None):
     meta_path = os.path.join(NUBI, "sprites.json")
     meta = json.load(open(meta_path, encoding="utf-8"))
@@ -103,9 +144,13 @@ def main(preview=None):
         json.dump(meta, f, ensure_ascii=False, indent=2)
     art_path = os.path.join(ROOT, "assets", "art.json")
     art = json.load(open(art_path, encoding="utf-8"))
-    for k in art:
-        if k.startswith("roupas/calcado_"):
-            art[k]["parts"] = shoe_parts(os.path.join(ROOT, "assets", k + ".webp"))
+    for k in list(art):
+        if k.startswith("roupas/calcado_") and not k.endswith("_pe"):
+            src = os.path.join(ROOT, "assets", k + ".webp")
+            art[k]["parts"] = shoe_parts(src)
+            worn = worn_shoe(src)
+            worn.save(os.path.join(ROOT, "assets", k + "_pe.webp"), "WEBP", quality=90, method=6)
+            art[k + "_pe"] = {"w": worn.width, "h": worn.height}
             print(k, art[k]["parts"])
     with open(art_path, "w", encoding="utf-8") as f:
         json.dump(dict(sorted(art.items())), f, ensure_ascii=False, indent=1)

@@ -1483,6 +1483,14 @@
    ]
   ]
  },
+ "roupas/calcado_botas_brilho_pe": {
+  "w": 592,
+  "h": 213
+ },
+ "roupas/calcado_botas_pe": {
+  "w": 591,
+  "h": 214
+ },
  "roupas/calcado_pantufas": {
   "w": 601,
   "h": 210,
@@ -1510,6 +1518,10 @@
     210
    ]
   ]
+ },
+ "roupas/calcado_pantufas_pe": {
+  "w": 601,
+  "h": 210
  },
  "roupas/calcado_sapatilhas": {
   "w": 595,
@@ -1539,6 +1551,10 @@
    ]
   ]
  },
+ "roupas/calcado_sapatilhas_pe": {
+  "w": 595,
+  "h": 215
+ },
  "roupas/calcado_tenis": {
   "w": 591,
   "h": 167,
@@ -1566,6 +1582,10 @@
     167
    ]
   ]
+ },
+ "roupas/calcado_tenis_pe": {
+  "w": 591,
+  "h": 167
  },
  "roupas/roupa_asas": {
   "w": 640,
