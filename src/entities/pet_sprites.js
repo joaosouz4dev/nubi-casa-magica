@@ -25,7 +25,7 @@ const FUR = { nubi: "#cbabe5" };
 class PetSprites {
   constructor(species) {
     this.species = species;
-    this.meta = null; this.img = {}; this.front = {}; this.loaded = 0; this.total = -1;
+    this.meta = null; this.img = {}; this.front = {}; this.feetImg = {}; this.noFeet = {}; this.loaded = 0; this.total = -1;
     this.tintCache = new Map();
     fetch("assets/" + species + "/sprites.json").then(r => (r.ok ? r.json() : null)).then(meta => {
       if (!meta || !meta.poses) return;
@@ -55,6 +55,10 @@ class PetSprites {
           f.onload = () => { f.ok = true; };
           f.src = "assets/" + species + "/" + meta.prefix + "_" + p + "_frente.webp";
           this.front[p] = f;
+          const pe = new Image();
+          pe.onload = () => { pe.ok = true; };
+          pe.src = "assets/" + species + "/" + meta.prefix + "_" + p + "_pes.webp";
+          this.feetImg[p] = pe;
         }
       }
     }).catch(() => {});
@@ -127,8 +131,7 @@ class PetSprites {
      pose (sprites.json "feet": [centro x, base, largura]), no tamanho do pé.
      Assim o pé some dentro do sapato também sentada e dormindo. */
   shoes(ctx, r, pose, name, k = 1) {
-    // versão "calçada" (boca do sapato com o pé dentro), do mesmo tamanho da original
-    const im = art(name + "_pe") || art(name), pm = artMeta(name), B = this.meta.box;
+    const im = art(name), pm = artMeta(name), B = this.meta.box;
     const P = this.meta.poses.parada && this.meta.poses.parada.feet, E = (this.meta.poses[pose] || {}).feet || P;
     if (!im || !pm || !pm.parts || !P || !E) return this.piece(ctx, r, pose, name, "fixed", k);
     const s = this.meta.h / (B[3] - B[1]), c = (pm.box[2] - pm.box[0]) / im.naturalWidth;
@@ -137,8 +140,13 @@ class PetSprites {
       const x0 = (pm.box[0] + pt[0] * c - B[0]) * s, x1 = (pm.box[0] + pt[2] * c - B[0]) * s;
       const y0 = (pm.box[1] + pt[1] * c - B[1]) * s, y1 = (pm.box[1] + pt[3] * c - B[1]) * s;
       const fp = P[i], fe = E[i], q = fe[2] / fp[2];
-      const cx = fe[0] + ((x0 + x1) / 2 - fp[0]) * q, by = fe[1] + (y1 - fp[1]) * q;
-      const W = (x1 - x0) * q * this.F * r, H = (y1 - y0) * q * this.F * r;
+      // nunca mais estreito que o pé (senão a pontinha do pé aparece do lado)
+      const wide = fe[2] * 1.05 > (x1 - x0) * q;
+      const cx = wide ? fe[0] : fe[0] + ((x0 + x1) / 2 - fp[0]) * q, by = fe[1] + (y1 - fp[1]) * q;
+      // pé mais alto que na parada (sentada mostra a sola): o calçado cresce
+      // para cima até cobrir o pé inteiro, sem deixar os dedos aparecendo
+      const fh = (this.meta.poses[pose] || {}).feetH || 0;
+      const W = Math.max((x1 - x0) * q, fe[2] * 1.05) * this.F * r, H = Math.max((y1 - y0) * q, fh * 1.08) * this.F * r;
       ctx.save();
       ctx.translate(this.lx(cx) * r, this.ly(by) * r - H / 2); ctx.scale(k, k);
       ctx.drawImage(im, pt[0], pt[1], pt[2] - pt[0], pt[3] - pt[1], -W / 2, -H / 2, W, H);
@@ -164,7 +172,7 @@ class PetSprites {
     const key = pose + "|" + color;
     let c = this.tintCache.get(key);
     if (c) return c;
-    c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
+    c = document.createElement("canvas"); c.width = im.naturalWidth || im.width; c.height = im.naturalHeight || im.height;
     const g = c.getContext("2d");
     g.drawImage(im, 0, 0);
     g.globalCompositeOperation = "color"; g.globalAlpha = 0.75;
@@ -176,18 +184,35 @@ class PetSprites {
     return c;
   }
 
-  /* Patinhas e pés da pose por cima da roupa (e debaixo do sapato). */
-  drawFront(ctx, r, pose, tint, tintK) {
+  /* Patinhas da pose por cima da roupa; feet = também os pés (sem sapato). */
+  drawFront(ctx, r, pose, tint, tintK, feet = true) {
     if (!this.img[pose]) pose = "parada";
-    const f = this.front[pose];
+    const f = this.front[pose], pe = this.feetImg[pose];
     if (f && f.ok) this._blit(ctx, r, f, "f|" + pose, tint, tintK);
+    if (feet && pe && pe.ok) this._blit(ctx, r, pe, "p|" + pose, tint, tintK);
+  }
+  /* A pose sem os pés (calçada): a imagem com os pés apagados, feita uma vez. */
+  _withoutFeet(pose) {
+    const pe = this.feetImg[pose], im = this.img[pose];
+    if (!pe || !pe.ok) return null;
+    let c = this.noFeet[pose];
+    if (!c) {
+      c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
+      const g = c.getContext("2d");
+      g.drawImage(im, 0, 0);
+      g.globalCompositeOperation = "destination-out"; g.drawImage(pe, 0, 0, c.width, c.height);
+      this.noFeet[pose] = c;
+    }
+    return c;
   }
 
   /* Desenha a pose (já no sistema local do bichinho). tintK 0..1 mistura a
-     cor da comida por cima. */
-  draw(ctx, r, pose, tint, tintK) {
+     cor da comida por cima. shod = calçada (sem os pés da imagem). */
+  draw(ctx, r, pose, tint, tintK, shod = false) {
     if (!this.img[pose]) pose = "parada";
-    this._blit(ctx, r, this.img[pose], pose, tint, tintK);
+    const nf = shod ? this._withoutFeet(pose) : null;
+    if (nf) this._blit(ctx, r, nf, "s|" + pose, tint, tintK);
+    else this._blit(ctx, r, this.img[pose], pose, tint, tintK);
   }
   _blit(ctx, r, im, key, tint, tintK) {
     const x = this.left * r, y = this.top * r, w = this.meta.w * this.F * r, h = this.meta.h * this.F * r;

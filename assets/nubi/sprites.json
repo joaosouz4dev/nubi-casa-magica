@@ -29,7 +29,8 @@
           165
         ]
       ],
-      "front": true
+      "front": true,
+      "feetH": 54
     },
     "comemorando": {
       "eyes": [
@@ -49,7 +50,8 @@
           143
         ]
       ],
-      "front": true
+      "front": true,
+      "feetH": 54
     },
     "comendo": {
       "eyes": [
@@ -69,7 +71,8 @@
           164
         ]
       ],
-      "front": true
+      "front": true,
+      "feetH": 54
     },
     "dormindo": {
       "eyes": [
@@ -89,7 +92,8 @@
           135
         ]
       ],
-      "front": true
+      "front": true,
+      "feetH": 85
     },
     "falando": {
       "eyes": [
@@ -109,7 +113,8 @@
           162
         ]
       ],
-      "front": true
+      "front": true,
+      "feetH": 54
     },
     "parada": {
       "eyes": [
@@ -129,7 +134,8 @@
           162
         ]
       ],
-      "front": true
+      "front": true,
+      "feetH": 54
     },
     "piscando": {
       "eyes": [
@@ -149,7 +155,8 @@
           165
         ]
       ],
-      "front": true
+      "front": true,
+      "feetH": 54
     },
     "sentada": {
       "eyes": [
@@ -169,7 +176,8 @@
           127
         ]
       ],
-      "front": true
+      "front": true,
+      "feetH": 110
     }
   }
 }
