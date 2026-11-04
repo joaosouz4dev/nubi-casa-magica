@@ -622,7 +622,9 @@ export class Nubi {
     // capa / asas: atrás do corpo
     const cape = this.accShown.cape;
     const capeFelt = cape && FELT[cape.def.id];
-    if (capeFelt) {
+    const capePose = capeFelt && S.hasPoseArt(pose, capeFelt[0]);
+    if (capePose) { /* desenhada na pose, logo depois da Nubi */ }
+    else if (capeFelt) {
       const k = clamp(this._accK(cape));
       ctx.save(); ctx.globalAlpha = k;
       if (!S.bodyPiece(ctx, r, pose, capeFelt[0], 0.85 + 0.15 * k, false)) S.piece(ctx, r, pose, capeFelt[0], false, 0.85 + 0.15 * k);
@@ -635,6 +637,7 @@ export class Nubi {
     }
     const feet = this.accShown.boots, feetFelt = feet && FELT[feet.def.id];
     S.draw(ctx, r, pose, this._spriteTint, this.tintK, !!feetFelt);   // calçada: sem os pés da imagem
+    if (capePose) S.poseArt(ctx, r, pose, capeFelt[0], clamp(this._accK(cape)));
     // lua no topete (banana)
     if (this.moonShown > 0.02) {
       const k = Ease.outBack(clamp(this.moonShown));
@@ -661,7 +664,7 @@ export class Nubi {
       ctx.save();
       ctx.globalAlpha = clamp(k);
       const felt = FELT[bodyWear.def.id];
-      if (felt && (S.bodyPiece(ctx, r, pose, felt[0], 0.85 + 0.15 * clamp(k)) || S.piece(ctx, r, pose, felt[0], false, 0.85 + 0.15 * clamp(k)))) { /* roupa em feltro, moldada na pose */ }
+      if (felt && (S.poseArt(ctx, r, pose, felt[0], clamp(k)) || S.bodyPiece(ctx, r, pose, felt[0], 0.85 + 0.15 * clamp(k)) || S.piece(ctx, r, pose, felt[0], false, 0.85 + 0.15 * clamp(k)))) { /* roupa em feltro: desenhada na pose, ou moldada */ }
       else if (bodyWear.def.shape === "tutu") { S.bodyT(ctx, r); ctx.translate(0, r * 0.65); ctx.scale(k, k); ctx.translate(0, -r * 0.65); paintTutu(ctx, bodyWear.def, r, this.t); }
       else { S.torsoClip(ctx, r); S.bodyWearT(ctx, r); ctx.translate(0, (1 - clamp(k)) * r * 0.4); paintBody(ctx, bodyWear.def, r, this.t); }
       ctx.restore();
@@ -694,7 +697,7 @@ export class Nubi {
     if (faceFelt) S.piece(ctx, r, pose, faceFelt[0], true, this._accK(this.accShown.face));
     // pescoço
     const neckFelt = this.accShown.neck && FELT[this.accShown.neck.def.id];
-    if (neckFelt) S.piece(ctx, r, pose, neckFelt[0], true, this._accK(this.accShown.neck));
+    if (neckFelt) { if (!S.poseArt(ctx, r, pose, neckFelt[0], clamp(this._accK(this.accShown.neck)))) S.piece(ctx, r, pose, neckFelt[0], true, this._accK(this.accShown.neck)); }
     else { ctx.save(); S.neckT(ctx, r, pose); this._slot(ctx, r, "neck", paintNeck); ctx.restore(); }
     // patinhas e pés da pose na frente da roupa e do que vai no pescoço
     if (bodyWear || this.accShown.neck) S.drawFront(ctx, r, pose, this._spriteTint, this.tintK, !feetFelt);
@@ -714,7 +717,7 @@ export class Nubi {
       else this._boots(ctx, r, feet, outline, ow);
     }
     ctx.restore();
-    if (feetFelt) S.shoes(ctx, r, pose, feetFelt[0], this._accK(feet));
+    if (feetFelt && !S.poseArt(ctx, r, pose, feetFelt[0], clamp(this._accK(feet)))) S.shoes(ctx, r, pose, feetFelt[0], this._accK(feet));
     // enfeite de cabelo e chapéu
     const accFelt = this.cosmetics.hairAcc && FELT["acc:" + this.cosmetics.hairAcc];
     if (accFelt) S.piece(ctx, r, pose, accFelt[0], true);

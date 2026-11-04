@@ -132,6 +132,25 @@ class PetSprites {
     ctx.restore();
     return true;
   }
+  /* Peça desenhada NA POSE (assets/poses/<pose>/<arquivo>.webp, recortada
+     por scripts/pose-sprites.py da Nubi inteira vestindo a peça): vai por
+     cima da Nubi da pose, no mesmo quadro. false = a pose não tem essa arte
+     (quem chama usa o encaixe pela Nubi parada). */
+  hasPoseArt(pose, name) { return !!art("poses/" + pose + "/" + name.split("/").pop()); }
+  poseArt(ctx, r, pose, name, k = 1) {
+    const key = "poses/" + pose + "/" + name.split("/").pop();
+    const im = art(key), pm = artMeta(key), B = this.meta.box;
+    if (!im || !pm || !pm.box || !B) return false;
+    const s = this.meta.h / (B[3] - B[1]);
+    const x = this.lx((pm.box[0] - B[0]) * s) * r, y = this.ly((pm.box[1] - B[1]) * s) * r;
+    const w = (pm.box[2] - pm.box[0]) * s * this.F * r, h = (pm.box[3] - pm.box[1]) * s * this.F * r;
+    ctx.save();
+    if (k !== 1) { ctx.globalAlpha *= Math.max(0, Math.min(1, k)); ctx.translate(x + w / 2, y + h / 2); ctx.scale(0.9 + 0.1 * k, 0.9 + 0.1 * k); ctx.translate(-(x + w / 2), -(y + h / 2)); }
+    ctx.drawImage(im, x, y, w, h);
+    ctx.restore();
+    return true;
+  }
+
   /* Roupa do corpo (e capa/asas) moldada na pose: a peça, desenhada sobre a
      Nubi parada, vai da caixa do tronco da parada para a caixa do tronco da
      pose (sprites.json "torso") e, se clip, é cortada pelo molde do tronco da
