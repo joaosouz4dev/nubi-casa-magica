@@ -54,6 +54,8 @@ sed -i -E 's#(android:name="\.MainActivity")#\1 android:screenOrientation="senso
 cp "$SRC/android-src/MainActivity.java" "android/app/src/main/java/${APP_ID//.//}/MainActivity.java"
 # Google Play: apps novos precisam mirar o Android mais recente (API 36)
 sed -i -E 's#(compileSdkVersion|targetSdkVersion) = [0-9]+#\1 = 36#' android/variables.gradle
+# a Proteção Automática do Google Play exige Android 7 (API 24) ou mais novo
+sed -i -E 's#minSdkVersion = [0-9]+#minSdkVersion = 24#' android/variables.gradle
 grep -q suppressUnsupportedCompileSdk android/gradle.properties || echo "android.suppressUnsupportedCompileSdk=36" >> android/gradle.properties
 # versão (a Play Store exige um versionCode maior a cada envio)
 sed -i -E "s#versionCode [0-9]+#versionCode ${VERSION_CODE:-1}#; s#versionName \"[^\"]*\"#versionName \"${VERSION_NAME:-1.0}\"#" android/app/build.gradle
